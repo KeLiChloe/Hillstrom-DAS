@@ -40,7 +40,7 @@ def _make_regressor(model_type: str):
     model_type:
       - "ridge"
       - "mlp"
-      - "lgbm" (requires lightgbm)
+      - "light_gbm" (requires lightgbm)
     """
     model_type = str(model_type).lower()
 
@@ -59,9 +59,9 @@ def _make_regressor(model_type: str):
             random_state=0,
         )
 
-    if model_type == "lgbm":
+    if model_type == "light_gbm":
         if not _HAS_LGBM:
-            raise ImportError("model_type='lgbm' requires lightgbm to be installed.")
+            raise ImportError("model_type='light_gbm' requires lightgbm to be installed.")
         return LGBMRegressor(
             n_estimators=500,
             learning_rate=0.03,

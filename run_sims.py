@@ -52,7 +52,7 @@ eval_classes = {
     "ipw": evaluate_policy_ipw
 }
 
-M_candidates = [4, 5, 6, 7, 8, 9, 10, 11]
+M_candidates = [2, 3, 4, 5, 6, 7, 8, 9, 10]
 
 
 def run_single_experiment(sample_frac, pilot_frac, train_frac):
@@ -74,7 +74,7 @@ def run_single_experiment(sample_frac, pilot_frac, train_frac):
         y_impl,
         mu_pilot_models,   # dict[a] = model_a
         Gamma_pilot,       # (N_pilot, K)
-    ) = prepare_pilot_impl(X, y, D, pilot_frac=pilot_frac, model_type="lightgbm_reg", log_y=log_y)
+    ) = prepare_pilot_impl(X, y, D, pilot_frac=pilot_frac, model_type="mlp_reg", log_y=log_y)
 
     # K 个动作（0..K-1）
     K = Gamma_pilot.shape[1]
@@ -195,7 +195,7 @@ def run_single_experiment(sample_frac, pilot_frac, train_frac):
             num_trees=100,
             seed=int(seed),
         )
-        a_hat_cf, mu_hat_cf = predict_best_action_multiarm(cf_model, X_impl)
+        a_hat_cf, _ = predict_best_action_multiarm(cf_model, X_impl)
         seg_labels_impl_cf = a_hat_cf.astype(int)      # (n,)
         action_identity = np.arange(K, dtype=int)      # segment m -> action m
         for eval in eval_methods:
@@ -249,7 +249,7 @@ def run_single_experiment(sample_frac, pilot_frac, train_frac):
             D_pilot,
             y_pilot,
             K=K,
-            model_type="lightgbm_reg",   
+            model_type="mlp_reg",   
             log_y=log_y,
             random_state=seed,
         )
@@ -331,7 +331,7 @@ def run_single_experiment(sample_frac, pilot_frac, train_frac):
         dr_models = fit_dr_learner_models(
             X_pilot=X_pilot,
             Gamma_pilot=Gamma_pilot,
-            model_type="lgbm",     # options: "ridge", "mlp", "lgbm"
+            model_type="mlp",     # options: "ridge", "mlp", "light_gbm"
         )
 
         # Predict on implementation and take argmax
