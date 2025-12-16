@@ -152,38 +152,33 @@ def fit_multiarm_causal_forest(
 
 def predict_mu_hat_matrix_multiarm(cf_model: Dict, X: np.ndarray) -> np.ndarray:
     """
-    Return mu_hat matrix of shape (n, K) in the same arm order as cf_model["levels"].
+    Return a relative mu_hat matrix (n, K):
+      column 0 = 0 baseline (reference arm)
+      column a = tau_hat for arm a (a=1..K-1)
+    This is sufficient for argmax policy selection.
     """
     X = np.asarray(X, dtype=float)
     forest = cf_model["forest"]
+    K = len(cf_model["levels"])
 
     with localconverter(default_converter + numpy2ri.converter):
         X_r = ro.conversion.py2rpy(X)
 
     pred = grf.predict_multi_arm_causal_forest(forest, X_r)
+
     with localconverter(default_converter + numpy2ri.converter):
         tau_hat = np.asarray(ro.conversion.rpy2py(pred.rx2("predictions")), dtype=float)
 
-    # normalize shape to (n, K-1)
-    tau_hat = np.squeeze(tau_hat)  # handles (n, K-1, 1) -> (n, K-1)
+    tau_hat = np.squeeze(tau_hat)
     if tau_hat.ndim == 1:
         tau_hat = tau_hat.reshape(-1, 1)
 
-    with localconverter(default_converter + numpy2ri.converter):
-        Y_hat = np.asarray(ro.conversion.rpy2py(forest.rx2("Y.hat")), dtype=float).ravel()
-        W_hat = np.asarray(ro.conversion.rpy2py(forest.rx2("W.hat")), dtype=float)
+    # build relative mu_hat: baseline=0, others=tau
+    if tau_hat.shape[1] != K - 1:
+        raise ValueError(f"Expected tau_hat with {K-1} columns, got {tau_hat.shape}")
 
-    # sanity checks
-    if W_hat.shape[0] != tau_hat.shape[0]:
-        raise ValueError(f"Row mismatch: W_hat {W_hat.shape}, tau_hat {tau_hat.shape}")
-    if W_hat.shape[1] - 1 != tau_hat.shape[1]:
-        raise ValueError(f"Arm mismatch: W_hat {W_hat.shape}, tau_hat {tau_hat.shape}")
-
-    # baseline reconstruction
-    Y_hat_baseline = Y_hat - np.sum(W_hat[:, 1:] * tau_hat, axis=1)
-    mu_hat = np.column_stack([Y_hat_baseline, Y_hat_baseline.reshape(-1, 1) + tau_hat])
-    return mu_hat
-
+    mu_hat_rel = np.column_stack([np.zeros(tau_hat.shape[0]), tau_hat])
+    return mu_hat_rel
 
 def predict_best_action_multiarm(cf_model: Dict, X: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
     """
@@ -195,8 +190,12 @@ def predict_best_action_multiarm(cf_model: Dict, X: np.ndarray) -> Tuple[np.ndar
     mu_hat : (n, K) float
     """
     levels = np.asarray(cf_model["levels"], dtype=int)
-    mu_hat = predict_mu_hat_matrix_multiarm(cf_model, X)
+    if levels[0] != 0:
+        raise ValueError(f"Baseline arm is levels[0]={levels[0]}, expected 0. "
+                        "Either pass action_levels=np.arange(K) or adjust evaluation mapping.")
 
-    idx = np.argmax(mu_hat, axis=1).astype(int)
+    mu_hat_rel = predict_mu_hat_matrix_multiarm(cf_model, X)
+
+    idx = np.argmax(mu_hat_rel, axis=1).astype(int)
     a_hat = levels[idx]
-    return a_hat, mu_hat
+    return a_hat, mu_hat_rel
