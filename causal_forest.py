@@ -54,8 +54,8 @@ def fitted_multiarm_causal_forest(
     y_pilot: np.ndarray,
     D_pilot: np.ndarray,
     *,
-    action_levels: Optional[Sequence[int]] = None,
-    num_trees: int = 2000,
+    action_levels: Optional[Sequence[int]],
+    num_trees: int,
     seed: int = 0,
     cleanup: bool = True,
     run_r_gc: bool = True,
@@ -91,9 +91,9 @@ def fit_multiarm_causal_forest(
     y_pilot: np.ndarray,
     D_pilot: np.ndarray,
     *,
-    action_levels: Optional[Sequence[int]] = None,
-    num_trees: int = 2000,
-    seed: int = 0,
+    action_levels: Optional[Sequence[int]],
+    num_trees: int,
+    seed: int,
 ) -> Dict:
     """
     Fit grf::multi_arm_causal_forest on pilot data.
@@ -141,6 +141,7 @@ def fit_multiarm_causal_forest(
         W_r,
         num_trees=num_trees,
         seed=seed,
+        min_node_size=2,
     )
 
     return {

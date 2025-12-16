@@ -191,7 +191,7 @@ def run_single_experiment(sample_frac, pilot_frac, train_frac):
             y_pilot,
             D_pilot,
             action_levels=np.arange(K),   # 确保列顺序与 0..K-1 对齐
-            num_trees=2000,
+            num_trees=100,
             seed=int(seed),
         )
         a_hat_cf, mu_hat_cf = predict_best_action_multiarm(cf_model, X_impl)
