@@ -1,56 +1,22 @@
-# dr_learner.py
-"""
-DR-learner (multi-action, K-action) for your Hillstrom pipeline.
-
-Key idea:
-  - You already computed Gamma_pilot: shape (N, K)
-      Gamma_{i,a} is a DR pseudo-outcome for E[Y(a) | X_i].
-  - DR-learner fits a supervised model per action:
-      f_a(x) ≈ E[ Gamma_{i,a} | X=x ]
-  - Policy: pi(x) = argmax_a f_a(x)
-
-Important:
-  - This module ONLY learns the policy (via Gamma labels).
-  - Offline evaluation should still use your unified evaluator:
-        evaluate_policy_dual_dr(..., mu_pilot_models, action_identity, log_y=log_y)
-    to keep ALL comparators on the same OPE.
-"""
-
-from __future__ import annotations
-
+# dr_learner_true.py
 import numpy as np
-from sklearn.linear_model import Ridge
+from sklearn.base import clone
 from sklearn.neural_network import MLPRegressor
+from sklearn.linear_model import Ridge
+from lightgbm import LGBMRegressor
 
-try:
-    from lightgbm import LGBMRegressor
-    _HAS_LGBM = True
-except Exception:
-    _HAS_LGBM = False
+from outcome_model import predict_mu
 
 
-# =========================================================
-# Models
-# =========================================================
+# --------------------------------------------------
+# utilities
+# --------------------------------------------------
 
 def _make_regressor(model_type: str):
-    """
-    Return a fresh regressor instance.
-
-    model_type:
-      - "ridge"
-      - "mlp"
-      - "light_gbm" (requires lightgbm)
-    """
-    model_type = str(model_type).lower()
-
+    model_type = model_type.lower()
     if model_type == "ridge":
-        # Strong baseline, stable, low variance.
-        return Ridge(alpha=1.0, random_state=0)
-
+        return Ridge(alpha=1.0)
     if model_type == "mlp":
-        # Similar spirit to your MLPRegressor outcome model.
-        # Keep it modest to avoid overfitting Gamma noise.
         return MLPRegressor(
             hidden_layer_sizes=(128, 64),
             activation="relu",
@@ -58,117 +24,97 @@ def _make_regressor(model_type: str):
             early_stopping=True,
             random_state=0,
         )
-
-    if model_type == "light_gbm":
-        if not _HAS_LGBM:
-            raise ImportError("model_type='light_gbm' requires lightgbm to be installed.")
+    if model_type == "lgbm":
         return LGBMRegressor(
-            n_estimators=500,
+            n_estimators=400,
             learning_rate=0.03,
             num_leaves=63,
             subsample=0.9,
             colsample_bytree=0.9,
             random_state=0,
         )
+    raise ValueError(model_type)
 
-    raise ValueError(f"Unknown model_type: {model_type}")
 
+# --------------------------------------------------
+# fit
+# --------------------------------------------------
 
-# =========================================================
-# Fit DR-learner per-action models on Gamma labels
-# =========================================================
-
-def fit_dr_learner_models(
-    X_pilot: np.ndarray,
-    Gamma_pilot: np.ndarray,
-    model_type: str,
-    actions: np.ndarray | None = None,
+def fit_true_dr_learner(
+    X_pilot,
+    D_pilot,
+    y_pilot,
+    mu_pilot_models,     # dict[a] -> μ_a(x)
+    *,
+    K: int,
+    baseline: int = 0,
+    model_type: str = "lgbm",
 ):
     """
-    Fit f_a(x) ~ Gamma_{.,a} for each action a.
-
-    Parameters
-    ----------
-    X_pilot : (N, d)
-    Gamma_pilot : (N, K)
-    model_type : {"ridge","mlp","lgbm"}
-    actions : optional array of actions to fit (subset of 0..K-1).
-              Default fits all actions 0..K-1.
-
-    Returns
-    -------
-    dr_models : dict[int, regressor]
-        dr_models[a] predicts E[Gamma_a | X]
+    True DR-learner (Chernozhukov-style), multi-action one-vs-baseline.
     """
+
     X_pilot = np.asarray(X_pilot)
-    Gamma_pilot = np.asarray(Gamma_pilot, dtype=float)
+    D_pilot = np.asarray(D_pilot).astype(int)
+    y_pilot = np.asarray(y_pilot, float)
 
-    if Gamma_pilot.ndim != 2:
-        raise ValueError("Gamma_pilot must be 2D: shape (N, K)")
-    N, K = Gamma_pilot.shape
-    if X_pilot.shape[0] != N:
-        raise ValueError("X_pilot and Gamma_pilot must have the same N")
+    n = X_pilot.shape[0]
 
-    if actions is None:
-        actions = np.arange(K, dtype=int)
-    else:
-        actions = np.asarray(actions, dtype=int)
+    # ---- marginal outcome m(x) ----
+    # use mixture over actions (RCT => consistent)
+    m_hat = np.zeros(n)
+    for a, mu_a in mu_pilot_models.items():
+        m_hat += predict_mu(mu_a, X_pilot)
+    m_hat /= len(mu_pilot_models)
 
-    dr_models = {}
-    for a in actions:
-        if a < 0 or a >= K:
+    # ---- known propensities (RCT) ----
+    pi = np.array([(D_pilot == a).mean() for a in range(K)])
+    pi = np.clip(pi, 1e-6, 1.0)
+
+    tau_models = {}
+
+    for a in range(K):
+        if a == baseline:
             continue
-        y_a = Gamma_pilot[:, a]
 
-        # If Gamma is degenerate for some action (rare but possible), fail loudly.
-        if np.unique(y_a).size <= 1:
-            raise ValueError(
-                f"DR-learner: Gamma_pilot[:, {a}] is degenerate (single unique value). "
-                "This usually means that action has too few samples or identical outcomes."
-            )
+        pseudo = (
+            ((D_pilot == a).astype(float) - pi[a])
+            / (pi[a] * (1 - pi[a]))
+            * (y_pilot - m_hat)
+        )
 
         model = _make_regressor(model_type)
-        model.fit(X_pilot, y_a)
-        dr_models[int(a)] = model
+        model.fit(X_pilot, pseudo)
+        tau_models[a] = model
 
-    return dr_models
+    return {
+        "baseline": baseline,
+        "tau_models": tau_models,
+        "m_hat_model": mu_pilot_models[baseline],
+        "K": K,
+    }
 
 
-def predict_dr_values(
-    dr_models: dict[int, object],
-    X: np.ndarray,
-    K: int,
+# --------------------------------------------------
+# predict policy
+# --------------------------------------------------
+
+def predict_policy_true_dr(
+    dr_model,
+    X,
 ):
-    """
-    Predict f_a(x) for all actions a and all samples.
-
-    Returns
-    -------
-    V_hat : (n, K) where V_hat[i,a] = f_a(X_i)
-    """
     X = np.asarray(X)
     n = X.shape[0]
-    V_hat = np.zeros((n, K), dtype=float)
+    K = dr_model["K"]
+    baseline = dr_model["baseline"]
 
-    for a, model in dr_models.items():
-        a = int(a)
-        if 0 <= a < K:
-            V_hat[:, a] = model.predict(X)
+    mu0 = predict_mu(dr_model["m_hat_model"], X)
 
-    return V_hat
+    mu_hat = np.zeros((n, K))
+    mu_hat[:, baseline] = mu0
 
+    for a, tau_model in dr_model["tau_models"].items():
+        mu_hat[:, a] = mu0 + tau_model.predict(X)
 
-def dr_learner_policy(
-    dr_models: dict[int, object],
-    X: np.ndarray,
-    K: int,
-):
-    """
-    Return individual-level actions a_hat(x) = argmax_a f_a(x).
-
-    Returns
-    -------
-    a_hat : (n,) int
-    """
-    V_hat = predict_dr_values(dr_models, X, K)  # (n,K)
-    return np.argmax(V_hat, axis=1).astype(int)
+    a_hat = np.argmax(mu_hat, axis=1)
+    return a_hat, mu_hat
