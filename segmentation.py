@@ -508,7 +508,7 @@ def run_mst_dams(
         )
         print(f"  MST  M={M} DAMS-score={score_M:.6f}")
 
-        if score_M >= best_score:
+        if score_M > best_score:
             best_score = score_M
             best_M = M
 
@@ -661,7 +661,7 @@ def run_policytree_segmentation(
         )
         print(f"    DAMS-score(M={M}) = {score_M:.6f}")
 
-        if score_M >= best_score:
+        if score_M > best_score:
             best_score = score_M
             best_M = M
 

@@ -41,7 +41,7 @@ from segmentation import (
 )
 
 # 你目前只用 dual_dr
-ALGO_LIST = [ "causal_forest", "dast", "mst", "clr", "kmeans", "gmm", "t_learner", "x_learner", "s_learner", "dr_learner"] 
+ALGO_LIST = ["causal_forest", "dast", "mst", "clr", "kmeans", "gmm", "t_learner", "x_learner", "s_learner", "dr_learner"] 
 # ALGO_LIST = ["kmeans", "kmeans_dams", "gmm", "gmm_dams", "clr", "clr_dams", "dast"]
 
 eval_methods = ["dr", "dual_dr", "ipw"]
@@ -52,7 +52,7 @@ eval_classes = {
     "ipw": evaluate_policy_ipw
 }
 
-M_candidates = [2, 3, 4, 5, 6, 7, 8]
+M_candidates = [4, 5, 6, 7, 8, 9, 10, 11]
 
 
 def run_single_experiment(sample_frac, pilot_frac, train_frac):
@@ -74,7 +74,7 @@ def run_single_experiment(sample_frac, pilot_frac, train_frac):
         y_impl,
         mu_pilot_models,   # dict[a] = model_a
         Gamma_pilot,       # (N_pilot, K)
-    ) = prepare_pilot_impl(X, y, D, pilot_frac=pilot_frac, model_type="mlp_reg", log_y=log_y)
+    ) = prepare_pilot_impl(X, y, D, pilot_frac=pilot_frac, model_type="lightgbm_reg", log_y=log_y)
 
     # K 个动作（0..K-1）
     K = Gamma_pilot.shape[1]
@@ -109,40 +109,41 @@ def run_single_experiment(sample_frac, pilot_frac, train_frac):
 
 
     # --------------------------------------------------
-    # Baselines — K-action 版本
+    # Baselines — multi (K)-action 版本
     # --------------------------------------------------
     # 所有 baseline 都用“1 个 segment”的形式：seg_labels_impl = 0
     
-    seg_labels_single_seg = np.zeros(len(X_impl), dtype=int)
-    for a in actions_all:
-        action_all_a = np.array([a], dtype=int)  # segment 0 -> action a
-        for eval in eval_methods:
-            value_all_a = eval_classes[eval](
-                X_impl,
-                D_impl,
-                y_impl,
-                seg_labels_single_seg,
-                mu_pilot_models,
-                action_all_a,
-                log_y=log_y,
-            )
-            results[f"all_{a}"][f"{eval}"] = float(value_all_a["value_mean"])
+    # seg_labels_single_seg = np.zeros(len(X_impl), dtype=int)
+    # for a in actions_all:
+    #     action_all_a = np.array([a], dtype=int)  # segment 0 -> action a
+    #     for eval in eval_methods:
+    #         value_all_a = eval_classes[eval](
+    #             X_impl,
+    #             D_impl,
+    #             y_impl,
+    #             seg_labels_single_seg,
+    #             mu_pilot_models,
+    #             action_all_a,
+    #             log_y=log_y,
+    #         )
+    #         results[f"all_{a}"][f"{eval}"] = float(value_all_a["value_mean"])
 
 
-    # random baseline
-    seg_labels_random = np.random.randint(0, K, size=len(X_impl))
-    action_random = np.arange(K, dtype=int)
-    for eval in eval_methods:
-        value_random = eval_classes[eval](
-            X_impl,
-            D_impl,
-            y_impl,
-            seg_labels_random,
-            mu_pilot_models,
-            action_random,
-            log_y=log_y,
-        )
-        results["random"][f"{eval}"] = float(value_random["value_mean"])
+    # # random baseline
+    # seg_labels_random = np.random.randint(0, K, size=len(X_impl))
+    # action_random = np.arange(K, dtype=int)
+    # for eval in eval_methods:
+    #     value_random = eval_classes[eval](
+    #         X_impl,
+    #         D_impl,
+    #         y_impl,
+    #         seg_labels_random,
+    #         mu_pilot_models,
+    #         action_random,
+    #         log_y=log_y,
+    #     )
+    #     results["random"][f"{eval}"] = float(value_random["value_mean"])
+    
     
     if "ot_lloyd" in ALGO_LIST:
         t0 = time.perf_counter()
@@ -210,6 +211,9 @@ def run_single_experiment(sample_frac, pilot_frac, train_frac):
             
         t1 = time.perf_counter()
         results["causal_forest"]["time"] = float(t1 - t0)
+    
+        print("causal forest finished")
+    
     # --------------------------------------------------
     # ---- Direct argmax benchmark (T-learner) ----
     # --------------------------------------------------
@@ -245,7 +249,7 @@ def run_single_experiment(sample_frac, pilot_frac, train_frac):
             D_pilot,
             y_pilot,
             K=K,
-            model_type="mlp_reg",   
+            model_type="lightgbm_reg",   
             log_y=log_y,
             random_state=seed,
         )
@@ -804,7 +808,7 @@ if __name__ == "__main__":
     train_frac = 0.7  # 70% pilot for training
 
     run_multiple_experiments(
-        N_sim=50,
+        N_sim=100,
         sample_frac=1,
         pilot_frac=pilot_frac,
         train_frac=train_frac,

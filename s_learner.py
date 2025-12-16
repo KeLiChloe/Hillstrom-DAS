@@ -52,7 +52,7 @@ def fit_s_learner(
             return Ridge(alpha=1e-2, random_state=random_state)
         if model_type == "mlp_reg":
             return MLPRegressor(
-                hidden_layer_sizes=(128, 64),
+                hidden_layer_sizes=(64, 32),
                 activation="relu",
                 max_iter=300,
                 early_stopping=True,
@@ -60,7 +60,7 @@ def fit_s_learner(
             )
         if model_type == "lightgbm_reg":
             return LGBMRegressor(
-                n_estimators=400,
+                n_estimators=200,
                 learning_rate=0.05,
                 max_depth=-1,
                 random_state=random_state,
