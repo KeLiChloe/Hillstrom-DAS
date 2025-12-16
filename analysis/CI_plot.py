@@ -1,240 +1,332 @@
+import os
 import pickle
-import pandas as pd
+import warnings
 import numpy as np
+import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 from scipy import stats
 from matplotlib.lines import Line2D
-import warnings
 
 # ==========================================
-# 数据加载与处理
+# 0. I/O
 # ==========================================
-with open("exp_results/main/exp0.pkl", "rb") as f:
+PKL_PATH = "exp_results/main/exp2_merged.pkl"
+FIG_DIR = "figures"
+os.makedirs(FIG_DIR, exist_ok=True)
+
+with open(PKL_PATH, "rb") as f:
     data_exp = pickle.load(f)
 
-# 忽略不必要的警告
-warnings.simplefilter(action='ignore', category=FutureWarning)
+warnings.simplefilter(action="ignore", category=FutureWarning)
 
 # ==========================================
-# 1. 画图风格 & 字体设置
+# 1. Plot style
 # ==========================================
 sns.set_context("paper", font_scale=1.4)
 sns.set_style("ticks", {'axes.grid': True})
 
 plt.rcParams.update({
-    # 尝试 STIX，没有的话回退到 Times / 通用 serif
     'font.family': 'serif',
     'font.serif': ['STIXGeneral', 'Times New Roman', 'Times', 'Liberation Serif', 'DejaVu Serif'],
     'axes.labelweight': 'bold',
     'axes.labelsize': 14,
     'xtick.labelsize': 12,
     'ytick.labelsize': 12,
-    'pdf.fonttype': 42,   # 矢量字体嵌入，投稿友好
+    'pdf.fonttype': 42,
     'figure.dpi': 300,
 })
 
-# 获取参数和结果
-if "params" in data_exp:
-    params = data_exp["params"]
+# ==========================================
+# 2. Load results
+# ==========================================
+if isinstance(data_exp, dict) and "results" in data_exp:
+    params = data_exp.get("params", {})
     print("Experiment Params:", params)
     results_list = data_exp["results"]
 else:
     results_list = data_exp
+
 n_sims = len(results_list)
+print("Number of runs:", n_sims)
 
-baselines = ['all_0', 'all_1', 'all_2', 'random', 'kmeans', 'gmm', 'clr', 'mst']
+target = "dast"
+eval_methods = ["dual_dr", "dr", "ipw"]  # 画三张图
 
-target = 'dast'
+# 你希望出现的 comparator（如果 pkl 里没有，会自动跳过）
+requested_baselines = [
+    # "all_0", "all_1", "all_2",
+    "random",
+    "kmeans", "gmm", "clr", "mst",
+    "causal_forest",
+    "t_learner", "s_learner", "x_learner", 
+    # "dr_learner",
+]
 
-records = []
-raw_data_map = {m: [] for m in baselines + [target]}
+# ==========================================
+# 3. Helpers: safely get value
+# ==========================================
+def safe_get_value(run: dict, algo: str, ev: str):
+    """
+    New structure:
+      run[algo] is dict like {"dual_dr": float, "dr": float, "ipw": float, "time":..., ...}
+    Returns float or np.nan
+    """
+    x = run[algo]
+    v = x.get(ev, np.nan)
+    v = float(v)
+    return v
 
-for i, run in enumerate(results_list):
-    val_target = run[target]
-    raw_data_map[target].append(val_target)
-    for base in baselines:
-        val_base = run[base]
-        raw_data_map[base].append(val_base)
-        lift = ((val_target - val_base) / val_base) * 100
-        records.append({'Run': i, 'Baseline': base, 'Lift': lift})
+def pretty_name(k: str) -> str:
+    return "vs. " + k.replace("_", " ").title()
 
-df = pd.DataFrame(records)
-
-# ==============================
-# 2. Label 映射（带 "vs." 前缀）
-# ==============================
 label_map = {
-    'all_0': 'vs. All Control',
-    'all_1': 'vs. All Action=1',
-    'all_2': 'vs. All Action=2',
-    'random': 'vs. Random', 
-    'kmeans': 'vs. K-Means',
-    'gmm': 'vs. GMM', 
-    'clr': 'vs. CLR',
-    'mst': 'vs. MST',
+    "all_0": "vs. All Action=0",
+    "all_1": "vs. All Action=1",
+    "all_2": "vs. All Action=2",
+    "random": "vs. Random",
+    "kmeans": "vs. K-Means",
+    "gmm": "vs. GMM",
+    "clr": "vs. CLR",
+    "mst": "vs. MST",
+    "causal_forest": "vs. Causal Forest",
+    "t_learner": "vs. T-learner",
+    "s_learner": "vs. S-learner",
+    "x_learner": "vs. X-learner",
+    "dr_learner": "vs. DR-learner",
 }
 
-df['Baseline_Label'] = df['Baseline'].map(label_map)
+preferred_order = [
+    "vs. All Action=1",
+    "vs. All Action=2",
+    "vs. All Action=0",
+    "vs. Random",
+    "vs. K-Means",
+    "vs. GMM",
+    "vs. CLR",
+    "vs. MST",
+    "vs. Causal Forest",
+    "vs. T-learner",
+    "vs. S-learner",
+    "vs. X-learner",
+    "vs. DR-learner",
+]
 
-# ==========================================
-# 3. 统计计算 (P-value & CI)
-# ==========================================
+palette = {
+    "vs. All Action=0": "#55A86899",
+    "vs. All Action=1": "#4C72B099",
+    "vs. All Action=2": "#8172B299",
+    "vs. Random": "#C44E5299",
+    "vs. K-Means": "#CCB97499",
+    "vs. GMM": "#64B5CD99",
+    "vs. CLR": "#8C613C99",
+    "vs. MST": "#93786099",
+    "vs. Causal Forest": "#1F77B499",
+    "vs. T-learner": "#FF7F0E99",
+    "vs. S-learner": "#2CA02C99",
+    "vs. X-learner": "#D6272899",
+    "vs. DR-learner": "#9467BD99",
+}
+
 def get_sig_star(p):
-    if p < 0.001: return '***'
-    if p < 0.01:  return '**'
-    if p < 0.05:  return '*'
+    if p < 0.001: return "***"
+    if p < 0.01:  return "**"
+    if p < 0.05:  return "*"
     return None
 
-p_values = {
-    label_map[b]: stats.ttest_rel(raw_data_map[target], raw_data_map[b])[1]
-    for b in baselines
-}
+# ==========================================
+# 4. Discover which algos exist
+# ==========================================
+all_keys = set()
+for run in results_list:
+    if isinstance(run, dict):
+        all_keys |= set(run.keys())
 
-# 固定展示顺序（如果你希望按 mean 排序，这个只用于过滤）
-constant_order = [
-    # 'vs. All Action=1',
-    # 'vs. All Action=2',
-    'vs. All Control',
-    'vs. Random',
-    'vs. K-Means',
-    'vs. GMM',
-    'vs. CLR',
-    'vs. MST',
-]
-palette = {
-    # --- All-action baselines（绿色系层次） ---
-    'vs. All Control':  "#81C784DD",   # 浅绿
+if target not in all_keys:
+    raise KeyError(f"Target '{target}' not found. Example keys: {sorted(list(all_keys))[:30]}")
 
-    # --- Random baseline（红色系） ---
-    'vs. Random':        "#E15759DD",
+baselines = [b for b in requested_baselines if b in all_keys and b != target]
+print("Baselines actually plotted:", baselines)
 
-    # --- Clustering baselines（冷色系+土黄） ---
-    'vs. K-Means':       "#5E3C99DD",  # 紫色
-    'vs. GMM':           "#F1A340DD",  # 土黄
-    'vs. CLR':           "#1F78B4DD",  # 蓝色
-    'vs. MST':           "#A6761CDD",  # 棕色
-}
+# ==========================================
+# 5. Build & plot for each eval_method
+# ==========================================
+for EV in eval_methods:
+    # ------------------------------------------
+    # 5.1 Build df of lifts for this EV
+    # ------------------------------------------
+    records = []
+    pair_counts = {b: 0 for b in baselines}
 
+    for i, run in enumerate(results_list):
+        vt = safe_get_value(run, target, EV)
+        if not np.isfinite(vt):
+            continue
 
-summary_stats = []
-for label in constant_order:
-    subset = df[df['Baseline_Label'] == label]['Lift']
-    if subset.empty:
+        for b in baselines:
+            vb = safe_get_value(run, b, EV)
+            if not np.isfinite(vb):
+                continue
+
+            # lift definition: (target - baseline)/baseline * 100
+            # 防止 baseline=0
+            if abs(vb) < 1e-12:
+                continue
+
+            lift = (vt - vb) / vb * 100.0
+            records.append({"Run": i, "Baseline": b, "Lift": float(lift)})
+            pair_counts[b] += 1
+
+    df = pd.DataFrame(records)
+    if df.empty:
+        print(f"[WARN] No valid pairs for eval={EV}. Skip plotting.")
         continue
-    mean = subset.mean()
-    sem = subset.sem()
-    ci = sem * stats.t.ppf(0.975, len(subset) - 1)
-    p_star = get_sig_star(p_values[label])
-    summary_stats.append({
-        'Label': label,
-        'Mean': mean,
-        'CI': ci,
-        'P_Star': p_star,
-    })
 
-stats_df = pd.DataFrame(summary_stats)
+    df["Baseline_Label"] = df["Baseline"].apply(lambda b: label_map.get(b, pretty_name(b)))
 
-# ==========================================
-# 3.5 按 mean 从大到小排序
-# ==========================================
-stats_df = stats_df.sort_values('Mean', ascending=False).reset_index(drop=True)
+    # ------------------------------------------
+    # 5.2 Paired t-test: align by Run for each baseline
+    # ------------------------------------------
+    p_values = {}
+    for b in baselines:
+        sub = df[df["Baseline"] == b].sort_values("Run")
+        if sub.empty:
+            continue
 
-# ==========================================
-# 4. 绘图
-# ==========================================
-fig, ax = plt.subplots(figsize=(10, 6))
-y_pos = np.arange(len(stats_df))
+        runs = sub["Run"].values
+        t_vals, b_vals = [], []
+        for r in runs:
+            run = results_list[int(r)]
+            vt = safe_get_value(run, target, EV)
+            vb = safe_get_value(run, b, EV)
+            if np.isfinite(vt) and np.isfinite(vb):
+                t_vals.append(vt)
+                b_vals.append(vb)
 
-ax.grid(axis='x', color='gray', linestyle=':', linewidth=0.5, alpha=0.5)
-ax.set_axisbelow(True)
+        label = label_map.get(b, pretty_name(b))
+        if len(t_vals) < 2:
+            p_values[label] = np.nan
+        else:
+            p_values[label] = stats.ttest_rel(t_vals, b_vals).pvalue
 
-for i, row in stats_df.iterrows():
-    color = palette.get(row['Label'], "#333333")
-    ax.errorbar(
-        x=row['Mean'],
-        y=i,
-        xerr=row['CI'],
-        fmt='o',
-        color=color,
-        ecolor=color,
-        capsize=4,
-        elinewidth=2,
-        markersize=9,
+    # ------------------------------------------
+    # 5.3 Summary stats (mean lift, 95% CI)
+    # ------------------------------------------
+    all_labels = df["Baseline_Label"].unique().tolist()
+    ordered_labels = [x for x in preferred_order if x in all_labels]
+    ordered_labels += [x for x in sorted(all_labels) if x not in set(ordered_labels)]
+
+    summary_stats = []
+    for label in ordered_labels:
+        subset = df[df["Baseline_Label"] == label]["Lift"]
+        if subset.empty:
+            continue
+        mean = float(subset.mean())
+        sem = float(subset.sem()) if len(subset) > 1 else 0.0
+        ci = float(sem * stats.t.ppf(0.975, len(subset) - 1)) if len(subset) > 1 else 0.0
+        p = p_values.get(label, np.nan)
+        p_star = get_sig_star(p) if np.isfinite(p) else None
+        summary_stats.append({"Label": label, "Mean": mean, "CI": ci, "P_Star": p_star, "N": int(len(subset))})
+
+    stats_df = pd.DataFrame(summary_stats)
+    if stats_df.empty:
+        print(f"[WARN] stats_df empty for eval={EV}. Skip plotting.")
+        continue
+
+    # ------------------------------------------
+    # 5.4 Plot
+    # ------------------------------------------
+    fig, ax = plt.subplots(figsize=(11.0, 7.0))
+    y_pos = np.arange(len(stats_df))
+
+    ax.grid(axis="x", color="gray", linestyle=":", linewidth=0.5, alpha=0.5)
+    ax.set_axisbelow(True)
+
+    for i, row in stats_df.iterrows():
+        color = palette.get(row["Label"], "#333333")
+        ax.errorbar(
+            x=row["Mean"],
+            y=i,
+            xerr=row["CI"],
+            fmt="o",
+            color=color,
+            ecolor=color,
+            capsize=4,
+            elinewidth=2,
+            markersize=6,
+        )
+
+    ytick_labels = [
+        f"{row['Label']}"
+        + (f" ({row['P_Star']})" if row["P_Star"] is not None else "")
+        + (f"  [n={row['N']}]" if row["N"] < n_sims else "")
+        for _, row in stats_df.iterrows()
+    ]
+
+    ax.set_yticks(y_pos)
+    ax.set_yticklabels(ytick_labels, fontweight="bold", fontsize=13)
+    ax.tick_params(axis="y", length=0)
+
+    ax.axvline(0, color="#E40606", linestyle="--", linewidth=1.6, alpha=0.8)
+
+    ax.set_xlabel(
+        "Averaged DAST Improvement (%) on Revenue Over Comparators",
+        fontweight="bold",
+        labelpad=12,
     )
 
-ytick_labels = [
-    f"{row['Label']}" + (f" ({row['P_Star']})" if row['P_Star'] is not None else '')
-    for _, row in stats_df.iterrows()
-]
-ax.set_yticks(y_pos)
-ax.set_yticklabels(ytick_labels, fontweight='bold', fontsize=14)
-ax.tick_params(axis='y', length=0)
+    ax.invert_yaxis()
+    sns.despine(left=True, top=True, right=True)
 
-# 0% 基准线
-ax.axvline(0, color="#E40606", linestyle='--', linewidth=1.6, alpha=0.8)
+    title_map = {
+        "dual_dr": "Dual DR OPE",
+        "dr": "DR OPE",
+        "ipw": "IPW OPE",
+    }
 
-# 轴标题
-ax.set_xlabel(
-    'Averaged DAST Improvement (%) on Conversion Rate Over Comparators',
-    fontweight='bold',
-    labelpad=12,
-)
+    ax.set_title(
+        f"Averaged DAST Improvement (%) with 95% CI — {title_map.get(EV, EV)} (Runs={n_sims})",
+        fontweight="bold",
+        pad=18,
+        fontsize=16,
+        y=1.08,
+    )
 
-# y 轴上方是表现更好的一侧 → invert
-ax.invert_yaxis()
-sns.despine(left=True, top=True, right=True)
+    ax.annotate(
+        "Positive values (>0%) indicate DAST outperforms comparators",
+        xy=(0.5, 1.03),
+        xycoords="axes fraction",
+        fontsize=12,
+        fontweight="bold",
+        color="#333333",
+        ha="center",
+        va="bottom",
+        bbox=dict(boxstyle="round,pad=0.3", fc="#f0f0f0", ec="gray", lw=0.5, alpha=0.8),
+    )
 
-# 标题
-ax.set_title(
-    f'Averaged DAST Improvement (%) on Conversion Rate Over Comparators with 95% CI (Runs={n_sims})',
-    fontweight='bold',
-    pad=20,
-    fontsize=16,
-    y=1.12,
-)
+    legend_handles = [
+        Line2D([0], [0], color="black", marker="o", linestyle="-", linewidth=2, markersize=8, label="Mean ± 95% CI"),
+        Line2D([0], [0], color="none", label="*** p < 0.001\n**   p < 0.01\n*     p < 0.05"),
+        Line2D([0], [0], color="#E40606", linestyle="--", linewidth=1.6, label="No Improvement (0%)"),
+    ]
+    ax.legend(
+        handles=legend_handles,
+        loc="best",
+        frameon=True,
+        framealpha=0.95,
+        edgecolor="#E0E0E0",
+        fancybox=False,
+        fontsize=11,
+        borderpad=1,
+    )
 
-# 说明文字
-ax.annotate(
-    'Positive values (>0%) indicate DAST outperforms comparators',
-    xy=(0.5, 1.06),
-    xycoords='axes fraction',
-    fontsize=12,
-    fontweight='bold',
-    color='#333333',
-    ha='center',
-    va='bottom',
-    bbox=dict(boxstyle="round,pad=0.3", fc="#f0f0f0", ec="gray", lw=0.5, alpha=0.8),
-)
+    plt.tight_layout()
 
-# ==========================================
-# 5. Legend
-# ==========================================
-legend_handles = [
-    Line2D([0], [0], color='black', marker='o', linestyle='-',
-           linewidth=2, markersize=8, label='Mean ± 95% CI'),
-    Line2D([0], [0], color='none',
-           label='*** p < 0.001\n**   p < 0.01\n*     p < 0.05'),
-    Line2D([0], [0], color="#E40606", linestyle='--',
-           linewidth=1.6, label='No Improvement (0%)'),
-]
+    out_pdf = os.path.join(FIG_DIR, f"Fig2_UTD_Style_{EV}.pdf")
+    out_png = os.path.join(FIG_DIR, f"Fig2_UTD_Style_{EV}.png")
+    plt.savefig(out_pdf, dpi=300, bbox_inches="tight")
+    plt.savefig(out_png, dpi=300, bbox_inches="tight")
+    plt.close(fig)
 
-ax.legend(
-    handles=legend_handles,
-    loc='best',
-    frameon=True,
-    framealpha=0.95,
-    edgecolor='#E0E0E0',
-    fancybox=False,
-    fontsize=11,
-    borderpad=1,
-)
-
-plt.tight_layout()
-
-# ==========================================
-# 6. 导出
-# ==========================================
-plt.savefig('figures/Fig2_UTD_Style.pdf', dpi=300, bbox_inches='tight')
-plt.savefig('figures/Fig2_UTD_Style.png', dpi=300, bbox_inches='tight')
-
+    print(f"[OK] Saved ({EV}): {out_pdf}")
+    print(f"[OK] Saved ({EV}): {out_png}")

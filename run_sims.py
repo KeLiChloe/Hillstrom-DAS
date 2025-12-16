@@ -16,7 +16,17 @@ import time
 from data_utils import split_seg_train_test
 from data_utils import load_hillstrom, prepare_pilot_impl 
 from estimation import estimate_segment_policy
-from evaluation import evaluate_policy_dual_dr  # 已改成多 action 版
+from evaluation import evaluate_policy_dual_dr, _build_mu_matrix, evaluate_policy_dr, evaluate_policy_ipw   # 已改成多 action 版
+from s_learner import fit_s_learner, predict_mu_s_learner_matrix
+from dr_learner import fit_dr_learner_models, dr_learner_policy
+from x_learner import fit_x_learner, predict_best_action_x_learner
+from causal_forest import (
+            fit_multiarm_causal_forest,
+            predict_best_action_multiarm,
+        )
+from ot_lloyd_discrete import run_discrete_ot_lloyd_model_select
+
+
 
 from segmentation import (
     run_kmeans_segmentation,
@@ -31,13 +41,15 @@ from segmentation import (
 )
 
 # 你目前只用 dual_dr
-ALGO_LIST = [ "dast", "mst", "clr", "kmeans", "gmm"] 
+ALGO_LIST = [ "causal_forest", "dast", "mst", "clr", "kmeans", "gmm", "t_learner", "x_learner", "s_learner", "dr_learner"] 
 # ALGO_LIST = ["kmeans", "kmeans_dams", "gmm", "gmm_dams", "clr", "clr_dams", "dast"]
 
-eval_method = "dual_dr"
+eval_methods = ["dr", "dual_dr", "ipw"]
 
 eval_classes = {
+    "dr": evaluate_policy_dr,
     "dual_dr": evaluate_policy_dual_dr,  # 多 action 版
+    "ipw": evaluate_policy_ipw
 }
 
 M_candidates = [2, 3, 4, 5, 6, 7, 8]
@@ -52,6 +64,7 @@ def run_single_experiment(sample_frac, pilot_frac, train_frac):
     # --------------------------------------------------
     # 1–3. pilot + outcome models + Gamma_pilot (K-action DR)
     # --------------------------------------------------
+    log_y = False
     (
         X_pilot,
         X_impl,
@@ -61,7 +74,7 @@ def run_single_experiment(sample_frac, pilot_frac, train_frac):
         y_impl,
         mu_pilot_models,   # dict[a] = model_a
         Gamma_pilot,       # (N_pilot, K)
-    ) = prepare_pilot_impl(X, y, D, pilot_frac=pilot_frac)
+    ) = prepare_pilot_impl(X, y, D, pilot_frac=pilot_frac, model_type="mlp_reg", log_y=log_y)
 
     # K 个动作（0..K-1）
     K = Gamma_pilot.shape[1]
@@ -84,47 +97,263 @@ def run_single_experiment(sample_frac, pilot_frac, train_frac):
 
     # storage for output
     results = {
-        "seed": int(seed),
-        "K": int(K),
+    "seed": int(seed),
+    "all_0":{},
+    "all_1":{},
+    "all_2":{},
+    "random":{},    
     }
+
+    for algo in ALGO_LIST:
+        results[algo] = {}
+
 
     # --------------------------------------------------
     # Baselines — K-action 版本
     # --------------------------------------------------
     # 所有 baseline 都用“1 个 segment”的形式：seg_labels_impl = 0
+    
     seg_labels_single_seg = np.zeros(len(X_impl), dtype=int)
-
-    # 1) all_a: everyone gets action a
     for a in actions_all:
         action_all_a = np.array([a], dtype=int)  # segment 0 -> action a
-        value_all_a = eval_classes[eval_method](
+        for eval in eval_methods:
+            value_all_a = eval_classes[eval](
+                X_impl,
+                D_impl,
+                y_impl,
+                seg_labels_single_seg,
+                mu_pilot_models,
+                action_all_a,
+                log_y=log_y,
+            )
+            results[f"all_{a}"][f"{eval}"] = float(value_all_a["value_mean"])
+
+
+    # random baseline
+    seg_labels_random = np.random.randint(0, K, size=len(X_impl))
+    action_random = np.arange(K, dtype=int)
+    for eval in eval_methods:
+        value_random = eval_classes[eval](
             X_impl,
             D_impl,
             y_impl,
-            seg_labels_single_seg,
+            seg_labels_random,
             mu_pilot_models,
-            action_all_a,
+            action_random,
+            log_y=log_y,
         )
-        results[f"all_{a}"] = float(value_all_a["value_mean"])
+        results["random"][f"{eval}"] = float(value_random["value_mean"])
+    
+    if "ot_lloyd" in ALGO_LIST:
+        t0 = time.perf_counter()
 
-    # 为了兼容旧版二元记号：K=2 时额外写入 all_control / all_treat
-    if K == 2:
-        results["all_control"] = results["all_0"]
-        results["all_treat"] = results["all_1"]
+        # 用 dual_dr 在 pilot 的 train/val 上选 best_M（你也可以换成 eval_methods 里任何一个）
+        seg_ot, _, best_M_ot, action_ot = run_discrete_ot_lloyd_model_select(
+            X_train=X_train,
+            X_val=X_val,
+            D_val=D_val,
+            y_val=y_val,
+            mu_models=mu_pilot_models,
+            K=K,
+            M_candidates=M_candidates,
+            eval_fn=evaluate_policy_dual_dr,   # 用它来选 M
+            log_y=log_y,
+            seed=int(seed),
+            max_iter=50,
+            use_balanced_ot=True,              # 这一步更贴近“OT”的容量约束
+            q=None,                            # None = 等分
+        )
 
-    # 2) random baseline: 每个个体随机一个 action ∈ {0,...,K-1}
-    seg_labels_random = np.random.randint(0, K, size=len(X_impl))
-    # 定义 segment->action 为 identity: segment m -> action m
-    action_random = np.arange(K, dtype=int)
-    value_random = eval_classes[eval_method](
-        X_impl,
-        D_impl,
-        y_impl,
-        seg_labels_random,
-        mu_pilot_models,
-        action_random,
-    )
-    results["random"] = float(value_random["value_mean"])
+        results["ot_lloyd"]["best_M"] = int(best_M_ot)
+
+        # apply to implementation set
+        seg_labels_impl_ot = seg_ot.assign(X_impl)
+
+        for eval in eval_methods:
+            val_ot = eval_classes[eval](
+                X_impl, D_impl, y_impl,
+                seg_labels_impl_ot,
+                mu_pilot_models,
+                action_ot,          # 注意：这里 action_ot 长度 = L
+                log_y=log_y,
+            )
+            results["ot_lloyd"][eval] = float(val_ot["value_mean"])
+
+        t1 = time.perf_counter()
+        results["ot_lloyd"]["time"] = float(t1 - t0)
+
+    
+    
+    if "causal_forest" in ALGO_LIST:
+        t0 = time.perf_counter()
+        cf_model = fit_multiarm_causal_forest(
+            X_pilot,
+            y_pilot,
+            D_pilot,
+            action_levels=np.arange(K),   # 确保列顺序与 0..K-1 对齐
+            num_trees=2000,
+            seed=int(seed),
+        )
+        a_hat_cf, mu_hat_cf = predict_best_action_multiarm(cf_model, X_impl)
+        seg_labels_impl_cf = a_hat_cf.astype(int)      # (n,)
+        action_identity = np.arange(K, dtype=int)      # segment m -> action m
+        for eval in eval_methods:
+            value_cf = eval_classes[eval](
+                X_impl, D_impl, y_impl,
+                seg_labels_impl_cf,
+                mu_pilot_models,
+                action_identity,
+                log_y=log_y,
+            )
+            results["causal_forest"][f"{eval}"] = float(value_cf["value_mean"])
+           
+            
+        t1 = time.perf_counter()
+        results["causal_forest"]["time"] = float(t1 - t0)
+    # --------------------------------------------------
+    # ---- Direct argmax benchmark (T-learner) ----
+    # --------------------------------------------------
+    if "t_learner" in ALGO_LIST:
+        t0 = time.perf_counter()
+        K = Gamma_pilot.shape[1]
+        mu_mat_impl = _build_mu_matrix(mu_pilot_models, X_impl, K, log_y=log_y)  # (n, K)
+        a_hat = np.argmax(mu_mat_impl, axis=1).astype(int)
+
+        seg_labels_impl = a_hat
+        action_identity = np.arange(K, dtype=int)
+        for eval in eval_methods:
+            value_tlearner = eval_classes[eval](
+                X_impl, D_impl, y_impl,
+                seg_labels_impl,
+                mu_pilot_models,
+                action_identity,
+                log_y=log_y,
+            )
+            results["t_learner"][f"{eval}"] = float(value_tlearner["value_mean"])
+        
+        t1 = time.perf_counter()
+        results["t_learner"]["time"]= float(t1 - t0)   
+        
+    
+    # --------------------------------------------------
+    # ---- S-learner benchmark (single model mu(x,a) + argmax_a) ----
+    # --------------------------------------------------
+    if "s_learner" in ALGO_LIST:
+        t0 = time.perf_counter()
+        s_model = fit_s_learner(
+            X_pilot,
+            D_pilot,
+            y_pilot,
+            K=K,
+            model_type="mlp_reg",   
+            log_y=log_y,
+            random_state=seed,
+        )
+
+        mu_mat_impl_s = predict_mu_s_learner_matrix(
+            s_model,
+            X_impl,
+            K=K,
+            log_y=log_y,
+        )
+        a_hat_s = np.argmax(mu_mat_impl_s, axis=1).astype(int)
+        seg_labels_impl_s = a_hat_s
+        action_identity = np.arange(K, dtype=int)
+        for eval in eval_methods:
+            value_s = eval_classes[eval](
+                X_impl, D_impl, y_impl,
+                seg_labels_impl_s,
+                mu_pilot_models,        
+                action_identity,
+                log_y=log_y,
+            )
+            results["s_learner"][f"{eval}"] = float(value_s["value_mean"])
+
+        
+        t1 = time.perf_counter()
+        results["s_learner"]["time"] = float(t1 - t0)   
+        
+    
+    # --------------------------------------------------
+    # ---- X-learner benchmark (one-vs-control) ----
+    # --------------------------------------------------
+    if "x_learner" in ALGO_LIST:
+        t0 = time.perf_counter()
+        x_models = fit_x_learner(
+            X_pilot=X_pilot,
+            D_pilot=D_pilot,
+            y_pilot=y_pilot,
+            mu_pilot_models=mu_pilot_models,
+            log_y=log_y,
+            control_action=0,        # Hillstrom: 通常 0 是 control
+            use_rct_gate=True,       # 你的实验是 RCT -> 常数 gating
+            min_samples_per_group=5,
+            random_state=0,
+        )
+
+        # 2) predict individual best action on IMPLEMENTATION set
+        a_hat_x, mu_hat_x = predict_best_action_x_learner(
+            x_learner_models=x_models,
+            X=X_impl,
+            mu_pilot_models=mu_pilot_models,
+            log_y=log_y,
+        )
+
+        # 3) evaluate with your existing multi-action dual DR evaluator
+        # trick: treat each action as its own "segment id"
+        seg_labels_impl_x = a_hat_x
+        action_identity = np.arange(K, dtype=int)  # segment m -> action m
+
+        for eval in eval_methods:
+            value_x = eval_classes[eval](
+                X_impl, D_impl, y_impl,
+                seg_labels_impl_x,
+                mu_pilot_models,
+                action_identity,
+                log_y=log_y,
+            )
+            results["x_learner"][f"{eval}"] = float(value_x["value_mean"])  
+        
+        t1 = time.perf_counter()
+        results["x_learner"]["time"] = float(t1 - t0)    
+    
+    
+    # --------------------------------------------------
+    # ---- DR-learner benchmark (learn policy from Gamma labels) ----
+    # --------------------------------------------------
+    # Train on pilot: f_a(x) ~ Gamma_{.,a}
+    if "dr_learner" in ALGO_LIST:
+        t0 = time.perf_counter()
+        dr_models = fit_dr_learner_models(
+            X_pilot=X_pilot,
+            Gamma_pilot=Gamma_pilot,
+            model_type="lgbm",     # options: "ridge", "mlp", "lgbm"
+        )
+
+        # Predict on implementation and take argmax
+        a_hat_dr = dr_learner_policy(
+            dr_models=dr_models,
+            X=X_impl,
+            K=K,
+        )
+
+        # Encode individual actions into your evaluator interface
+        seg_labels_impl_dr = a_hat_dr
+        action_identity = np.arange(K, dtype=int)
+        for eval in eval_methods:
+            value_dr = eval_classes[eval](
+                X_impl, D_impl, y_impl,
+                seg_labels_impl_dr,
+                mu_pilot_models,          # IMPORTANT: evaluation uses the SAME mu_models as everyone else
+                action_identity,
+                log_y=log_y,
+            )
+            results["dr_learner"][f"{eval}"] = float(value_dr["value_mean"])
+        
+        t1 = time.perf_counter()
+        results["dr_learner"]["time"] = float(t1 - t0)
+        
+
 
     # --------------------------------------------------
     # 4a. KMeans
@@ -134,22 +363,26 @@ def run_single_experiment(sample_frac, pilot_frac, train_frac):
         kmeans_seg, seg_labels_pilot_kmeans, best_M_kmeans = run_kmeans_segmentation(
             X_pilot, M_candidates=M_candidates
         )
+        results["kmeans"]["best_M"] = best_M_kmeans
         action_kmeans = estimate_segment_policy(
             X_pilot, y_pilot, D_pilot, seg_labels_pilot_kmeans
         )  # shape (M_k,), each in {0,...,K-1}
         seg_labels_impl_kmeans = kmeans_seg.assign(X_impl)
-        value_kmeans = eval_classes[eval_method](
-            X_impl,
-            D_impl,
-            y_impl,
-            seg_labels_impl_kmeans,
-            mu_pilot_models,
-            action_kmeans,
-        )
+        for eval in eval_methods:
+            value_kmeans = eval_classes[eval](
+                X_impl,
+                D_impl,
+                y_impl,
+                seg_labels_impl_kmeans,
+                mu_pilot_models,
+                action_kmeans,
+                log_y=log_y,
+            )
+            results["kmeans"][f"{eval}"] = float(value_kmeans["value_mean"])
+            
         t1 = time.perf_counter()
-        results["kmeans"] = float(value_kmeans["value_mean"])
-        results["time_kmeans"] = float(t1 - t0)
-        results["best_M_kmeans"] = best_M_kmeans
+        results["kmeans"]["time"] = float(t1 - t0)
+        
         print(
             f"KMeans - Segments: {len(np.unique(seg_labels_pilot_kmeans))}, "
             f"Actions: {action_kmeans}",
@@ -170,22 +403,26 @@ def run_single_experiment(sample_frac, pilot_frac, train_frac):
                 M_candidates=M_candidates,
             )
         )
+        results["kmeans_dams"]["best_M"] = best_M_kmeans_dams
+        
         action_kmeans_dams = estimate_segment_policy(
             X_pilot, y_pilot, D_pilot, seg_labels_pilot_kmeans_dams
         )
         seg_labels_impl_kmeans_dams = kmeans_dams_seg.assign(X_impl)
-        value_kmeans_dams = eval_classes[eval_method](
-            X_impl,
-            D_impl,
-            y_impl,
-            seg_labels_impl_kmeans_dams,
-            mu_pilot_models,
-            action_kmeans_dams,
-        )
+        for eval in eval_methods:
+            value_kmeans_dams = eval_classes[eval](
+                X_impl,
+                D_impl,
+                y_impl,
+                seg_labels_impl_kmeans_dams,
+                mu_pilot_models,
+                action_kmeans_dams,
+                log_y=log_y,
+            )
+            results["kmeans_dams"][f"{eval}"] = float(value_kmeans_dams["value_mean"])
+        
         t1 = time.perf_counter()
-        results["kmeans_dams"] = float(value_kmeans_dams["value_mean"])
-        results["time_kmeans_dams"] = float(t1 - t0)
-        results["best_M_kmeans_dams"] = best_M_kmeans_dams
+        results["kmeans_dams"]["time"] = float(t1 - t0)
         print(
             f"KMeans_DAMS - Segments: {len(np.unique(seg_labels_pilot_kmeans_dams))}, "
             f"Actions: {action_kmeans_dams}",
@@ -200,22 +437,26 @@ def run_single_experiment(sample_frac, pilot_frac, train_frac):
             X_pilot,
             M_candidates=M_candidates,
         )
+        results["gmm"]["best_M"] = best_M_gmm
+        
         action_gmm = estimate_segment_policy(
             X_pilot, y_pilot, D_pilot, seg_labels_pilot_gmm
         )
         seg_labels_impl_gmm = gmm_seg.assign(X_impl)
-        value_gmm = eval_classes[eval_method](
-            X_impl,
-            D_impl,
-            y_impl,
-            seg_labels_impl_gmm,
-            mu_pilot_models,
-            action_gmm,
-        )
+        for eval in eval_methods:
+            value_gmm = eval_classes[eval](
+                X_impl,
+                D_impl,
+                y_impl,
+                seg_labels_impl_gmm,
+                mu_pilot_models,
+                action_gmm,
+                log_y=log_y,
+            )
+            results["gmm"][f"{eval}"] = float(value_gmm["value_mean"])
+            
         t1 = time.perf_counter()
-        results["gmm"] = float(value_gmm["value_mean"])
-        results["time_gmm"] = float(t1 - t0)
-        results["best_M_gmm"] = best_M_gmm
+        results["gmm"]["time"] = float(t1 - t0)
         print(
             f"GMM - Segments: {len(np.unique(seg_labels_pilot_gmm))}, "
             f"Actions: {action_gmm}",
@@ -236,22 +477,27 @@ def run_single_experiment(sample_frac, pilot_frac, train_frac):
                 M_candidates,
             )
         )
+        
+        results["gmm_dams"]["best_M"] = best_M_gmm_dams
+        
         action_gmm_dams = estimate_segment_policy(
             X_pilot, y_pilot, D_pilot, seg_labels_pilot_gmm_dams
         )
         seg_labels_impl_gmm_dams = gmm_dams_seg.assign(X_impl)
-        value_gmm_dams = eval_classes[eval_method](
-            X_impl,
-            D_impl,
-            y_impl,
-            seg_labels_impl_gmm_dams,
-            mu_pilot_models,
-            action_gmm_dams,
-        )
+        for eval in eval_methods:
+            value_gmm_dams = eval_classes[eval](
+                X_impl,
+                D_impl,
+                y_impl,
+                seg_labels_impl_gmm_dams,
+                mu_pilot_models,
+                action_gmm_dams,
+                log_y=log_y,
+            )
+            results["gmm_dams"][f"{eval}"] = float(value_gmm_dams["value_mean"])
+            
         t1 = time.perf_counter()
-        results["gmm_dams"] = float(value_gmm_dams["value_mean"])
-        results["time_gmm_dams"] = float(t1 - t0)
-        results["best_M_gmm_dams"] = best_M_gmm_dams
+        results["gmm_dams"]["time"] = float(t1 - t0)
         print(
             f"GMM_DAMS - Segments: {len(np.unique(seg_labels_pilot_gmm_dams))}, "
             f"Actions: {action_gmm_dams}",
@@ -268,22 +514,26 @@ def run_single_experiment(sample_frac, pilot_frac, train_frac):
             y_pilot,
             M_candidates,
         )
+        results["clr"]["best_M"] = best_M_clr
+        
         action_clr = estimate_segment_policy(
             X_pilot, y_pilot, D_pilot, seg_labels_pilot_clr
         )
         seg_labels_impl_clr = clr_seg.assign(X_impl)
-        value_clr = eval_classes[eval_method](
-            X_impl,
-            D_impl,
-            y_impl,
-            seg_labels_impl_clr,
-            mu_pilot_models,
-            action_clr,
-        )
+        for eval in eval_methods:
+            value_clr = eval_classes[eval](
+                X_impl,
+                D_impl,
+                y_impl,
+                seg_labels_impl_clr,
+                mu_pilot_models,
+                action_clr,
+                log_y=log_y,
+            )
+            results["clr"][f"{eval}"] = float(value_clr["value_mean"])
+            
         t1 = time.perf_counter()
-        results["clr"] = float(value_clr["value_mean"])
-        results["time_clr"] = float(t1 - t0)
-        results["best_M_clr"] = best_M_clr
+        results["clr"]["time"] = float(t1 - t0)
         print(
             f"CLR - Segments: {len(np.unique(seg_labels_pilot_clr))}, "
             f"Actions: {action_clr}",
@@ -306,22 +556,24 @@ def run_single_experiment(sample_frac, pilot_frac, train_frac):
                 M_candidates,
             )
         )
+        results["clr_dams"]["best_M"] = best_M_clr_dams
         action_clr_dams = estimate_segment_policy(
             X_pilot, y_pilot, D_pilot, seg_labels_pilot_clr_dams
         )
         seg_labels_impl_clr_dams = clr_dams_seg.assign(X_impl)
-        value_clr_dams = eval_classes[eval_method](
-            X_impl,
-            D_impl,
-            y_impl,
-            seg_labels_impl_clr_dams,
-            mu_pilot_models,
-            action_clr_dams,
-        )
+        for eval in eval_methods:
+            value_clr_dams = eval_classes[eval](
+                X_impl,
+                D_impl,
+                y_impl,
+                seg_labels_impl_clr_dams,
+                mu_pilot_models,
+                action_clr_dams,
+                log_y=log_y,
+            )
+            results["clr_dams"][f"{eval}"] = float(value_clr_dams["value_mean"])
         t1 = time.perf_counter()
-        results["clr_dams"] = float(value_clr_dams["value_mean"])
-        results["time_clr_dams"] = float(t1 - t0)
-        results["best_M_clr_dams"] = best_M_clr_dams
+        results["clr_dams"]["time"] = float(t1 - t0)
         print(
             f"CLR_DAMS - Segments: {len(np.unique(seg_labels_pilot_clr_dams))}, "
             f"Actions: {action_clr_dams}",
@@ -353,22 +605,28 @@ def run_single_experiment(sample_frac, pilot_frac, train_frac):
             M_candidates,
             min_leaf_size=5,
         )
+        
+        results["dast"]["best_M"] = best_M_dast
+        
         action_dast = estimate_segment_policy(
             X_pilot, y_pilot, D_pilot, seg_labels_pilot_dast
         )
         seg_labels_impl_dast = tree_final.assign(X_impl)
-        value_dast = eval_classes[eval_method](
-            X_impl,
-            D_impl,
-            y_impl,
-            seg_labels_impl_dast,
-            mu_pilot_models,
-            action_dast,
-        )
+        for eval in eval_methods:
+            value_dast = eval_classes[eval](
+                X_impl,
+                D_impl,
+                y_impl,
+                seg_labels_impl_dast,
+                mu_pilot_models,
+                action_dast,
+                log_y=log_y,
+            )
+            results["dast"][f"{eval}"] = float(value_dast["value_mean"])
+            
         t1 = time.perf_counter()
-        results["dast"] = float(value_dast["value_mean"])
-        results["time_dast"] = float(t1 - t0)
-        results["best_M_dast"] = best_M_dast
+        results["dast"]["time"] = float(t1 - t0)
+        
         print(
             f"DAST - Segments: {len(np.unique(seg_labels_pilot_dast))}, "
             f"Actions: {action_dast}",
@@ -391,6 +649,7 @@ def run_single_experiment(sample_frac, pilot_frac, train_frac):
             M_candidates,
             min_leaf_size=5,
         )
+        results["mst"]["best_M"] = best_M_mst
 
         print(
             f"MST - Segments: {len(np.unique(seg_labels_pilot_mst))}, "
@@ -398,19 +657,24 @@ def run_single_experiment(sample_frac, pilot_frac, train_frac):
         )
 
         seg_labels_impl_mst = tree_mst.assign(X_impl)
-
-        value_mst = eval_classes[eval_method](
-            X_impl,
-            D_impl,
-            y_impl,
-            seg_labels_impl_mst,
-            mu_pilot_models,
-            action_mst,
-        )
+        for eval in eval_methods:
+            value_mst = eval_classes[eval](
+                X_impl,
+                D_impl,
+                y_impl,
+                seg_labels_impl_mst,
+                mu_pilot_models,
+                action_mst,
+                log_y=log_y,
+            )
+            results["mst"][f"{eval}"] = float(value_mst["value_mean"])
+        
         t1 = time.perf_counter()
-        results["mst"] = float(value_mst["value_mean"])
-        results["time_mst"] = float(t1 - t0)
-        results["best_M_mst"] = best_M_mst
+        results["mst"]["time"] = float(t1 - t0)
+
+
+        # ---- Causal Forest benchmark (grf multi_arm_causal_forest) ----
+    
 
     # Policytree (R based) — 如果你已经升级成多 action 版 policytree_segmentation
     if "policytree" in ALGO_LIST:
@@ -433,24 +697,29 @@ def run_single_experiment(sample_frac, pilot_frac, train_frac):
             Gamma_val,
             M_candidates,
         )
+        
+        results["policytree"]["best_M"] = best_M_policytree 
+        
         action_policy = estimate_segment_policy(
             X_pilot, y_pilot, D_pilot, seg_labels_pilot_policy
         )
         seg_labels_impl_policy = policy_seg.assign(X_impl)
-        value_policy = eval_classes[eval_method](
-            X_impl,
-            D_impl,
-            y_impl,
-            seg_labels_impl_policy,
-            mu_pilot_models,
-            action_policy,
-        )
+        for eval in eval_methods:
+            value_policy = eval_classes[eval](
+                X_impl,
+                D_impl,
+                y_impl,
+                seg_labels_impl_policy,
+                mu_pilot_models,
+                action_policy,
+                log_y=log_y,
+            )
+            results["policytree"][f"{eval}"] = float(value_policy["value_mean"])
         
         
         t1 = time.perf_counter()
-        results["policytree"] = float(value_policy["value_mean"])
-        results["time_policytree"] = float(t1 - t0)
-        results["best_M_policytree"] = best_M_policytree
+        results["policytree"]["time"] = float(t1 - t0)
+
         print(
             f"PolicyTree - Segments: {len(np.unique(seg_labels_pilot_policy))}, "
             f"Actions: {action_policy}, Time: {t1 - t0:.2f} seconds",
@@ -535,7 +804,7 @@ if __name__ == "__main__":
     train_frac = 0.7  # 70% pilot for training
 
     run_multiple_experiments(
-        N_sim=100,
+        N_sim=50,
         sample_frac=1,
         pilot_frac=pilot_frac,
         train_frac=train_frac,

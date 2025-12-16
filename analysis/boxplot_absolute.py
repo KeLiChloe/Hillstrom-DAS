@@ -5,16 +5,29 @@ import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 from matplotlib.lines import Line2D
-import warnings
 from matplotlib.patches import Patch
+import warnings
 
 warnings.simplefilter(action='ignore', category=FutureWarning)
 
-with open("exp_results/main/exp0.pkl", "rb") as f:
-    data_exp = pickle.load(f)
-    
 # ==========================================
-# 1. 样式设置（保持与原一致）
+# 0. 读取数据
+# ==========================================
+with open("exp_results/main/exp2.pkl", "rb") as f:
+    data_exp = pickle.load(f)
+
+if isinstance(data_exp, dict) and "results" in data_exp:
+    params = data_exp.get("params", {})
+    print("Experiment Params:", params)
+    results_list = data_exp["results"]
+else:
+    results_list = data_exp
+
+n_sims = len(results_list)
+print("Number of runs:", n_sims)
+
+# ==========================================
+# 1. 样式设置
 # ==========================================
 sns.set_context("paper", font_scale=1.4)
 sns.set_style("ticks", {'axes.grid': True})
@@ -33,69 +46,77 @@ plt.rcParams.update({
     'figure.dpi': 300
 })
 
-
-# 获取 simulation results
-if "params" in data_exp:
-    params = data_exp["params"]
-    print("Experiment Params:", params)
-    results_list = data_exp["results"]
-else:
-    results_list = data_exp
-
-n_sims = len(results_list)
-
 # ==========================================
-# 3. 定义方法、标签、颜色（颜色绑定用字典！）
+# 2. 定义方法、颜色、标签
 # ==========================================
-
-# 方法内部名称（run 存的 key）
 methods = [
-    'all_control', 'random', 'kmeans', 
-    'gmm', 'clr', 'mst', 'policytree', 'dast'
+    "all_0", "all_1", "all_2",
+    "random",
+    "kmeans", "gmm", "clr", "mst",
+    "causal_forest",
+    "t_learner", "s_learner", "x_learner", "dr_learner",
+    "dast"
 ]
 
-# 显示用标签
 label_map = {
-    # 'all_treat': 'All Treat',
-    'all_control': 'All Control',
-    'random': 'Random',
-    'kmeans': 'K-Means',
-    'gmm': 'GMM',
-    'clr': 'CLR',
-    'mst': 'MST',
-    'policytree': 'Policytree',
-    'dast': 'DAST'
+    "all_0": "All Action=0",
+    "all_1": "All Action=1",
+    "all_2": "All Action=2",
+    "random": "Random",
+    "kmeans": "K-Means",
+    "gmm": "GMM",
+    "clr": "CLR",
+    "mst": "MST",
+    "causal_forest": "Causal Forest",
+    "t_learner": "T-learner",
+    "s_learner": "S-learner",
+    "x_learner": "X-learner",
+    "dr_learner": "DR-learner",
+    "dast": "DAST",
 }
 
-# 🎨 用字典绑定颜色，不依赖顺序
 palette = {
-    # 'All Treat':   "#4C72B099",
-    'All Control': "#55A86899",
-    'Random':      "#C44E5299",
-    'K-Means':     "#8172B299",
-    'GMM':         "#CCB97499",
-    'CLR':         "#64B5CD99",
-    'MST':         "#8C613C99",
-    'Policytree':  "#93786099",
-    'DAST':        "#FF7F0E99",
+    "All Action=0": "#55A86899",
+    "All Action=1": "#4C72B099",
+    "All Action=2": "#8172B299",
+    "Random": "#C44E5299",
+    "K-Means": "#CCB97499",
+    "GMM": "#64B5CD99",
+    "CLR": "#8C613C99",
+    "MST": "#93786099",
+    "Causal Forest": "#1F77B499",
+    "T-learner": "#FF923499",
+    "S-learner": "#2CA02C99",
+    "X-learner": "#F5474799",
+    "DR-learner": "#9467BD99",
+    "DAST": "#EF660A99",
 }
 
-
-# 👉 画图顺序：你可以随便改，不影响颜色
+# 可选：排序顺序
 constant_order = [
-    # 'All Treat',
-    'All Control',
-    'Random',
-    'K-Means',
-    'GMM',
-    'CLR',
-    'MST',
-    # 'Policytree',
-    'DAST',
+    "All Action=1",
+    "All Action=2",
+    "All Action=0",
+    "Random",
+    "K-Means",
+    "GMM",
+    "CLR",
+    "MST",
+    "Causal Forest",
+    "T-learner",
+    "S-learner",
+    "X-learner",
+    "DR-learner",
+    "DAST",
 ]
 
 # ==========================================
-# 4. 整理数据
+# 3. 指定 evaluation method
+# ==========================================
+eval_method = "dual_dr"  # 你也可以换成 "dr" 或 "ipw"
+
+# ==========================================
+# 4. 构造 DataFrame
 # ==========================================
 records = []
 
@@ -103,38 +124,23 @@ for i, run in enumerate(results_list):
     for m in methods:
         if m not in run:
             continue
+        score = run[m].get(eval_method, np.nan)
+        if not np.isfinite(score):
+            continue
         records.append({
-            'Run': i,
-            'Method': m,
-            'Method_Label': label_map[m],
-            'Value': run[m]
+            "Run": i,
+            "Method": m,
+            "Method_Label": label_map[m],
+            "Value": float(score)
         })
 
 df = pd.DataFrame(records)
-df['Value'] = df['Value']*100
-# ==========================================
-# 按照 median 动态排序方法顺序
-# ==========================================
-median_order = (
-    df.groupby("Method_Label")["Value"]
-      .median()
-      .sort_values(ascending=True)
-      .index
-      .tolist()
-)
-constant_order = median_order  # 直接改写你的 constant_order
-
 
 # ==========================================
 # 5. 绘图
 # ==========================================
 fig, ax = plt.subplots(figsize=(10, 6))
 
-# --- 网格 ---
-ax.grid(axis='y', color='gray', linestyle=':', linewidth=0.5, alpha=0.5)
-ax.set_axisbelow(True)
-
-# --- 箱线图 ---
 sns.boxplot(
     x='Method_Label', y='Value', data=df, order=constant_order,
     palette=palette, showfliers=False, width=0.55, linewidth=1.2, ax=ax,
@@ -146,49 +152,44 @@ sns.boxplot(
     medianprops=dict(color="#D02613", linewidth=1.5)
 )
 
-# --- 单次 run 的离散点 ---
 sns.stripplot(
     x='Method_Label', y='Value', data=df, order=constant_order,
     color='#333333', alpha=0.4, size=4, jitter=False, ax=ax
 )
 
-# --- 坐标轴标签 ---
-ax.set_ylabel('Expected Spend per Customer ($) at Implementation Stage', fontweight='bold', labelpad=12)
-ax.set_xlabel('Methods', fontweight='bold', labelpad=14,fontsize=16)
+ax.set_ylabel('Estimated Revenue per Customer ($)', fontweight='bold', labelpad=12)
+ax.set_xlabel('Methods', labelpad=14, fontsize=16)
 
-# --- Y 轴自适应边距 ---
-y_min = df['Value'].min()
-y_max = df['Value'].max()
+y_min, y_max = df["Value"].min(), df["Value"].max()
 margin = 0.05 * (y_max - y_min if y_max != y_min else 1)
 ax.set_ylim(y_min - margin, y_max + margin)
 
-# --- X 轴标签格式 ---
-ax.set_xticks(range(len(constant_order)))
-ax.set_xticklabels(constant_order, rotation=30, ha='right', fontsize=14, fontweight='bold')
+# 在绘图代码后，手动设置 tick labels（强制覆盖）
+ax.set_xticks(range(len(constant_order)))  # 明确 tick 位置
+ax.set_xticklabels(
+    constant_order,
+    rotation=30,
+    ha='right',
+    fontsize=14,
+)
+
 
 sns.despine(trim=True, offset=10)
 
-# --- 标题 ---
 ax.set_title(
-    f'Distribution of Performance Metric (Expected Spend per Customer ($)) across {n_sims} Runs',
+    f'Performance Comparison ({eval_method.upper()}) across {n_sims} Runs',
     fontweight='bold', fontsize=16, y=1.12
 )
 
-# --- 图例 ---
 legend_elements = [
-    Patch(facecolor='#E0E0E0', edgecolor='black', linewidth=1.2,
-          label='Box: IQR (25%–75%)'),
+    Patch(facecolor='#E0E0E0', edgecolor='black', linewidth=1.2, label='Box: IQR (25%–75%)'),
     Line2D([0], [0], color="#D02613", linewidth=1.5, label='Median'),
     Line2D([0], [0], marker='D', color='w', markerfacecolor='white',
-           markeredgecolor='black', markersize=6, linestyle='None',
-           label='Mean'),
-    Line2D([0], [0], color='black', linewidth=1.2,
-           marker='_', markersize=15, markeredgewidth=1.2,
-           markerfacecolor='black',
-           label=r'Whiskers'),
+           markeredgecolor='black', markersize=6, linestyle='None', label='Mean'),
+    Line2D([0], [0], color='black', linewidth=1.2, marker='_', markersize=15,
+           markeredgewidth=1.2, markerfacecolor='black', label='Whiskers'),
     Line2D([0], [0], marker='o', color='w', markerfacecolor='#333333',
-           alpha=0.4, markersize=5, linestyle='None',
-           label='Single run')
+           alpha=0.4, markersize=5, linestyle='None', label='Single run')
 ]
 
 leg = ax.legend(
@@ -201,9 +202,20 @@ leg._legend_box.align = "left"
 plt.tight_layout()
 
 # ==========================================
-# 6. 导出图像
+# 6. 保存图像（确保 rotation 生效）
 # ==========================================
-os.makedirs("figures", exist_ok=True)
-plt.savefig('figures/Fig1_Boxplot_Method_Distribution.pdf', dpi=300, bbox_inches='tight')
-plt.savefig('figures/Fig1_Boxplot_Method_Distribution.png', dpi=300, bbox_inches='tight')
+
+# 在 savefig 前强制 draw + 设置 label rotation（这是关键）
+plt.draw()
+for label in ax.get_xticklabels():
+    label.set_rotation(30)
+    label.set_ha('right')
+    label.set_fontsize(14)
+
+# 不要使用 bbox_inches='tight'，它会裁剪掉旋转的 label
+out_path = f'figures/Fig1_Boxplot_Distribution_{eval_method.upper()}.pdf'
+plt.savefig(out_path, dpi=300)  # ❌ 不加 bbox_inches
+plt.savefig(out_path.replace(".pdf", ".png"), dpi=300)
 plt.close()
+print(f"[OK] Saved: {out_path}")
+

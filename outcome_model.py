@@ -55,6 +55,7 @@ def fit_mu_models(X, D, y, model_type):
                 hidden_layer_sizes=(64, 32),
                 activation="relu",
                 max_iter=300,
+                early_stopping=True,
             )
 
         elif model_type == "lightgbm_reg":

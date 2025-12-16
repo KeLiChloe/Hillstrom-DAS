@@ -95,7 +95,7 @@ from sklift.datasets import fetch_hillstrom
 import numpy as np
 import pandas as pd
 from sklearn.preprocessing import StandardScaler
-from sklift.datasets import fetch_hillstrom
+from sklift.datasets import fetch_hillstrom, fetch_criteo
 
 def load_hillstrom(sample_frac, seed, target_col):
     np.random.seed(seed)
@@ -150,15 +150,66 @@ def load_hillstrom(sample_frac, seed, target_col):
 
     return X_np, y_np, D_np
 
+def load_criteo(sample_frac, seed, target_col):
+    np.random.seed(seed)
+    print("Loading Criteo uplift dataset ...")
+    print("(Using random seed =", seed, ")")
+    
+    X, y, D = fetch_criteo(
+        target_col=target_col,
+        treatment_col="treatment",
+        percent10=True,
+        return_X_y_t=True,
+    )
+    
+
+    n_samples = int(len(X) * sample_frac)
+    indices = np.random.choice(len(X), size=n_samples, replace=False)
+    X, y, D = X.iloc[indices], y.iloc[indices], D.iloc[indices]
+    
+    # print posit=iive ratio of y
+    print(f"Positive ratio of y: {y.mean():.6f}")
+
+    X = X.reset_index(drop=True)
+    y = y.reset_index(drop=True)
+    D = D.reset_index(drop=True)
+
+    print("\n" + "=" * 60)
+    print("DATA EXPLORATION")
+    print("=" * 60)
+
+    print("\n Basic Information:")
+    print(f"   X shape: {X.shape} (n={X.shape[0]}, d={X.shape[1]})")
+
+    # print("\n Outcome by Treatment:")
+    # y_control = y[D == 0]
+    # y_treated = y[D == 1]
+    # print(f"   Control (D=0) - mean: {y_control.mean():.6f}, std: {y_control.std():.6f}")
+    # print(f"   Treated (D=1) - mean: {y_treated.mean():.6f}, std: {y_treated.std():.6f}")
+    # print(f"   Naive ATE: {y_treated.mean() - y_control.mean():.6f}")
+    
+    # # print ratio of treatment assignment (D=1) and positive outcomes
+    # print("\n Treatment Assignment:")
+    # print(f"   Treatment (D=1) ratio: {D.mean():.6f}")
+    # print(f"   Positive Outcome (y=1) ratio: {y.mean():.6f}")
+
+    # 转成 numpy
+    X_np = X.values
+    y_np = y.values
+    D_np = D.values
+
+    # scale X features
+    # scaler = StandardScaler()
+    # X_np = scaler.fit_transform(X_np)
+    
+    return X_np, y_np, D_np
+
 # =========================================================
 # 1. pilot / implementation 划分 + outcome model + Gamma (K-action)
 # =========================================================
-def prepare_pilot_impl(X, y, D, pilot_frac):
+def prepare_pilot_impl(X, y, D, pilot_frac, model_type, log_y):
     """
-    通用 K-action 版本：
-      - 动作 D 可以是 0,1,...,K-1（Hillstrom: 3 actions）
-      - 对每个 action a 拟合 μ_a(x)
-      - 构造 DR 矩阵 Gamma_pilot, shape = (N_pilot, K)，第 a 列是 Γ_{i,a}
+    K-action 版本 + log1p 回归稳定 heavy-tail revenue（Hillstrom 推荐 log_y=True）
     """
     print("\n" + "=" * 60)
     print("Split & fit outcome models")
@@ -170,45 +221,43 @@ def prepare_pilot_impl(X, y, D, pilot_frac):
     print(f"Pilot size: {len(X_pilot)}, Implementation size: {len(X_impl)}")
 
     X_pilot = np.asarray(X_pilot)
-    D_pilot = np.asarray(D_pilot)
-    y_pilot = np.asarray(y_pilot)
+    D_pilot = np.asarray(D_pilot).astype(int)
+    y_pilot = np.asarray(y_pilot, dtype=float)
 
-    # ===== 1) 多 action 拟合 μ_a(x) =====
+    # ---- 1) log1p 训练目标（只在训练时变换）----
+    if log_y:
+        if (y_pilot < 0).any():
+            raise ValueError("log1p requires non-negative y, but found y<0 in pilot.")
+        y_fit = np.log1p(y_pilot)
+    else:
+        y_fit = y_pilot
+
+    # ---- 2) fit μ_a models（你 outcome_model.py 不动）----
     mu_pilot_models = fit_mu_models(
         X_pilot,
         D_pilot,
-        y_pilot,
-        model_type="lightgbm_reg",
+        y_fit,
+        model_type=model_type,   # 你 benchmark 要 NN 就用这个
     )
-    # 要求：D 已经被编码成非负整数（0,1,...）
-    # Gamma 的列索引直接用 action 值：Gamma[:, a] 对应动作 a
 
     actions = np.unique(D_pilot).astype(int)
-    max_a = actions.max()
-    K = max_a + 1
+    K = int(actions.max()) + 1
     N_pilot = X_pilot.shape[0]
+    print(f"Detected actions: {actions.tolist()} (K={K}), log_y={log_y}")
 
-    print(f"Detected actions: {actions.tolist()} (K={K})")
-
-    # ===== 2) 构造 K-action DR 矩阵 Gamma_pilot =====
+    # ---- 3) build Gamma_pilot: (N, K) ----
     Gamma_pilot = np.zeros((N_pilot, K), dtype=float)
-
     for a in actions:
         mask_a = (D_pilot == a)
         e_a = mask_a.mean()
-        # 避免除零，极端情况下如果某 action 特别少
         e_a = max(e_a, 1e-6)
 
-        mu_a = predict_mu(mu_pilot_models[a], X_pilot)
-        # 通用 DR 公式：
-        #   Γ_{i,a} = μ_a(x_i) + 1{D_i = a} / e_a * (y_i - μ_a(x_i))
-        Gamma_pilot[:, a] = mu_a + (mask_a.astype(float) / e_a) * (y_pilot - mu_a)
+        mu_a_hat = predict_mu(mu_pilot_models[a], X_pilot)  # 在 log 空间 or 原空间
+        if log_y:
+            mu_a_hat = np.expm1(mu_a_hat)  # 还原到 revenue 空间
 
-    # ===== 3) e_pilot 仍然返回一个标量（为兼容旧的 evaluator 接口）=====
-    # 在多 action 设置下，这个值对 DR 没有实际意义，
-    # 你可以在多 action evaluator 里完全忽略它。
-    e_pilot = float(D_pilot.mean())
-
+        Gamma_pilot[:, a] = mu_a_hat + (mask_a.astype(float) / e_a) * (y_pilot - mu_a_hat)
+        
     return (
         X_pilot,
         X_impl,
@@ -216,6 +265,6 @@ def prepare_pilot_impl(X, y, D, pilot_frac):
         D_impl,
         y_pilot,
         y_impl,
-        mu_pilot_models,  # dict[a] = model_a
-        Gamma_pilot,      # (N_pilot, K) 的 DR 矩阵
+        mu_pilot_models,
+        Gamma_pilot,
     )

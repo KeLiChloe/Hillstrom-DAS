@@ -70,21 +70,7 @@ def _get_propensity_per_action(D_impl, actions, propensities=None):
     return e
 
 
-def _build_mu_matrix(mu_models, X_impl, K):
-    """
-    构造 μ 矩阵:
-        mu_mat[i, a] = μ_a(x_i)
-
-    参数
-    ----
-    mu_models : dict[int, model]
-    X_impl : (n, d)
-    K : int, 动作数 (= max_action+1)
-
-    返回
-    ----
-    mu_mat : np.ndarray, shape (n, K)
-    """
+def _build_mu_matrix(mu_models, X_impl, K, log_y):
     n = X_impl.shape[0]
     mu_mat = np.zeros((n, K), dtype=float)
 
@@ -92,10 +78,12 @@ def _build_mu_matrix(mu_models, X_impl, K):
         a_int = int(a)
         if a_int < 0 or a_int >= K:
             continue
-        mu_mat[:, a_int] = predict_mu(model, X_impl)
+        pred = predict_mu(model, X_impl)
+        if log_y:
+            pred = np.expm1(pred)
+        mu_mat[:, a_int] = pred
 
     return mu_mat
-
 
 # =========================================================
 # 1. 非 DR 版本：直接用 y 和 μ 做 counterfactual
@@ -123,7 +111,7 @@ def evaluate_policy(
     action = np.asarray(action, dtype=int)
 
     actions, K = _infer_actions(D_impl, mu_models)
-    mu_mat = _build_mu_matrix(mu_models, X_impl, K)  # shape (n, K)
+    mu_mat = _build_mu_matrix(mu_models, X_impl, K, log_y=log_y)  # shape (n, K)
 
     # 根据 segment label 得到 policy 对每个样本的 action: a_i
     a_i = action[seg_labels_impl].astype(int)        # shape (n,)
@@ -151,6 +139,7 @@ def evaluate_policy_dual_dr(
         mu_models,
         action,
         propensities=None,
+        log_y=True,
     ):
     """
     K-action dual DR policy evaluation.
@@ -190,7 +179,7 @@ def evaluate_policy_dual_dr(
     e = _get_propensity_per_action(D_impl, actions, propensities)  # shape (K,)
 
     # 2. μ_a(x_i) 矩阵
-    mu_mat = _build_mu_matrix(mu_models, X_impl, K)  # (n, K)
+    mu_mat = _build_mu_matrix(mu_models, X_impl, K, log_y=log_y)  # (n, K)
 
     # 3. 构造 DR Γ_{i,a}
     Gamma = np.zeros((n, K), dtype=float)
@@ -229,6 +218,7 @@ def evaluate_policy_dr(
         mu_models,
         action,
         propensities=None,
+        log_y = True,
     ):
     """
     K-action doubly-robust off-policy evaluation.
@@ -252,7 +242,7 @@ def evaluate_policy_dr(
     e = _get_propensity_per_action(D_impl, actions, propensities)  # (K,)
 
     # 2. μ_a(x_i) 矩阵
-    mu_mat = _build_mu_matrix(mu_models, X_impl, K)
+    mu_mat = _build_mu_matrix(mu_models, X_impl, K, log_y=log_y)
 
     # 3. policy 的 action a_i = π(X_i)
     a_i = action[seg_labels_impl].astype(int)
@@ -276,11 +266,13 @@ def evaluate_policy_dr(
 # 4. 纯 IPW 版本
 # =========================================================
 
-def evaluate_policy_ips(
+def evaluate_policy_ipw(
         X_impl, D_impl, y_impl,
         seg_labels_impl,
+        mu_models, # placeholder, no use
         action,
         propensities=None,
+        log_y = True # placeholder, no use
     ):
     """
     纯 IPW policy evaluation，只用 y，不用 outcome model / Gamma。
@@ -357,7 +349,7 @@ def evaluate_policy_for_random_baseline(
     e = _get_propensity_per_action(D_impl, actions, propensities)
 
     # μ 矩阵
-    mu_mat = _build_mu_matrix(mu_models, X_impl, K)
+    mu_mat = _build_mu_matrix(mu_models, X_impl, K, log_y=log_y)
 
     # 构造 DR Γ_{i,a}
     Gamma = np.zeros((n, K), dtype=float)
