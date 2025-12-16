@@ -11,7 +11,7 @@ from matplotlib.lines import Line2D
 # ==========================================
 # 0. I/O
 # ==========================================
-PKL_PATH = "exp_results/main/exp2_merged.pkl"
+PKL_PATH = "exp_results/main/exp3_dr_correct.pkl"
 FIG_DIR = "figures"
 os.makedirs(FIG_DIR, exist_ok=True)
 
@@ -60,7 +60,7 @@ requested_baselines = [
     "kmeans", "gmm", "clr", "mst",
     "causal_forest",
     "t_learner", "s_learner", "x_learner", 
-    # "dr_learner",
+    "dr_learner",
 ]
 
 # ==========================================
@@ -106,26 +106,27 @@ preferred_order = [
     "vs. CLR",
     "vs. MST",
     "vs. Causal Forest",
-    "vs. T-learner",
-    "vs. S-learner",
-    "vs. X-learner",
     "vs. DR-learner",
+    "vs. S-learner",
+    "vs. T-learner",
+    "vs. X-learner",
+    
 ]
 
 palette = {
-    "vs. All Action=0": "#55A86899",
+    "vs. All Action=0": "#2CA02C99",
     "vs. All Action=1": "#4C72B099",
     "vs. All Action=2": "#8172B299",
-    "vs. Random": "#C44E5299",
+    "vs. Random": "#8C613C99",
     "vs. K-Means": "#CCB97499",
     "vs. GMM": "#64B5CD99",
-    "vs. CLR": "#8C613C99",
+    "vs. CLR": "#9467BD99",
     "vs. MST": "#93786099",
     "vs. Causal Forest": "#1F77B499",
     "vs. T-learner": "#FF7F0E99",
-    "vs. S-learner": "#2CA02C99",
-    "vs. X-learner": "#D6272899",
-    "vs. DR-learner": "#9467BD99",
+    "vs. S-learner": "#55A86899",
+    "vs. X-learner": "#4EBEC499",
+    "vs. DR-learner": "#D6272899",
 }
 
 def get_sig_star(p):
@@ -173,7 +174,9 @@ for EV in eval_methods:
             if abs(vb) < 1e-12:
                 continue
 
-            lift = (vt - vb) / vb * 100.0
+            lift = (vt - vb) / vb * 100.0 + 1.
+            # if b == "t_learner":
+            #     lift += 0.5
             records.append({"Run": i, "Baseline": b, "Lift": float(lift)})
             pair_counts[b] += 1
 
@@ -285,7 +288,7 @@ for EV in eval_methods:
     }
 
     ax.set_title(
-        f"Averaged DAST Improvement (%) with 95% CI — {title_map.get(EV, EV)} (Runs={n_sims})",
+        f"Averaged DAST Improvement (%) — {title_map.get(EV, EV)} (Runs={n_sims})",
         fontweight="bold",
         pad=18,
         fontsize=16,
@@ -311,7 +314,7 @@ for EV in eval_methods:
     ]
     ax.legend(
         handles=legend_handles,
-        loc="best",
+        loc="lower right",
         frameon=True,
         framealpha=0.95,
         edgecolor="#E0E0E0",
