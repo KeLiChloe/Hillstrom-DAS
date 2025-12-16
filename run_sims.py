@@ -52,7 +52,7 @@ eval_classes = {
     "ipw": evaluate_policy_ipw
 }
 
-M_candidates = [2, 3, 4, 5, 6, 7, 8, 9, 10]
+M_candidates = [2, 3, 4, 5, 6, 7, 8]
 
 
 def run_single_experiment(sample_frac, pilot_frac, train_frac):
@@ -325,38 +325,39 @@ def run_single_experiment(sample_frac, pilot_frac, train_frac):
     # --------------------------------------------------
     # ---- DR-learner benchmark (learn policy from Gamma labels) ----
     # --------------------------------------------------
-    # Train on pilot: f_a(x) ~ Gamma_{.,a}
     if "dr_learner" in ALGO_LIST:
         t0 = time.perf_counter()
-        dr_models = fit_dr_learner_models(
+
+        # 1) fit true DR-learner (CATE-style) on PILOT
+        dr_model = fit_dr_learner_models(
             X_pilot=X_pilot,
-            Gamma_pilot=Gamma_pilot,
-            model_type="mlp",     # options: "ridge", "mlp", "light_gbm"
-        )
-
-        # Predict on implementation and take argmax
-        a_hat_dr = dr_learner_policy(
-            dr_models=dr_models,
-            X=X_impl,
+            D_pilot=D_pilot,
+            y_pilot=y_pilot,
+            mu_pilot_models=mu_pilot_models,
             K=K,
+            baseline=0,          # Hillstrom: 0 is control
+            model_type="mlp",   # "ridge" / "mlp" / "lgbm"
         )
 
-        # Encode individual actions into your evaluator interface
-        seg_labels_impl_dr = a_hat_dr
+        # 2) predict individual best action on IMPLEMENTATION
+        a_hat_dr, _ = dr_learner_policy(dr_model, X_impl)
+
+        # 3) evaluate with your unified OPE interface
+        seg_labels_impl_dr = a_hat_dr.astype(int)
         action_identity = np.arange(K, dtype=int)
+
         for eval in eval_methods:
             value_dr = eval_classes[eval](
                 X_impl, D_impl, y_impl,
                 seg_labels_impl_dr,
-                mu_pilot_models,          # IMPORTANT: evaluation uses the SAME mu_models as everyone else
+                mu_pilot_models,
                 action_identity,
                 log_y=log_y,
             )
             results["dr_learner"][f"{eval}"] = float(value_dr["value_mean"])
-        
+
         t1 = time.perf_counter()
         results["dr_learner"]["time"] = float(t1 - t0)
-        
 
 
     # --------------------------------------------------
