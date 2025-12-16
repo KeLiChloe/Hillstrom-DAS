@@ -40,7 +40,7 @@ def _make_regressor(model_type: str):
 # fit
 # --------------------------------------------------
 
-def fit_true_dr_learner(
+def fit_dr_learner_models(
     X_pilot,
     D_pilot,
     y_pilot,
@@ -99,7 +99,7 @@ def fit_true_dr_learner(
 # predict policy
 # --------------------------------------------------
 
-def predict_policy_true_dr(
+def dr_learner_policy(
     dr_model,
     X,
 ):
