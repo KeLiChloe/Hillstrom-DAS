@@ -240,8 +240,9 @@ def prepare_pilot_impl(X, y, D, pilot_frac, model_type, log_y):
         model_type=model_type,   # 你 benchmark 要 NN 就用这个
     )
 
-    actions = np.unique(D_pilot).astype(int)
-    K = int(actions.max()) + 1
+    K = int(np.max(D)) + 1   # 用全数据 D，不用 D_pilot
+    actions = np.arange(K, dtype=int)
+
     N_pilot = X_pilot.shape[0]
     print(f"Detected actions: {actions.tolist()} (K={K}), log_y={log_y}")
 
