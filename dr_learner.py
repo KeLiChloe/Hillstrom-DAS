@@ -1,5 +1,5 @@
-#dr_learner.py 
 import numpy as np
+from sklearn.model_selection import KFold
 from sklearn.neural_network import MLPRegressor
 from sklearn.linear_model import Ridge
 from lightgbm import LGBMRegressor
@@ -31,147 +31,196 @@ def _make_regressor(model_type: str):
     raise ValueError(model_type)
 
 
-def _as_1d(x, name: str):
-    x = np.asarray(x).reshape(-1)
-    if x.ndim != 1:
-        raise ValueError(f"{name} must be 1D")
-    return x
-
-
 def _clip_prob(p, eps=1e-6):
     return np.clip(p, eps, 1.0 - eps)
 
 
+def _fit_mu_models_by_action(X_train, D_train, y_train, K, model_type):
+    """Fit mu_a(x)=E[Y|X,D=a] on a training split."""
+    mu_models = {}
+    for a in range(K):
+        mask = (D_train == a)
+        if mask.sum() == 0:
+            raise ValueError(f"No training samples for action {a} in this fold.")
+        m = _make_regressor(model_type)
+        m.fit(X_train[mask], y_train[mask])
+        mu_models[a] = m
+    return mu_models
+
+
+# =========================
+
 
 def fit_dr_learner_binary(
-    X,
-    D,
-    y,
-    mu_models,          # dict {0: m0_model, 1: m1_model}
-    e: float,           # known RCT propensity P(D=1)
-    model_type: str,
+    X, D, y,
+    *,
+    e: float,
+    n_folds: int,
+    mu_model_type: str,
+    tau_model_type: str,
 ):
     X = np.asarray(X)
-    D = _as_1d(D, "D").astype(int)
-    y = _as_1d(y, "y").astype(float)
+    D = np.asarray(D).astype(int).reshape(-1)
+    y = np.asarray(y, float).reshape(-1)
 
     if set(np.unique(D)) - {0, 1}:
-        raise ValueError("Binary version expects D in {0,1}.")
-    if 0 not in mu_models or 1 not in mu_models:
-        raise ValueError("mu_models must contain keys 0 and 1.")
+        raise ValueError("Binary expects D in {0,1}.")
+    n = X.shape[0]
+    if D.shape[0] != n or y.shape[0] != n:
+        raise ValueError("X, D, y must have same length.")
 
-    e = float(_clip_prob(e))
+    e = float(_clip_prob(float(e)))
 
-    m0 = predict_mu(mu_models[0], X)
-    m1 = predict_mu(mu_models[1], X)
-    mD = D * m1 + (1 - D) * m0
+    kf = KFold(n_splits=n_folds, shuffle=True)
 
-    pseudo = ((D - e) / (e * (1 - e))) * (y - mD) + (m1 - m0)
+    tau_models = []
+    mu_models_full = None  # optional final nuisances for better mu0 at prediction
 
-    tau_model = _make_regressor(model_type)
-    tau_model.fit(X, pseudo)
+    for fold, (train_idx, test_idx) in enumerate(kf.split(X)):
+        X_tr, D_tr, y_tr = X[train_idx], D[train_idx], y[train_idx]
+        X_te, D_te, y_te = X[test_idx], D[test_idx], y[test_idx]
+
+        # nuisances on TRAIN folds
+        mu_models = _fit_mu_models_by_action(X_tr, D_tr, y_tr, K=2, model_type=mu_model_type)
+
+        # pseudo on HELD-OUT fold
+        m0 = predict_mu(mu_models[0], X_te)
+        m1 = predict_mu(mu_models[1], X_te)
+        mD = D_te * m1 + (1 - D_te) * m0
+        pseudo = ((D_te - e) / (e * (1 - e))) * (y_te - mD) + (m1 - m0)
+
+        # second-stage model trained on THIS fold's pseudo
+        tau_f = _make_regressor(tau_model_type)
+        tau_f.fit(X_te, pseudo)
+        tau_models.append(tau_f)
+
+    # optional: fit nuisance on all data for better outcome prediction in policy
+    mu_models_full = _fit_mu_models_by_action(X, D, y, K=2, model_type=mu_model_type)
 
     return {
-        "type": "binary",
-        "tau_model": tau_model,
-        "mu_models": mu_models,
+        "type": "binary_crossfit_ensemble",
         "e": e,
+        "n_folds": n_folds,
+        "mu_models": mu_models_full,
+        "tau_models": tau_models,  # list of estimators
     }
 
 
+def dr_learner_predict_binary(dr_model, X):
+    X = np.asarray(X)
+    preds = np.column_stack([m.predict(X) for m in dr_model["tau_models"]])
+    return preds.mean(axis=1)
+
 
 def dr_learner_policy_binary(dr_model, X):
-    """
-    Returns action in {0,1} maximizing estimated outcome.
-    Uses mu0(x) and tau(x): mu1(x) = mu0(x) + tau(x)
-    """
     X = np.asarray(X)
     mu0 = predict_mu(dr_model["mu_models"][0], X)
-    tau = dr_model["tau_model"].predict(X)
+    tau = dr_learner_predict_binary(dr_model, X)
     mu1 = mu0 + tau
-    a_hat = (mu1 > mu0).astype(int)
     mu_hat = np.vstack([mu0, mu1]).T
+    a_hat = np.argmax(mu_hat, axis=1)
     return a_hat, mu_hat
 
 
 
 def fit_dr_learner_k_armed(
-    X,
-    D,
-    y,
-    mu_models,              # dict[a] -> m_a_model for all a in {0..K-1}
+    X, D, y,
+    *,
     K: int,
-    pi,                     # known propensities: array-like length K (sum ~ 1)
+    pi,
     baseline: int,
-    model_type: str,
+    n_folds: int,
+    mu_model_type: str,
+    tau_model_type: str,
 ):
     X = np.asarray(X)
-    D = _as_1d(D, "D").astype(int)
-    y = _as_1d(y, "y").astype(float)
+    D = np.asarray(D).astype(int).reshape(-1)
+    y = np.asarray(y, float).reshape(-1)
 
+    n = X.shape[0]
+    if D.shape[0] != n or y.shape[0] != n:
+        raise ValueError("X, D, y must have same length.")
     if K < 2:
         raise ValueError("K must be >= 2.")
     if baseline < 0 or baseline >= K:
         raise ValueError("baseline out of range.")
-    if any(a not in mu_models for a in range(K)):
-        missing = [a for a in range(K) if a not in mu_models]
-        raise ValueError(f"mu_models missing actions: {missing}")
+    if np.any((D < 0) | (D >= K)):
+        raise ValueError("D contains invalid action ids outside [0, K).")
 
-    pi = _clip_prob(np.asarray(pi, float).reshape(-1))
+    pi = np.asarray(pi, float).reshape(-1)
     if pi.shape[0] != K:
         raise ValueError("pi must have length K.")
-
-    # Precompute outcome predictions for all arms on X
-    mu_hat = {a: predict_mu(mu_models[a], X) for a in range(K)}
-    mub = mu_hat[baseline]
+    pi = _clip_prob(pi)
     pib = float(pi[baseline])
 
-    tau_models = {}
-    for a in range(K):
-        if a == baseline:
-            continue
+    kf = KFold(n_splits=n_folds, shuffle=True)
 
-        mua = mu_hat[a]
-        pia = float(pi[a])
+    # For each action a!=baseline, keep a list of tau estimators across folds
+    tau_models_by_a = {a: [] for a in range(K) if a != baseline}
 
-        Ia = (D == a).astype(float)
-        Ib = (D == baseline).astype(float)
+    for fold, (train_idx, test_idx) in enumerate(kf.split(X)):
+        X_tr, D_tr, y_tr = X[train_idx], D[train_idx], y[train_idx]
+        X_te, D_te, y_te = X[test_idx], D[test_idx], y[test_idx]
 
-        pseudo = (mua - mub) + (Ia / pia) * (y - mua) - (Ib / pib) * (y - mub)
+        # nuisances on TRAIN folds
+        mu_models = _fit_mu_models_by_action(X_tr, D_tr, y_tr, K=K, model_type=mu_model_type)
 
-        model = _make_regressor(model_type)
-        model.fit(X, pseudo)
-        tau_models[a] = model
+        # pseudo on HELD-OUT fold
+        mu_hat = {a: predict_mu(mu_models[a], X_te) for a in range(K)}
+        mub = mu_hat[baseline]
+        Ib = (D_te == baseline).astype(float)
+
+        for a in range(K):
+            if a == baseline:
+                continue
+            mua = mu_hat[a]
+            pia = float(pi[a])
+            Ia = (D_te == a).astype(float)
+
+            pseudo = (mua - mub) + (Ia / pia) * (y_te - mua) - (Ib / pib) * (y_te - mub)
+
+            tau_f = _make_regressor(tau_model_type)
+            tau_f.fit(X_te, pseudo)
+            tau_models_by_a[a].append(tau_f)
+
+    # optional: fit nuisance on all data for better baseline prediction in policy
+    mu_models_full = _fit_mu_models_by_action(X, D, y, K=K, model_type=mu_model_type)
 
     return {
-        "type": "k_armed",
+        "type": "k_armed_crossfit_ensemble",
         "K": K,
         "baseline": baseline,
         "pi": pi,
-        "mu_models": mu_models,     # keep all m_a models
-        "tau_models": tau_models,   # dict[a!=baseline] -> model for tau_a(x)
+        "n_folds": n_folds,
+        "mu_models": mu_models_full,
+        "tau_models_by_a": tau_models_by_a,  # dict[a] -> list of estimators
     }
 
 
-
-
-def dr_learner_policy_k_armed(dr_model, X):
-    """
-    Policy: choose argmax_a \hat m_a(x).
-    We form \hat m_baseline(x) then add \hat tau_a(x) to get \hat m_a(x).
-    """
+def dr_learner_predict_k_armed(dr_model, X):
     X = np.asarray(X)
     n = X.shape[0]
     K = dr_model["K"]
     baseline = dr_model["baseline"]
 
+    tau_hat = np.zeros((n, K), float)
+    for a, models in dr_model["tau_models_by_a"].items():
+        preds = np.column_stack([m.predict(X) for m in models])
+        tau_hat[:, a] = preds.mean(axis=1)
+    tau_hat[:, baseline] = 0.0
+    return tau_hat
+
+
+def dr_learner_policy_k_armed(dr_model, X):
+    X = np.asarray(X)
+    K = dr_model["K"]
+    baseline = dr_model["baseline"]
+
     mub = predict_mu(dr_model["mu_models"][baseline], X)
+    tau_hat = dr_learner_predict_k_armed(dr_model, X)
 
-    mu_hat = np.zeros((n, K), float)
-    mu_hat[:, baseline] = mub
-
-    for a, tau_model in dr_model["tau_models"].items():
-        mu_hat[:, a] = mub + tau_model.predict(X)
+    mu_hat = mub[:, None] + tau_hat
+    mu_hat[:, baseline] = mub  # baseline = mub + 0
 
     a_hat = np.argmax(mu_hat, axis=1)
     return a_hat, mu_hat

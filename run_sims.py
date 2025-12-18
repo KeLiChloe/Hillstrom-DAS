@@ -288,34 +288,35 @@ def run_single_experiment(sample_frac, pilot_frac, train_frac):
     # --------------------------------------------------
     if "dr_learner" in ALGO_LIST:
         t0 = time.perf_counter()
-
+        pi_vec = _get_propensity_per_action(D_pilot, actions_all)
         # 1) fit true DR-learner (CATE-style) on PILOT
         if action_K > 2:
             dr_model = fit_dr_learner_k_armed(
                 X=X_pilot,
                 D=D_pilot,
                 y=y_pilot,
-                mu_models=mu_pilot_models,
                 K=action_K,
-                pi=_get_propensity_per_action(D_pilot, actions_all),  # length K
+                pi=pi_vec,  # length K
                 baseline=0,          # Hillstrom: 0 is control
-                model_type="mlp",   # "ridge" / "mlp" / "lgbm"
+                n_folds=3
+                mu_model_type="mlp",   # "ridge" / "mlp" / "lgbm"
+                tau_model_type="mlp",
             )
 
             # 2) predict individual best action on IMPLEMENTATION
             a_hat_dr, _ = dr_learner_policy_k_armed(dr_model, X_impl)
         
         elif action_K == 2:
-            pi_vec = _get_propensity_per_action(D_pilot, actions_all)  # [pi0, pi1]
             e = float(pi_vec[1])
-
             dr_model = fit_dr_learner_binary(
                 X=X_pilot,
                 D=D_pilot,
                 y=y_pilot,
-                mu_models=mu_pilot_models,
+
                 e=e,  # P(D=1)
-                model_type="mlp",   # "ridge" / "mlp" / "lgbm"
+                n_folds=3,
+                mu_model_type="mlp",   # "ridge" / "mlp" / "lgbm"
+                tau_model_type="mlp",
             )
 
             # 2) predict individual best action on IMPLEMENTATION
