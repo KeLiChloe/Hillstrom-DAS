@@ -298,7 +298,7 @@ def run_single_experiment(sample_frac, pilot_frac, train_frac):
                 K=action_K,
                 pi=pi_vec,  # length K
                 baseline=0,          # Hillstrom: 0 is control
-                n_folds=3
+                n_folds=3,
                 mu_model_type="mlp",   # "ridge" / "mlp" / "lgbm"
                 tau_model_type="mlp",
             )
