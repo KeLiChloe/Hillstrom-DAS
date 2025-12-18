@@ -55,8 +55,6 @@ def fit_x_learner(
     # effect models
     effect_model=None,
     # gating options
-    use_rct_gate: bool = True,
-    min_samples_per_group: int = 5,
     random_state: int = 0,
 ):
     """

@@ -16,9 +16,10 @@ import time
 from data_utils import split_seg_train_test
 from data_utils import load_hillstrom, prepare_pilot_impl 
 from estimation import estimate_segment_policy
-from evaluation import evaluate_policy_dual_dr, _build_mu_matrix, evaluate_policy_dr, evaluate_policy_ipw   # 已改成多 action 版
+from evaluation import evaluate_policy_dual_dr, _build_mu_matrix, evaluate_policy_dr, evaluate_policy_ipw, _get_propensity_per_action  # 已改成多 action 版
 from s_learner import fit_s_learner, predict_mu_s_learner_matrix
-from dr_learner import fit_dr_learner_models, dr_learner_policy
+from dr_learner import ( dr_learner_policy_binary, fit_dr_learner_binary,
+                           dr_learner_policy_k_armed,  fit_dr_learner_k_armed)
 from x_learner import fit_x_learner, predict_best_action_x_learner
 from causal_forest import (
             fit_multiarm_causal_forest,
@@ -77,8 +78,8 @@ def run_single_experiment(sample_frac, pilot_frac, train_frac):
     ) = prepare_pilot_impl(X, y, D, pilot_frac=pilot_frac, model_type="mlp_reg", log_y=log_y)
 
     # K 个动作（0..K-1）
-    K = Gamma_pilot.shape[1]
-    actions_all = np.arange(K, dtype=int)
+    action_K = Gamma_pilot.shape[1]
+    actions_all = np.arange(action_K, dtype=int)
 
     # segmentation 训练 / 验证划分（对 DAST / MST / *_DAMS 用）
     (
@@ -108,43 +109,6 @@ def run_single_experiment(sample_frac, pilot_frac, train_frac):
         results[algo] = {}
 
 
-    # --------------------------------------------------
-    # Baselines — multi (K)-action 版本
-    # --------------------------------------------------
-    # 所有 baseline 都用“1 个 segment”的形式：seg_labels_impl = 0
-    
-    # seg_labels_single_seg = np.zeros(len(X_impl), dtype=int)
-    # for a in actions_all:
-    #     action_all_a = np.array([a], dtype=int)  # segment 0 -> action a
-    #     for eval in eval_methods:
-    #         value_all_a = eval_classes[eval](
-    #             X_impl,
-    #             D_impl,
-    #             y_impl,
-    #             seg_labels_single_seg,
-    #             mu_pilot_models,
-    #             action_all_a,
-    #             log_y=log_y,
-    #         )
-    #         results[f"all_{a}"][f"{eval}"] = float(value_all_a["value_mean"])
-
-
-    # # random baseline
-    # seg_labels_random = np.random.randint(0, K, size=len(X_impl))
-    # action_random = np.arange(K, dtype=int)
-    # for eval in eval_methods:
-    #     value_random = eval_classes[eval](
-    #         X_impl,
-    #         D_impl,
-    #         y_impl,
-    #         seg_labels_random,
-    #         mu_pilot_models,
-    #         action_random,
-    #         log_y=log_y,
-    #     )
-    #     results["random"][f"{eval}"] = float(value_random["value_mean"])
-    
-    
     if "ot_lloyd" in ALGO_LIST:
         t0 = time.perf_counter()
 
@@ -155,7 +119,7 @@ def run_single_experiment(sample_frac, pilot_frac, train_frac):
             D_val=D_val,
             y_val=y_val,
             mu_models=mu_pilot_models,
-            K=K,
+            K=action_K,
             M_candidates=M_candidates,
             eval_fn=evaluate_policy_dual_dr,   # 用它来选 M
             log_y=log_y,
@@ -191,13 +155,13 @@ def run_single_experiment(sample_frac, pilot_frac, train_frac):
             X_pilot,
             y_pilot,
             D_pilot,
-            action_levels=np.arange(K),   # 确保列顺序与 0..K-1 对齐
+            action_levels=np.arange(action_K),   # 确保列顺序与 0..K-1 对齐
             num_trees=100,
             seed=int(seed),
         )
         a_hat_cf, _ = predict_best_action_multiarm(cf_model, X_impl)
         seg_labels_impl_cf = a_hat_cf.astype(int)      # (n,)
-        action_identity = np.arange(K, dtype=int)      # segment m -> action m
+        action_identity = np.arange(action_K, dtype=int)      # segment m -> action m
         for eval in eval_methods:
             value_cf = eval_classes[eval](
                 X_impl, D_impl, y_impl,
@@ -219,12 +183,11 @@ def run_single_experiment(sample_frac, pilot_frac, train_frac):
     # --------------------------------------------------
     if "t_learner" in ALGO_LIST:
         t0 = time.perf_counter()
-        K = Gamma_pilot.shape[1]
-        mu_mat_impl = _build_mu_matrix(mu_pilot_models, X_impl, K, log_y=log_y)  # (n, K)
-        a_hat = np.argmax(mu_mat_impl, axis=1).astype(int)
+        mu_mat_impl = _build_mu_matrix(mu_pilot_models, X_impl, action_K, log_y=log_y)  # (n, K)
+        a_hat_t_learner = np.argmax(mu_mat_impl, axis=1).astype(int)
 
-        seg_labels_impl = a_hat
-        action_identity = np.arange(K, dtype=int)
+        seg_labels_impl = a_hat_t_learner
+        action_identity = np.arange(action_K, dtype=int)
         for eval in eval_methods:
             value_tlearner = eval_classes[eval](
                 X_impl, D_impl, y_impl,
@@ -248,7 +211,7 @@ def run_single_experiment(sample_frac, pilot_frac, train_frac):
             X_pilot,
             D_pilot,
             y_pilot,
-            K=K,
+            K=action_K,
             model_type="mlp_reg",   
             log_y=log_y,
             random_state=seed,
@@ -257,12 +220,12 @@ def run_single_experiment(sample_frac, pilot_frac, train_frac):
         mu_mat_impl_s = predict_mu_s_learner_matrix(
             s_model,
             X_impl,
-            K=K,
+            K=action_K,
             log_y=log_y,
         )
         a_hat_s = np.argmax(mu_mat_impl_s, axis=1).astype(int)
         seg_labels_impl_s = a_hat_s
-        action_identity = np.arange(K, dtype=int)
+        action_identity = np.arange(action_K, dtype=int)
         for eval in eval_methods:
             value_s = eval_classes[eval](
                 X_impl, D_impl, y_impl,
@@ -290,8 +253,6 @@ def run_single_experiment(sample_frac, pilot_frac, train_frac):
             mu_pilot_models=mu_pilot_models,
             log_y=log_y,
             control_action=0,        # Hillstrom: 通常 0 是 control
-            use_rct_gate=True,       # 你的实验是 RCT -> 常数 gating
-            min_samples_per_group=5,
             random_state=0,
         )
 
@@ -306,7 +267,7 @@ def run_single_experiment(sample_frac, pilot_frac, train_frac):
         # 3) evaluate with your existing multi-action dual DR evaluator
         # trick: treat each action as its own "segment id"
         seg_labels_impl_x = a_hat_x
-        action_identity = np.arange(K, dtype=int)  # segment m -> action m
+        action_identity = np.arange(action_K, dtype=int)  # segment m -> action m
 
         for eval in eval_methods:
             value_x = eval_classes[eval](
@@ -329,22 +290,40 @@ def run_single_experiment(sample_frac, pilot_frac, train_frac):
         t0 = time.perf_counter()
 
         # 1) fit true DR-learner (CATE-style) on PILOT
-        dr_model = fit_dr_learner_models(
-            X_pilot=X_pilot,
-            D_pilot=D_pilot,
-            y_pilot=y_pilot,
-            mu_pilot_models=mu_pilot_models,
-            K=K,
-            baseline=0,          # Hillstrom: 0 is control
-            model_type="mlp",   # "ridge" / "mlp" / "lgbm"
-        )
+        if action_K > 2:
+            dr_model = fit_dr_learner_k_armed(
+                X=X_pilot,
+                D=D_pilot,
+                y=y_pilot,
+                mu_models=mu_pilot_models,
+                K=action_K,
+                pi=_get_propensity_per_action(D_pilot, actions_all),  # length K
+                baseline=0,          # Hillstrom: 0 is control
+                model_type="mlp",   # "ridge" / "mlp" / "lgbm"
+            )
 
-        # 2) predict individual best action on IMPLEMENTATION
-        a_hat_dr, _ = dr_learner_policy(dr_model, X_impl)
+            # 2) predict individual best action on IMPLEMENTATION
+            a_hat_dr, _ = dr_learner_policy_k_armed(dr_model, X_impl)
+        
+        elif action_K == 2:
+            pi_vec = _get_propensity_per_action(D_pilot, actions_all)  # [pi0, pi1]
+            e = float(pi_vec[1])
 
+            dr_model = fit_dr_learner_binary(
+                X=X_pilot,
+                D=D_pilot,
+                y=y_pilot,
+                mu_models=mu_pilot_models,
+                e=e,  # P(D=1)
+                model_type="mlp",   # "ridge" / "mlp" / "lgbm"
+            )
+
+            # 2) predict individual best action on IMPLEMENTATION
+            a_hat_dr, _ = dr_learner_policy_binary(dr_model, X_impl)
+            
         # 3) evaluate with your unified OPE interface
         seg_labels_impl_dr = a_hat_dr.astype(int)
-        action_identity = np.arange(K, dtype=int)
+        action_identity = np.arange(action_K, dtype=int)
 
         for eval in eval_methods:
             value_dr = eval_classes[eval](
