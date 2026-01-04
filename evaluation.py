@@ -25,7 +25,7 @@ def _infer_actions(D_impl, mu_models):
     return actions, K
 
 
-def _get_propensity_per_action(D_impl, actions, propensities=None):
+def _get_propensity_per_action(D_impl, actions, propensities):
     """
     返回每个动作 a 的行为策略概率 e_a.
 
@@ -94,6 +94,7 @@ def evaluate_policy(
         seg_labels_impl,
         mu_models,
         action,
+        log_y,
     ):
     """
     K-action 非 DR policy evaluation：
@@ -113,6 +114,13 @@ def evaluate_policy(
     actions, K = _infer_actions(D_impl, mu_models)
     mu_mat = _build_mu_matrix(mu_models, X_impl, K, log_y=log_y)  # shape (n, K)
 
+    # 边界检查：确保 segment labels 在有效范围内
+    if seg_labels_impl.max() >= len(action):
+        raise ValueError(
+            f"Segment label {seg_labels_impl.max()} exceeds action array length {len(action)}. "
+            f"Expected seg_labels in [0, {len(action)-1}]."
+        )
+    
     # 根据 segment label 得到 policy 对每个样本的 action: a_i
     a_i = action[seg_labels_impl].astype(int)        # shape (n,)
 
@@ -138,8 +146,8 @@ def evaluate_policy_dual_dr(
         seg_labels_impl,
         mu_models,
         action,
-        propensities=None,
-        log_y=True,
+        propensities,
+        log_y,
     ):
     """
     K-action dual DR policy evaluation.
@@ -181,6 +189,13 @@ def evaluate_policy_dual_dr(
     # 2. μ_a(x_i) 矩阵
     mu_mat = _build_mu_matrix(mu_models, X_impl, K, log_y=log_y)  # (n, K)
 
+    # 边界检查：确保 segment labels 在有效范围内
+    if seg_labels_impl.max() >= len(action):
+        raise ValueError(
+            f"Segment label {seg_labels_impl.max()} exceeds action array length {len(action)}. "
+            f"Expected seg_labels in [0, {len(action)-1}]."
+        )
+
     # 3. 构造 DR Γ_{i,a}
     Gamma = np.zeros((n, K), dtype=float)
     for a in actions:
@@ -217,8 +232,8 @@ def evaluate_policy_dr(
         seg_labels_impl,
         mu_models,
         action,
-        propensities=None,
-        log_y = True,
+        propensities,
+        log_y,
     ):
     """
     K-action doubly-robust off-policy evaluation.
@@ -243,6 +258,13 @@ def evaluate_policy_dr(
 
     # 2. μ_a(x_i) 矩阵
     mu_mat = _build_mu_matrix(mu_models, X_impl, K, log_y=log_y)
+
+    # 边界检查：确保 segment labels 在有效范围内
+    if seg_labels_impl.max() >= len(action):
+        raise ValueError(
+            f"Segment label {seg_labels_impl.max()} exceeds action array length {len(action)}. "
+            f"Expected seg_labels in [0, {len(action)-1}]."
+        )
 
     # 3. policy 的 action a_i = π(X_i)
     a_i = action[seg_labels_impl].astype(int)
@@ -271,8 +293,8 @@ def evaluate_policy_ipw(
         seg_labels_impl,
         mu_models, # placeholder, no use
         action,
-        propensities=None,
-        log_y = True # placeholder, no use
+        propensities,
+        log_y # placeholder, no use
     ):
     """
     纯 IPW policy evaluation，只用 y，不用 outcome model / Gamma。
@@ -294,6 +316,13 @@ def evaluate_policy_ipw(
     max_a = int(actions.max())
     K = max_a + 1
     e = _get_propensity_per_action(D_impl, actions, propensities)  # (K,)
+
+    # 边界检查：确保 segment labels 在有效范围内
+    if seg_labels_impl.max() >= len(action):
+        raise ValueError(
+            f"Segment label {seg_labels_impl.max()} exceeds action array length {len(action)}. "
+            f"Expected seg_labels in [0, {len(action)-1}]."
+        )
 
     # 2. policy 决策 a_i
     a_i = action[seg_labels_impl].astype(int)
@@ -322,7 +351,8 @@ def evaluate_policy_for_random_baseline(
         X_impl, D_impl, y_impl,
         a_random,
         mu_models,
-        propensities=None,
+        propensities,
+        log_y,
     ):
     """
     Evaluate an individual-level random policy using multi-action dual DR estimator.

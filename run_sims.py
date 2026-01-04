@@ -13,8 +13,7 @@ import pickle
 import os
 import time
 
-from data_utils import split_seg_train_test
-from data_utils import load_hillstrom, prepare_pilot_impl 
+from data_utils import load_criteo, load_hillstrom, split_seg_train_test, prepare_pilot_impl
 from estimation import estimate_segment_policy
 from evaluation import evaluate_policy_dual_dr, _build_mu_matrix, evaluate_policy_dr, evaluate_policy_ipw, _get_propensity_per_action  # 已改成多 action 版
 from s_learner import fit_s_learner, predict_mu_s_learner_matrix
@@ -25,8 +24,6 @@ from causal_forest import (
             fit_multiarm_causal_forest,
             predict_best_action_multiarm,
         )
-from ot_lloyd_discrete import run_discrete_ot_lloyd_model_select
-
 
 
 from segmentation import (
@@ -60,12 +57,14 @@ def run_single_experiment(sample_frac, pilot_frac, train_frac):
     # --------------------------------------------------）
     # --------------------------------------------------
     seed = np.random.randint(0, 1_000_000)
-    X, y, D = load_hillstrom(sample_frac=sample_frac, seed=seed, target_col="spend")
+    # X, y, D = load_hillstrom(sample_frac=sample_frac, seed=seed, target_col="spend")
+    X, y, D = load_criteo(sample_frac=sample_frac, seed=seed, target_col="conversion")
 
     # --------------------------------------------------
     # 1–3. pilot + outcome models + Gamma_pilot (K-action DR)
     # --------------------------------------------------
     log_y = False
+    
     (
         X_pilot,
         X_impl,
@@ -75,7 +74,7 @@ def run_single_experiment(sample_frac, pilot_frac, train_frac):
         y_impl,
         mu_pilot_models,   # dict[a] = model_a
         Gamma_pilot,       # (N_pilot, K)
-    ) = prepare_pilot_impl(X, y, D, pilot_frac=pilot_frac, model_type="mlp_reg", log_y=log_y)
+    ) = prepare_pilot_impl(X, y, D, pilot_frac=pilot_frac, model_type="lightgbm_reg", log_y=log_y)
 
     # K 个动作（0..K-1）
     action_K = Gamma_pilot.shape[1]
@@ -98,56 +97,17 @@ def run_single_experiment(sample_frac, pilot_frac, train_frac):
 
     # storage for output
     results = {
-    "seed": int(seed),
-    "all_0":{},
-    "all_1":{},
-    "all_2":{},
-    "random":{},    
+        "seed": int(seed),
+        "random": {},
     }
+    
+    # 动态添加 "all_a" baseline 占位符（针对每个 action a）
+    for a in actions_all:
+        results[f"all_{a}"] = {}
 
     for algo in ALGO_LIST:
         results[algo] = {}
 
-
-    if "ot_lloyd" in ALGO_LIST:
-        t0 = time.perf_counter()
-
-        # 用 dual_dr 在 pilot 的 train/val 上选 best_M（你也可以换成 eval_methods 里任何一个）
-        seg_ot, _, best_M_ot, action_ot = run_discrete_ot_lloyd_model_select(
-            X_train=X_train,
-            X_val=X_val,
-            D_val=D_val,
-            y_val=y_val,
-            mu_models=mu_pilot_models,
-            K=action_K,
-            M_candidates=M_candidates,
-            eval_fn=evaluate_policy_dual_dr,   # 用它来选 M
-            log_y=log_y,
-            seed=int(seed),
-            max_iter=50,
-            use_balanced_ot=True,              # 这一步更贴近“OT”的容量约束
-            q=None,                            # None = 等分
-        )
-
-        results["ot_lloyd"]["best_M"] = int(best_M_ot)
-
-        # apply to implementation set
-        seg_labels_impl_ot = seg_ot.assign(X_impl)
-
-        for eval in eval_methods:
-            val_ot = eval_classes[eval](
-                X_impl, D_impl, y_impl,
-                seg_labels_impl_ot,
-                mu_pilot_models,
-                action_ot,          # 注意：这里 action_ot 长度 = L
-                log_y=log_y,
-            )
-            results["ot_lloyd"][eval] = float(val_ot["value_mean"])
-
-        t1 = time.perf_counter()
-        results["ot_lloyd"]["time"] = float(t1 - t0)
-
-    
     
     if "causal_forest" in ALGO_LIST:
         t0 = time.perf_counter()
@@ -168,6 +128,7 @@ def run_single_experiment(sample_frac, pilot_frac, train_frac):
                 seg_labels_impl_cf,
                 mu_pilot_models,
                 action_identity,
+                propensities=None,
                 log_y=log_y,
             )
             results["causal_forest"][f"{eval}"] = float(value_cf["value_mean"])
@@ -194,6 +155,7 @@ def run_single_experiment(sample_frac, pilot_frac, train_frac):
                 seg_labels_impl,
                 mu_pilot_models,
                 action_identity,
+                propensities=None,
                 log_y=log_y,
             )
             results["t_learner"][f"{eval}"] = float(value_tlearner["value_mean"])
@@ -232,6 +194,7 @@ def run_single_experiment(sample_frac, pilot_frac, train_frac):
                 seg_labels_impl_s,
                 mu_pilot_models,        
                 action_identity,
+                propensities=None,
                 log_y=log_y,
             )
             results["s_learner"][f"{eval}"] = float(value_s["value_mean"])
@@ -253,7 +216,7 @@ def run_single_experiment(sample_frac, pilot_frac, train_frac):
             mu_pilot_models=mu_pilot_models,
             log_y=log_y,
             control_action=0,        # Hillstrom: 通常 0 是 control
-            random_state=0,
+            random_state=seed,
         )
 
         # 2) predict individual best action on IMPLEMENTATION set
@@ -275,6 +238,7 @@ def run_single_experiment(sample_frac, pilot_frac, train_frac):
                 seg_labels_impl_x,
                 mu_pilot_models,
                 action_identity,
+                propensities=None,
                 log_y=log_y,
             )
             results["x_learner"][f"{eval}"] = float(value_x["value_mean"])  
@@ -288,7 +252,7 @@ def run_single_experiment(sample_frac, pilot_frac, train_frac):
     # --------------------------------------------------
     if "dr_learner" in ALGO_LIST:
         t0 = time.perf_counter()
-        pi_vec = _get_propensity_per_action(D_pilot, actions_all)
+        pi_vec = _get_propensity_per_action(D_pilot, actions_all, propensities=None)
         # 1) fit true DR-learner (CATE-style) on PILOT
         if action_K > 2:
             dr_model = fit_dr_learner_k_armed(
@@ -332,6 +296,7 @@ def run_single_experiment(sample_frac, pilot_frac, train_frac):
                 seg_labels_impl_dr,
                 mu_pilot_models,
                 action_identity,
+                propensities=None,
                 log_y=log_y,
             )
             results["dr_learner"][f"{eval}"] = float(value_dr["value_mean"])
@@ -346,7 +311,7 @@ def run_single_experiment(sample_frac, pilot_frac, train_frac):
     if "kmeans" in ALGO_LIST:
         t0 = time.perf_counter()
         kmeans_seg, seg_labels_pilot_kmeans, best_M_kmeans = run_kmeans_segmentation(
-            X_pilot, M_candidates=M_candidates
+            X_pilot, M_candidates=M_candidates, random_state=seed
         )
         results["kmeans"]["best_M"] = best_M_kmeans
         action_kmeans = estimate_segment_policy(
@@ -361,6 +326,7 @@ def run_single_experiment(sample_frac, pilot_frac, train_frac):
                 seg_labels_impl_kmeans,
                 mu_pilot_models,
                 action_kmeans,
+                propensities=None,
                 log_y=log_y,
             )
             results["kmeans"][f"{eval}"] = float(value_kmeans["value_mean"])
@@ -386,6 +352,7 @@ def run_single_experiment(sample_frac, pilot_frac, train_frac):
                 y_val,
                 Gamma_val,
                 M_candidates=M_candidates,
+                random_state=seed,
             )
         )
         results["kmeans_dams"]["best_M"] = best_M_kmeans_dams
@@ -402,6 +369,7 @@ def run_single_experiment(sample_frac, pilot_frac, train_frac):
                 seg_labels_impl_kmeans_dams,
                 mu_pilot_models,
                 action_kmeans_dams,
+                propensities=None,
                 log_y=log_y,
             )
             results["kmeans_dams"][f"{eval}"] = float(value_kmeans_dams["value_mean"])
@@ -421,6 +389,7 @@ def run_single_experiment(sample_frac, pilot_frac, train_frac):
         gmm_seg, seg_labels_pilot_gmm, best_M_gmm = run_gmm_segmentation(
             X_pilot,
             M_candidates=M_candidates,
+            random_state=seed,
         )
         results["gmm"]["best_M"] = best_M_gmm
         
@@ -436,6 +405,7 @@ def run_single_experiment(sample_frac, pilot_frac, train_frac):
                 seg_labels_impl_gmm,
                 mu_pilot_models,
                 action_gmm,
+                propensities=None,
                 log_y=log_y,
             )
             results["gmm"][f"{eval}"] = float(value_gmm["value_mean"])
@@ -460,6 +430,7 @@ def run_single_experiment(sample_frac, pilot_frac, train_frac):
                 y_val,
                 Gamma_val,
                 M_candidates,
+                random_state=seed,
             )
         )
         
@@ -477,6 +448,7 @@ def run_single_experiment(sample_frac, pilot_frac, train_frac):
                 seg_labels_impl_gmm_dams,
                 mu_pilot_models,
                 action_gmm_dams,
+                propensities=None,
                 log_y=log_y,
             )
             results["gmm_dams"][f"{eval}"] = float(value_gmm_dams["value_mean"])
@@ -498,6 +470,7 @@ def run_single_experiment(sample_frac, pilot_frac, train_frac):
             D_pilot,
             y_pilot,
             M_candidates,
+            random_state=seed,
         )
         results["clr"]["best_M"] = best_M_clr
         
@@ -513,6 +486,7 @@ def run_single_experiment(sample_frac, pilot_frac, train_frac):
                 seg_labels_impl_clr,
                 mu_pilot_models,
                 action_clr,
+                propensities=None,
                 log_y=log_y,
             )
             results["clr"][f"{eval}"] = float(value_clr["value_mean"])
@@ -539,6 +513,7 @@ def run_single_experiment(sample_frac, pilot_frac, train_frac):
                 y_val,
                 Gamma_val,
                 M_candidates,
+                random_state=seed,
             )
         )
         results["clr_dams"]["best_M"] = best_M_clr_dams
@@ -554,6 +529,7 @@ def run_single_experiment(sample_frac, pilot_frac, train_frac):
                 seg_labels_impl_clr_dams,
                 mu_pilot_models,
                 action_clr_dams,
+                propensities=None,
                 log_y=log_y,
             )
             results["clr_dams"][f"{eval}"] = float(value_clr_dams["value_mean"])
@@ -605,6 +581,7 @@ def run_single_experiment(sample_frac, pilot_frac, train_frac):
                 seg_labels_impl_dast,
                 mu_pilot_models,
                 action_dast,
+                propensities=None,
                 log_y=log_y,
             )
             results["dast"][f"{eval}"] = float(value_dast["value_mean"])
@@ -650,6 +627,7 @@ def run_single_experiment(sample_frac, pilot_frac, train_frac):
                 seg_labels_impl_mst,
                 mu_pilot_models,
                 action_mst,
+                propensities=None,
                 log_y=log_y,
             )
             results["mst"][f"{eval}"] = float(value_mst["value_mean"])
@@ -697,6 +675,7 @@ def run_single_experiment(sample_frac, pilot_frac, train_frac):
                 seg_labels_impl_policy,
                 mu_pilot_models,
                 action_policy,
+                propensities=None,
                 log_y=log_y,
             )
             results["policytree"][f"{eval}"] = float(value_policy["value_mean"])
@@ -785,12 +764,12 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    pilot_frac = 0.5  # 20% data for pilot
+    pilot_frac = 0.2  # 20% data for pilot
     train_frac = 0.7  # 70% pilot for training
 
     run_multiple_experiments(
         N_sim=100,
-        sample_frac=1,
+        sample_frac=0.05,
         pilot_frac=pilot_frac,
         train_frac=train_frac,
         out_path=args.outpath,

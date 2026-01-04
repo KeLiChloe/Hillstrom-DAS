@@ -209,7 +209,7 @@ def load_criteo(sample_frac, seed, target_col):
 # =========================================================
 def prepare_pilot_impl(X, y, D, pilot_frac, model_type, log_y):
     """
-    K-action 版本 + log1p 回归稳定 heavy-tail revenue（Hillstrom 推荐 log_y=True）
+    K-action 版本
     """
     print("\n" + "=" * 60)
     print("Split & fit outcome models")
@@ -232,16 +232,25 @@ def prepare_pilot_impl(X, y, D, pilot_frac, model_type, log_y):
     else:
         y_fit = y_pilot
 
-    # ---- 2) fit μ_a models（你 outcome_model.py 不动）----
+    # ---- 2) fit μ_a models----
     mu_pilot_models = fit_mu_models(
         X_pilot,
         D_pilot,
         y_fit,
-        model_type=model_type,   # 你 benchmark 要 NN 就用这个
+        model_type=model_type,   
     )
 
     K = int(np.max(D)) + 1   # 用全数据 D，不用 D_pilot
     actions = np.arange(K, dtype=int)
+    
+    # ---- 检查所有 action 是否都有模型 ----
+    missing_actions = set(actions.tolist()) - set(mu_pilot_models.keys())
+    if missing_actions:
+        raise ValueError(
+            f"Pilot split resulted in missing actions: {sorted(missing_actions)}. "
+            f"These actions have no samples in pilot data. "
+            f"Consider increasing pilot_frac or sample_frac."
+        )
 
     N_pilot = X_pilot.shape[0]
     print(f"Detected actions: {actions.tolist()} (K={K}), log_y={log_y}")

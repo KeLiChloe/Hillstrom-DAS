@@ -78,7 +78,7 @@ class GMMSeg(BaseSegmentation):
 # =========================================================
 # 2. KMeans segmentation + K 选择
 # =========================================================
-def run_kmeans_segmentation(X_pilot, M_candidates):
+def run_kmeans_segmentation(X_pilot, M_candidates, random_state):
     print("\n" + "=" * 60)
     print("KMeans - selecting optimal K")
     print("=" * 60)
@@ -88,7 +88,7 @@ def run_kmeans_segmentation(X_pilot, M_candidates):
     best_seg = None
 
     for M in M_candidates:
-        seg = KMeansSeg(M)
+        seg = KMeansSeg(M, random_state=random_state)
         seg.fit(X_pilot)
 
         score = kmeans_silhouette_score(seg_model=seg, X_pilot=X_pilot)
@@ -107,7 +107,8 @@ def run_kmeans_dams_segmentation(X_pilot,
                                  X_train, D_train, y_train,
                                  X_val, D_val, y_val,
                                  Gamma_val,
-                                 M_candidates):
+                                 M_candidates,
+                                 random_state):
     print("\n" + "=" * 60)
     print("KMeans_DAMS - selecting optimal K")
     print("=" * 60)
@@ -116,7 +117,7 @@ def run_kmeans_dams_segmentation(X_pilot,
     best_score = -np.inf
 
     for M in M_candidates:
-        seg = KMeansSeg(M)
+        seg = KMeansSeg(M, random_state=random_state)
         seg.fit(X_train)
         action = estimate_segment_policy(
             X_train, y_train, D_train, seg.assign(X_train)
@@ -135,7 +136,7 @@ def run_kmeans_dams_segmentation(X_pilot,
 
     print(f"\n✓ KMeans_DAMS: selected M = {best_M} with score = {best_score:.4f}\n")
 
-    final_seg = KMeansSeg(best_M)
+    final_seg = KMeansSeg(best_M, random_state=random_state)
     final_seg.fit(X_pilot)
     seg_labels_pilot = final_seg.assign(X_pilot)
 
@@ -146,7 +147,7 @@ def run_kmeans_dams_segmentation(X_pilot,
 # =========================================================
 # 3. GMM segmentation + BIC 选 K
 # =========================================================
-def run_gmm_segmentation(X_pilot, M_candidates):
+def run_gmm_segmentation(X_pilot, M_candidates, random_state):
     print("\n" + "=" * 60)
     print("STEP 4b: GMM - selecting optimal M via BIC")
     print("=" * 60)
@@ -156,7 +157,7 @@ def run_gmm_segmentation(X_pilot, M_candidates):
     best_seg = None
 
     for M in M_candidates:
-        seg = GMMSeg(M)
+        seg = GMMSeg(M, random_state=random_state)
         seg.fit(X_pilot)
 
         bic = seg.model.bic(X_pilot)
@@ -176,7 +177,8 @@ def run_gmm_dams_segmentation(X_pilot,
                              X_train, D_train, y_train,
                              X_val, D_val, y_val,
                                 Gamma_val,
-                              M_candidates):
+                              M_candidates,
+                              random_state):
     print("\n" + "=" * 60)
     print("GMM_DAMS - selecting optimal K")
     print("=" * 60)
@@ -186,7 +188,7 @@ def run_gmm_dams_segmentation(X_pilot,
     best_score = -np.inf
 
     for M in M_candidates:
-        seg = GMMSeg(M)
+        seg = GMMSeg(M, random_state=random_state)
         seg.fit(X_train)
         action = estimate_segment_policy(
             X_train, y_train, D_train, seg.assign(X_train)
@@ -207,7 +209,7 @@ def run_gmm_dams_segmentation(X_pilot,
 
     print(f"\n✓ GMM_DAMS: selected M = {best_M} with score = {best_score:.4f}\n")
 
-    final_seg = GMMSeg(best_M)
+    final_seg = GMMSeg(best_M, random_state=random_state)
     final_seg.fit(X_pilot)
     seg_labels_pilot = final_seg.assign(X_pilot)
 
@@ -347,6 +349,7 @@ def run_clr_segmentation(
     D_pilot,
     y_pilot,
     M_candidates,
+    random_state,
 ):
     best_M = None
     best_score = np.inf
@@ -356,6 +359,7 @@ def run_clr_segmentation(
     for M in M_candidates:
         seg = CLRSeg(
             n_segments=M,
+            random_state=random_state,
         )
         seg.fit(X_pilot, D_pilot, y_pilot)
         bic = clr_bic_score(seg, X_pilot, D_pilot, y_pilot)
@@ -374,7 +378,8 @@ def run_clr_dams_segmentation(X_pilot, D_pilot,y_pilot,
                                 X_train, D_train, y_train,
                                 X_val, D_val, y_val,
                                 Gamma_val,
-                              M_candidates, ):
+                              M_candidates,
+                              random_state):
     print("\n" + "=" * 60)
     print("CLR_DAMS - selecting optimal K")
     print("=" * 60)
@@ -387,6 +392,7 @@ def run_clr_dams_segmentation(X_pilot, D_pilot,y_pilot,
     for M in M_candidates:
         seg = CLRSeg(
             n_segments=M,
+            random_state=random_state,
         )
         seg.fit(X_train, D_train, y_train)
         action = estimate_segment_policy(
@@ -407,6 +413,7 @@ def run_clr_dams_segmentation(X_pilot, D_pilot,y_pilot,
 
     final_seg = CLRSeg(
         n_segments=best_M,
+        random_state=random_state,
     )
     final_seg.fit(X_pilot, D_pilot, y_pilot)
     seg_labels_pilot = final_seg.assign(X_pilot)
