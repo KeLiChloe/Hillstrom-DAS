@@ -1,9 +1,9 @@
 from sklearn.model_selection import train_test_split
-from sklift.datasets import fetch_hillstrom
+from sklift.datasets import fetch_hillstrom, fetch_criteo, fetch_lenta
 from outcome_model import fit_mu_models, predict_mu
 import numpy as np
+import pandas as pd
 from sklearn.preprocessing import StandardScaler
-
 
 def split_pilot_impl(X, D, y, pilot_frac, random_state=0):
     """
@@ -89,13 +89,6 @@ def split_seg_train_test(X_pilot, D_pilot, y_pilot, Gamma_pilot, test_frac):
     return (X_tr, D_tr, y_tr, Gamma_tr), (X_te, D_te, y_te, Gamma_te)
 
 
-import numpy as np
-import pandas as pd
-from sklift.datasets import fetch_hillstrom
-import numpy as np
-import pandas as pd
-from sklearn.preprocessing import StandardScaler
-from sklift.datasets import fetch_hillstrom, fetch_criteo
 
 def load_hillstrom(sample_frac, seed, target_col):
     np.random.seed(seed)
@@ -112,7 +105,7 @@ def load_hillstrom(sample_frac, seed, target_col):
     indices = np.random.choice(len(X), size=n_samples, replace=False)
     X, y, D = X.iloc[indices].copy(), y.iloc[indices].copy(), D.iloc[indices].copy()
 
-    # ====== REMOVE history_segment (to avoid parsing strings) ======
+    # Remove history_segment (to avoid parsing strings)
     if "history_segment" in X.columns:
         X = X.drop(columns=["history_segment"])
 
@@ -201,6 +194,84 @@ def load_criteo(sample_frac, seed, target_col):
     # scale X features
     # scaler = StandardScaler()
     # X_np = scaler.fit_transform(X_np)
+    
+    return X_np, y_np, D_np
+
+
+def load_lenta(sample_frac, seed, target_col=None):
+    """
+    Load Lenta.ru dataset from sklift.
+    
+    Dataset: Russian news website, binary treatment (email/no email)
+    Target: Fixed binary outcome (conversion)
+    Treatment: Binary (0=control, 1=treatment)
+    Size: ~200k samples
+    Features: Categorical + numerical
+    
+    Parameters
+    ----------
+    sample_frac : float
+        Fraction of data to sample (0, 1]
+    seed : int
+        Random seed
+    target_col : str
+        Ignored for compatibility. Lenta has only one target.
+    
+    Returns
+    -------
+    X_np, y_np, D_np : numpy arrays
+    """
+    np.random.seed(seed)
+    print("Loading Lenta.ru dataset ...")
+    print("(Using random seed =", seed, ")")
+    
+    # fetch_lenta 正确用法
+    X, y, D = fetch_lenta(return_X_y_t=True)
+    
+    # ====== 处理 treatment 列（可能是字符串类型）======
+    if D.dtype == 'object' or D.dtype.name == 'category':
+        print(f"Converting treatment from strings: {D.unique()}")
+        # Lenta: "test" -> 1, "control" -> 0
+        D = D.map({'test': 1, 'control': 0})
+        if D.isnull().any():
+            raise ValueError(f"Unknown treatment values found after mapping: {D[D.isnull()].unique()}")
+    
+    # 子采样
+    n_samples = int(len(X) * sample_frac)
+    indices = np.random.choice(len(X), size=n_samples, replace=False)
+    X, y, D = X.iloc[indices].copy(), y.iloc[indices].copy(), D.iloc[indices].copy()
+    
+    # 打印基本信息
+    print(f"Positive ratio of y: {y.mean():.6f}")
+    print(f"Treatment ratio (D=1): {D.mean():.6f}")
+    
+    # ====== 处理 categorical features ======
+    cat_cols = X.select_dtypes(include=["object", "category"]).columns.tolist()
+    if len(cat_cols) > 0:
+        print(f"One-hot encoding {len(cat_cols)} categorical features: {cat_cols}")
+        X = pd.get_dummies(X, columns=cat_cols, drop_first=True)
+    
+    # ====== Standardize numerical features ======
+    scaler = StandardScaler()
+    X_scaled = scaler.fit_transform(X.values.astype(float))
+    
+    # reset index
+    y = y.reset_index(drop=True)
+    D = D.reset_index(drop=True)
+    
+    print("\n" + "=" * 60)
+    print("DATA EXPLORATION (Lenta)")
+    print("=" * 60)
+    print("\n Basic Information:")
+    print(f"   X shape: {X_scaled.shape} (n={X_scaled.shape[0]}, d={X_scaled.shape[1]})")
+    print(f"   Unique treatments: {sorted(D.unique())}")
+    print(f"   Outcome mean (y): {y.mean():.6f}")
+    print(f"   Treatment assignment (D=1): {D.mean():.6f}")
+    
+    # convert to numpy
+    X_np = X_scaled.astype(float)
+    y_np = y.values.astype(float)
+    D_np = D.values.astype(int)
     
     return X_np, y_np, D_np
 

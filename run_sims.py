@@ -13,7 +13,11 @@ import pickle
 import os
 import time
 
-from data_utils import load_criteo, load_hillstrom, split_seg_train_test, prepare_pilot_impl
+from data_utils import (
+    load_criteo, load_hillstrom, load_lenta,
+    split_seg_train_test, prepare_pilot_impl
+)
+
 from estimation import estimate_segment_policy
 from evaluation import evaluate_policy_dual_dr, _build_mu_matrix, evaluate_policy_dr, evaluate_policy_ipw, _get_propensity_per_action  # 已改成多 action 版
 from s_learner import fit_s_learner, predict_mu_s_learner_matrix
@@ -53,12 +57,24 @@ eval_classes = {
 M_candidates = [2, 3, 4, 5, 6, 7, 8]
 
 
-def run_single_experiment(sample_frac, pilot_frac, train_frac):
-    # --------------------------------------------------）
+def run_single_experiment(sample_frac, pilot_frac, train_frac, dataset, target_col):
+    # --------------------------------------------------
+    # Load dataset based on parameter
     # --------------------------------------------------
     seed = np.random.randint(0, 1_000_000)
-    # X, y, D = load_hillstrom(sample_frac=sample_frac, seed=seed, target_col="spend")
-    X, y, D = load_criteo(sample_frac=sample_frac, seed=seed, target_col="conversion")
+    
+    # 根据 dataset 参数选择加载函数
+    dataset_loaders = {
+        "hillstrom": load_hillstrom,
+        "criteo": load_criteo,
+        "lenta": load_lenta,
+    }
+    
+    if dataset not in dataset_loaders:
+        raise ValueError(f"Unknown dataset: {dataset}. Choose from {list(dataset_loaders.keys())}")
+    
+    loader = dataset_loaders[dataset]
+    X, y, D = loader(sample_frac=sample_frac, seed=seed, target_col=target_col)
 
     # --------------------------------------------------
     # 1–3. pilot + outcome models + Gamma_pilot (K-action DR)
@@ -74,7 +90,7 @@ def run_single_experiment(sample_frac, pilot_frac, train_frac):
         y_impl,
         mu_pilot_models,   # dict[a] = model_a
         Gamma_pilot,       # (N_pilot, K)
-    ) = prepare_pilot_impl(X, y, D, pilot_frac=pilot_frac, model_type="lightgbm_reg", log_y=log_y)
+    ) = prepare_pilot_impl(X, y, D, pilot_frac=pilot_frac, model_type="logistic", log_y=log_y)
 
     # K 个动作（0..K-1）
     action_K = Gamma_pilot.shape[1]
@@ -706,6 +722,8 @@ def run_multiple_experiments(
     pilot_frac,
     train_frac,
     out_path,
+    dataset,
+    target_col,
 ):
     experiment_data = {
         "params": {
@@ -713,12 +731,15 @@ def run_multiple_experiments(
             "pilot_frac": pilot_frac,
             "train_frac": train_frac,
             "N_sim": N_sim,
+            "dataset": dataset,
+            "target_col": target_col,
         },
         "results": [],
     }
 
     print("\n" + "=" * 60)
     print(f"STARTING SIMULATIONS: N_sim = {N_sim}")
+    print(f"Dataset: {dataset}, Target: {target_col}")
     print("=" * 60)
 
     for s in range(N_sim):
@@ -727,6 +748,8 @@ def run_multiple_experiments(
                 sample_frac=sample_frac,
                 pilot_frac=pilot_frac,
                 train_frac=train_frac,
+                dataset=dataset,
+                target_col=target_col,
             )
 
             experiment_data["results"].append(res)
@@ -761,6 +784,19 @@ if __name__ == "__main__":
         default=None,
         help="Output pkl path",
     )
+    
+    parser.add_argument(
+        "--dataset",
+        type=str,
+        choices=["hillstrom", "criteo", "lenta"],
+        help="Dataset to use (default: criteo)",
+    )
+    
+    parser.add_argument(
+        "--target",
+        type=str,
+        help="Target column",
+    )
 
     args = parser.parse_args()
 
@@ -773,4 +809,6 @@ if __name__ == "__main__":
         pilot_frac=pilot_frac,
         train_frac=train_frac,
         out_path=args.outpath,
+        dataset=args.dataset,
+        target_col=args.target,
     )

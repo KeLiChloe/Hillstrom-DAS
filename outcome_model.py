@@ -1,7 +1,7 @@
 # outcome_model.py
 
 import numpy as np
-from sklearn.linear_model import LinearRegression
+from sklearn.linear_model import LinearRegression, LogisticRegression
 from sklearn.neural_network import MLPRegressor
 from lightgbm import LGBMRegressor
 
@@ -49,6 +49,9 @@ def fit_mu_models(X, D, y, model_type):
     def make_model():
         if model_type == "linear":
             return LinearRegression()
+        
+        elif model_type == "logistic":
+            return LogisticRegression(max_iter=300)
 
         elif model_type == "mlp_reg":
             return MLPRegressor(
