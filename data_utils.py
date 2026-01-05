@@ -105,6 +105,23 @@ def load_hillstrom(sample_frac, seed, target_col):
     indices = np.random.choice(len(X), size=n_samples, replace=False)
     X, y, D = X.iloc[indices].copy(), y.iloc[indices].copy(), D.iloc[indices].copy()
 
+    # ====== 移除包含空值的行 ======
+    # 先重置索引，确保对齐
+    X = X.reset_index(drop=True)
+    y = y.reset_index(drop=True)
+    D = D.reset_index(drop=True)
+    
+    # 创建掩码并过滤
+    mask_notnull = X.notnull().all(axis=1) & y.notnull() & D.notnull()
+    n_removed = (~mask_notnull).sum()
+    if n_removed > 0:
+        print(f"Removing {n_removed} rows with null values ({n_removed/len(X)*100:.2f}%)")
+        X = X[mask_notnull].reset_index(drop=True)
+        y = y[mask_notnull].reset_index(drop=True)
+        D = D[mask_notnull].reset_index(drop=True)
+    
+    print(f"Final sample size: {len(X)}")
+
     # Remove history_segment (to avoid parsing strings)
     if "history_segment" in X.columns:
         X = X.drop(columns=["history_segment"])
@@ -158,14 +175,26 @@ def load_criteo(sample_frac, seed, target_col):
 
     n_samples = int(len(X) * sample_frac)
     indices = np.random.choice(len(X), size=n_samples, replace=False)
-    X, y, D = X.iloc[indices], y.iloc[indices], D.iloc[indices]
+    X, y, D = X.iloc[indices].copy(), y.iloc[indices].copy(), D.iloc[indices].copy()
     
-    # print posit=iive ratio of y
-    print(f"Positive ratio of y: {y.mean():.6f}")
-
+    # ====== 移除包含空值的行 ======
+    # 先重置索引，确保对齐
     X = X.reset_index(drop=True)
     y = y.reset_index(drop=True)
     D = D.reset_index(drop=True)
+    
+    # 创建掩码并过滤
+    mask_notnull = X.notnull().all(axis=1) & y.notnull() & D.notnull()
+    n_removed = (~mask_notnull).sum()
+    if n_removed > 0:
+        print(f"Removing {n_removed} rows with null values ({n_removed/len(X)*100:.2f}%)")
+        X = X[mask_notnull].reset_index(drop=True)
+        y = y[mask_notnull].reset_index(drop=True)
+        D = D[mask_notnull].reset_index(drop=True)
+    
+    # 打印基本信息
+    print(f"Final sample size: {len(X)}")
+    print(f"Positive ratio of y: {y.mean():.6f}")
 
     print("\n" + "=" * 60)
     print("DATA EXPLORATION")
@@ -241,7 +270,23 @@ def load_lenta(sample_frac, seed, target_col=None):
     indices = np.random.choice(len(X), size=n_samples, replace=False)
     X, y, D = X.iloc[indices].copy(), y.iloc[indices].copy(), D.iloc[indices].copy()
     
+    # ====== 移除包含空值的行 ======
+    # 先重置索引，确保对齐
+    X = X.reset_index(drop=True)
+    y = y.reset_index(drop=True)
+    D = D.reset_index(drop=True)
+    
+    # 创建掩码并过滤
+    mask_notnull = X.notnull().all(axis=1) & y.notnull() & D.notnull()
+    n_removed = (~mask_notnull).sum()
+    if n_removed > 0:
+        print(f"Removing {n_removed} rows with null values ({n_removed/len(X)*100:.2f}%)")
+        X = X[mask_notnull].reset_index(drop=True)
+        y = y[mask_notnull].reset_index(drop=True)
+        D = D[mask_notnull].reset_index(drop=True)
+    
     # 打印基本信息
+    print(f"Final sample size: {len(X)}")
     print(f"Positive ratio of y: {y.mean():.6f}")
     print(f"Treatment ratio (D=1): {D.mean():.6f}")
     
