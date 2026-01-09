@@ -184,7 +184,7 @@ def run_single_experiment(sample_frac, pilot_frac, train_frac, dataset, target_c
         seg_labels_impl_t = a_hat_t
         action_identity = np.arange(action_K, dtype=int)
         # analyzing t_learner results
-        print(f" Predicted actions distribution: {np.bincount(a_hat_t)}")
+        print(f"T-learner: Predicted actions distribution: {np.bincount(a_hat_t)}")
 
         for eval in eval_methods:
             value_t = eval_classes[eval](
