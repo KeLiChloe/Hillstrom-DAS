@@ -76,8 +76,6 @@ def _build_mu_matrix(mu_models, X_impl, K, log_y):
 
     for a, model in mu_models.items():
         a_int = int(a)
-        if a_int < 0 or a_int >= K:
-            continue
         pred = predict_mu(model, X_impl)
         if log_y:
             pred = np.expm1(pred)
