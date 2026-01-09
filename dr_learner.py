@@ -11,7 +11,7 @@ def _make_regressor(model_type: str):
     model_type = model_type.lower()
     if model_type == "ridge":
         return Ridge(alpha=1.0)
-    if model_type == "mlp":
+    if model_type == "mlp_reg":
         return MLPRegressor(
             hidden_layer_sizes=(128, 64),
             activation="relu",
@@ -19,7 +19,7 @@ def _make_regressor(model_type: str):
             early_stopping=True,
             random_state=0,
         )
-    if model_type == "lgbm":
+    if model_type == "lightgbm_reg":
         return LGBMRegressor(
             n_estimators=400,
             learning_rate=0.03,

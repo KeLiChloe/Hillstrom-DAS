@@ -43,7 +43,7 @@ from segmentation import (
 )
 
 # 你目前只用 dual_dr
-ALGO_LIST = ["causal_forest", "dast", "mst", "clr", "kmeans", "gmm", "t_learner", "x_learner", "s_learner", "dr_learner"] 
+ALGO_LIST = ["causal_forest", "dast", "mst", "clr", "kmeans", "gmm", "t_learner", "s_learner", "x_learner", "dr_learner"] #
 # ALGO_LIST = ["kmeans", "kmeans_dams", "gmm", "gmm_dams", "clr", "clr_dams", "dast"]
 
 eval_methods = ["dr", "dual_dr", "ipw"]
@@ -190,7 +190,7 @@ def run_single_experiment(sample_frac, pilot_frac, train_frac, dataset, target_c
             D_pilot,
             y_pilot,
             K=action_K,
-            model_type="mlp_reg",   
+            model_type="mlp_reg",    # "ridge" / "mlp_reg" / "lightgbm_reg"
             log_y=log_y,
             random_state=seed,
         )
@@ -279,8 +279,8 @@ def run_single_experiment(sample_frac, pilot_frac, train_frac, dataset, target_c
                 pi=pi_vec,  # length K
                 baseline=0,          # Hillstrom: 0 is control
                 n_folds=3,
-                mu_model_type="mlp",   # "ridge" / "mlp" / "lgbm"
-                tau_model_type="mlp",
+                mu_model_type="mlp_reg",   # "ridge" / "mlp_reg" / "lightgbm_reg"
+                tau_model_type="mlp_reg",
             )
 
             # 2) predict individual best action on IMPLEMENTATION
@@ -295,8 +295,8 @@ def run_single_experiment(sample_frac, pilot_frac, train_frac, dataset, target_c
 
                 e=e,  # P(D=1)
                 n_folds=3,
-                mu_model_type="mlp",   # "ridge" / "mlp" / "lgbm"
-                tau_model_type="mlp",
+                mu_model_type="mlp_reg",   # "ridge" / "mlp_reg" / "lightgbm_reg"
+                tau_model_type="mlp_reg",
             )
 
             # 2) predict individual best action on IMPLEMENTATION
