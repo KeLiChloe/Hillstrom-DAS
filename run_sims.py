@@ -91,7 +91,7 @@ def run_single_experiment(sample_frac, pilot_frac, train_frac, dataset, target_c
         y_impl,
         mu_pilot_models,   # dict[a] = model_a
         Gamma_pilot,       # (N_pilot, K)
-    ) = prepare_pilot_impl(X, y, D, pilot_frac=pilot_frac, model_type="logistic", log_y=log_y)
+    ) = prepare_pilot_impl(X, y, D, pilot_frac=pilot_frac, model_type="lightgbm_reg", log_y=log_y)
 
     # K 个动作（0..K-1）
     action_K = Gamma_pilot.shape[1]
@@ -820,14 +820,19 @@ if __name__ == "__main__":
         help="Target column",
     )
 
+    parser.add_argument(
+        "--sample_frac",
+        type=float,
+    )
+
     args = parser.parse_args()
 
-    pilot_frac = 0.2  # 20% data for pilot
+    pilot_frac = 0.5  # 20% data for pilot
     train_frac = 0.7  # 70% pilot for training
 
     run_multiple_experiments(
         N_sim=100,
-        sample_frac=0.05,
+        sample_frac=args.sample_frac,
         pilot_frac=pilot_frac,
         train_frac=train_frac,
         out_path=args.outpath,

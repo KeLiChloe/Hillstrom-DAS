@@ -57,7 +57,7 @@ def fit_mu_models(X, D, y, model_type):
             return MLPRegressor(
                 hidden_layer_sizes=(64, 32),
                 activation="relu",
-                max_iter=300,
+                max_iter=10000,
                 early_stopping=True,
             )
 
