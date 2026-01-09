@@ -20,6 +20,7 @@ from data_utils import (
 
 from estimation import estimate_segment_policy
 from evaluation import evaluate_policy_dual_dr, _build_mu_matrix, evaluate_policy_dr, evaluate_policy_ipw, _get_propensity_per_action  # 已改成多 action 版
+from t_learner import fit_t_learner, predict_mu_t_learner_matrix
 from s_learner import fit_s_learner, predict_mu_s_learner_matrix
 from dr_learner import ( dr_learner_policy_binary, fit_dr_learner_binary,
                            dr_learner_policy_k_armed,  fit_dr_learner_k_armed)
@@ -158,29 +159,45 @@ def run_single_experiment(sample_frac, pilot_frac, train_frac, dataset, target_c
     # --------------------------------------------------
     # ---- Direct argmax benchmark (T-learner) ----
     # --------------------------------------------------
+    
     if "t_learner" in ALGO_LIST:
         t0 = time.perf_counter()
-        mu_mat_impl = _build_mu_matrix(mu_pilot_models, X_impl, action_K, log_y=log_y)  # (n, K)
-        a_hat_t_learner = np.argmax(mu_mat_impl, axis=1).astype(int)
 
-        seg_labels_impl = a_hat_t_learner
+        # ========== fit ==========
+        t_models = fit_t_learner(
+            X_pilot,
+            D_pilot,
+            y_pilot,
+            K=action_K,
+            model_type="mlp_reg",    # "ridge" / "mlp_reg" / "lightgbm_reg"
+            log_y=log_y,
+            random_state=seed,
+        )
+
+        mu_mat_impl_t = predict_mu_t_learner_matrix(
+            t_models,
+            X_impl,
+            log_y=log_y,
+        )
+
+        a_hat_t = np.argmax(mu_mat_impl_t, axis=1).astype(int)
+        seg_labels_impl_t = a_hat_t
         action_identity = np.arange(action_K, dtype=int)
-        # analyzing the results of t_learner
-        print("T-learner - predicted actions distribution:", np.bincount(a_hat_t_learner))
-        print("T-learner - predicted actions mean:", a_hat_t_learner.mean())
+
         for eval in eval_methods:
-            value_tlearner = eval_classes[eval](
+            value_t = eval_classes[eval](
                 X_impl, D_impl, y_impl,
-                seg_labels_impl,
+                seg_labels_impl_t,
                 mu_pilot_models,
                 action_identity,
                 propensities=None,
                 log_y=log_y,
             )
-            results["t_learner"][f"{eval}"] = float(value_tlearner["value_mean"])
-        
+            results["t_learner"][f"{eval}"] = float(value_t["value_mean"])
+
         t1 = time.perf_counter()
-        results["t_learner"]["time"]= float(t1 - t0)   
+        results["t_learner"]["time"] = float(t1 - t0)
+    
         
     
     # --------------------------------------------------
