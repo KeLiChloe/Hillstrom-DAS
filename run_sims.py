@@ -126,35 +126,6 @@ def run_single_experiment(sample_frac, pilot_frac, train_frac, dataset, target_c
         results[algo] = {}
 
     
-    if "causal_forest" in ALGO_LIST:
-        t0 = time.perf_counter()
-        cf_model = fit_multiarm_causal_forest(
-            X_pilot,
-            y_pilot,
-            D_pilot,
-            action_levels=np.arange(action_K),   # 确保列顺序与 0..K-1 对齐
-            num_trees=100,
-            seed=int(seed),
-        )
-        a_hat_cf, _ = predict_best_action_multiarm(cf_model, X_impl)
-        seg_labels_impl_cf = a_hat_cf.astype(int)      # (n,)
-        action_identity = np.arange(action_K, dtype=int)      # segment m -> action m
-        for eval in eval_methods:
-            value_cf = eval_classes[eval](
-                X_impl, D_impl, y_impl,
-                seg_labels_impl_cf,
-                mu_pilot_models,
-                action_identity,
-                propensities=None,
-                log_y=log_y,
-            )
-            results["causal_forest"][f"{eval}"] = float(value_cf["value_mean"])
-           
-            
-        t1 = time.perf_counter()
-        results["causal_forest"]["time"] = float(t1 - t0)
-    
-        print("causal forest finished")
     
     # --------------------------------------------------
     # ---- Direct argmax benchmark (T-learner) ----
@@ -341,6 +312,37 @@ def run_single_experiment(sample_frac, pilot_frac, train_frac, dataset, target_c
 
         t1 = time.perf_counter()
         results["dr_learner"]["time"] = float(t1 - t0)
+    
+    if "causal_forest" in ALGO_LIST:
+        t0 = time.perf_counter()
+        cf_model = fit_multiarm_causal_forest(
+            X_pilot,
+            y_pilot,
+            D_pilot,
+            action_levels=np.arange(action_K),   # 确保列顺序与 0..K-1 对齐
+            num_trees=10,
+            seed=int(seed),
+        )
+        a_hat_cf, _ = predict_best_action_multiarm(cf_model, X_impl)
+        seg_labels_impl_cf = a_hat_cf.astype(int)      # (n,)
+        action_identity = np.arange(action_K, dtype=int)      # segment m -> action m
+        for eval in eval_methods:
+            value_cf = eval_classes[eval](
+                X_impl, D_impl, y_impl,
+                seg_labels_impl_cf,
+                mu_pilot_models,
+                action_identity,
+                propensities=None,
+                log_y=log_y,
+            )
+            results["causal_forest"][f"{eval}"] = float(value_cf["value_mean"])
+           
+            
+        t1 = time.perf_counter()
+        results["causal_forest"]["time"] = float(t1 - t0)
+    
+        print("causal forest finished")
+    
 
 
     # --------------------------------------------------
