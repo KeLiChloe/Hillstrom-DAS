@@ -11,7 +11,7 @@ from matplotlib.lines import Line2D
 # ==========================================
 # 0. I/O
 # ==========================================
-PKL_PATH = "exp_results_hillstrom/main/exp3.pkl"
+PKL_PATH = "exp_results_hillstrom/conversion/exp0.pkl"
 FIG_DIR = "figures"
 os.makedirs(FIG_DIR, exist_ok=True)
 
@@ -271,7 +271,7 @@ for EV in eval_methods:
     ax.axvline(0, color="#E40606", linestyle="--", linewidth=1.6, alpha=0.8)
 
     ax.set_xlabel(
-        "Averaged DAS Improvement (%) on Revenue Over Comparators",
+        "Averaged DAS Improvement (%) Over Comparators",
         fontweight="bold",
         labelpad=12,
     )
@@ -286,7 +286,7 @@ for EV in eval_methods:
     }
 
     ax.set_title(
-        f"Averaged DAS Improvement (%) — {title_map.get(EV, EV)} (Runs={n_sims})",
+        f"Averaged DAS Improvement (%) (Runs={n_sims})",
         fontweight="bold",
         pad=18,
         fontsize=16,
@@ -312,7 +312,7 @@ for EV in eval_methods:
     ]
     ax.legend(
         handles=legend_handles,
-        loc="lower right",
+        loc="best",
         frameon=True,
         framealpha=0.95,
         edgecolor="#E0E0E0",
