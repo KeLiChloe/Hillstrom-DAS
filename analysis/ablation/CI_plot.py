@@ -140,7 +140,7 @@ ax.axvline(0, color="#183BD8", linestyle='--', linewidth=1.6, alpha=0.8)
 
 
 # 轴标题
-ax.set_xlabel('Averaged DAST Improvement (%)', fontweight='bold', labelpad=12)
+ax.set_xlabel('Averaged DAS Improvement (%)', fontweight='bold', labelpad=12)
 
 ax.invert_yaxis()
 sns.despine(left=True, top=True, right=True)
@@ -150,7 +150,7 @@ sns.despine(left=True, top=True, right=True)
 # 1. 调整主标题位置
 # y=1.12: 将标题垂直位置手动设定在轴上方 1.12 倍处 (您可以根据需要微调这个数字，比如 1.15)
 # pad=...: pad 参数此时主要影响标题边框(如果有)的间距，有了 y 参数后，位置主要由 y 决定
-ax.set_title(f'Averaged DAST Improvement (%) on Profits with 95% CI (Runs={n_sims})', 
+ax.set_title(f'Averaged DAS Improvement (%) on Profits with 95% CI (Runs={n_sims})', 
              fontweight='bold', 
              pad=20,          # 如果用了 y，pad 可以稍微改小或者保持，主要靠 y 控制绝对位置
              fontsize=16, 
@@ -158,7 +158,7 @@ ax.set_title(f'Averaged DAST Improvement (%) on Profits with 95% CI (Runs={n_sim
 
 # 2. 调整 "Higher is Better" 标注位置
 # 将 xy 的 y 坐标从原来的 1.02 改为 1.06 (或者更高)，让它跟着标题一起往上走
-ax.annotate('Positive values (>0%) indicate DAST outperforms other methods', 
+ax.annotate('Positive values (>0%) indicate DAS outperforms other methods', 
             xy=(0.5, 1.06),             # <--- 【核心修改】：将 1.02 改为 1.06 (往上挪)
             xycoords='axes fraction',
             fontsize=12, fontweight='bold', color='#333333',

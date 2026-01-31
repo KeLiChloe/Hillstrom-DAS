@@ -26,7 +26,7 @@ def estimate_segment_policy(X, y, D, seg_labels):
 
     Returns
     -------
-    action : np.ndarray, shape (M,)
+    action_M : np.ndarray, shape (M,)
         Recommended action for each segment m, where M = 1 + max(seg_labels).
         action[m] ∈ unique(D)
     """
@@ -35,7 +35,7 @@ def estimate_segment_policy(X, y, D, seg_labels):
     seg_labels = np.asarray(seg_labels)
 
     M = int(seg_labels.max() + 1)
-    action = np.zeros(M, dtype=int)
+    action_M = np.zeros(M, dtype=int)
 
     actions = np.unique(D)
 
@@ -43,7 +43,7 @@ def estimate_segment_policy(X, y, D, seg_labels):
         idx_m = (seg_labels == m)
         if not np.any(idx_m):
             # 理论上不应该发生：该 segment 没有样本，随便给一个 action
-            action[m] = np.random.choice(actions)
+            action_M[m] = np.random.choice(actions)
             continue
 
         D_seg = D[idx_m]
@@ -53,14 +53,16 @@ def estimate_segment_policy(X, y, D, seg_labels):
         for a in actions:
             mask_a = (D_seg == a)
             if mask_a.sum() == 0:
-                est_means.append(np.nan)
+                raise ValueError(
+                    f"No samples for segment {m} and action {a}. "
+                    "Cannot estimate mean outcome."
+                )
             else:
                 est_means.append(y_seg[mask_a].mean())
 
         est_means = np.array(est_means)
 
-        valid_mask = ~np.isnan(est_means)
-        best_a = actions[valid_mask][np.argmax(est_means[valid_mask])]
-        action[m] = int(best_a)
+        best_a = actions[np.argmax(est_means)]
+        action_M[m] = int(best_a)
 
-    return action
+    return action_M

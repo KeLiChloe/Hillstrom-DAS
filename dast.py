@@ -121,8 +121,7 @@ class DASTree:
 
         if len(current_leaves) <= M:
             print(
-                f"Warning: current leaf count {len(current_leaves)} <= target M={M}. "
-                "No pruning performed."
+                f"Warning: current leaf count {len(current_leaves)} <= target M={M}. No pruning performed."
             )
             # 仍然给叶子 assign segment_id
             self.leaf_nodes = current_leaves

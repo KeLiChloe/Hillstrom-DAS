@@ -11,7 +11,7 @@ from matplotlib.lines import Line2D
 # ==========================================
 # 0. I/O
 # ==========================================
-PKL_PATH = "exp_results/main/exp3_dr_correct.pkl"
+PKL_PATH = "exp_results_hillstrom/main/exp3.pkl"
 FIG_DIR = "figures"
 os.makedirs(FIG_DIR, exist_ok=True)
 
@@ -175,8 +175,6 @@ for EV in eval_methods:
                 continue
 
             lift = (vt - vb) / vb * 100.0 + 1.
-            # if b == "t_learner":
-            #     lift += 0.5
             records.append({"Run": i, "Baseline": b, "Lift": float(lift)})
             pair_counts[b] += 1
 
@@ -273,7 +271,7 @@ for EV in eval_methods:
     ax.axvline(0, color="#E40606", linestyle="--", linewidth=1.6, alpha=0.8)
 
     ax.set_xlabel(
-        "Averaged DAST Improvement (%) on Revenue Over Comparators",
+        "Averaged DAS Improvement (%) on Revenue Over Comparators",
         fontweight="bold",
         labelpad=12,
     )
@@ -288,7 +286,7 @@ for EV in eval_methods:
     }
 
     ax.set_title(
-        f"Averaged DAST Improvement (%) — {title_map.get(EV, EV)} (Runs={n_sims})",
+        f"Averaged DAS Improvement (%) — {title_map.get(EV, EV)} (Runs={n_sims})",
         fontweight="bold",
         pad=18,
         fontsize=16,
@@ -296,7 +294,7 @@ for EV in eval_methods:
     )
 
     ax.annotate(
-        "Positive values (>0%) indicate DAST outperforms comparators",
+        "Positive values (>0%) indicate DAS outperforms comparators",
         xy=(0.5, 1.03),
         xycoords="axes fraction",
         fontsize=12,
