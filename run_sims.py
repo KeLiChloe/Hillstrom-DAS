@@ -12,6 +12,7 @@ import numpy as np
 import pickle
 import os
 import time
+import random
 
 from data_utils import (
     load_criteo, load_hillstrom, load_lenta,
@@ -58,11 +59,11 @@ eval_classes = {
 M_candidates = [2, 3, 4, 5, 6, 7, 8]
 
 
-def run_single_experiment(sample_frac, pilot_frac, train_frac, dataset, target_col):
+def run_single_experiment(sample_frac, pilot_frac, train_frac, dataset, target_col, model_type, value_type, seed):
     # --------------------------------------------------
     # Load dataset based on parameter
     # --------------------------------------------------
-    seed = np.random.randint(0, 1_000_000)
+
     
     # 根据 dataset 参数选择加载函数
     dataset_loaders = {
@@ -91,7 +92,7 @@ def run_single_experiment(sample_frac, pilot_frac, train_frac, dataset, target_c
         y_impl,
         mu_pilot_models,   # dict[a] = model_a
         Gamma_pilot,       # (N_pilot, K)
-    ) = prepare_pilot_impl(X, y, D, pilot_frac=pilot_frac, model_type="lightgbm_reg", log_y=log_y)
+    ) = prepare_pilot_impl(X, y, D, pilot_frac=pilot_frac, model_type=model_type, log_y=log_y)
 
     # K 个动作（0..K-1）
     action_K = Gamma_pilot.shape[1]
@@ -271,7 +272,7 @@ def run_single_experiment(sample_frac, pilot_frac, train_frac, dataset, target_c
                 K=action_K,
                 pi=pi_vec,  # length K
                 baseline=0,          # Hillstrom: 0 is control
-                n_folds=3,
+                n_folds=5,
                 mu_model_type="mlp_reg",   # "ridge" / "mlp_reg" / "lightgbm_reg"
                 tau_model_type="mlp_reg",
             )
@@ -589,7 +590,7 @@ def run_single_experiment(sample_frac, pilot_frac, train_frac, dataset, target_c
             tree_final,
             seg_labels_pilot_dast,
             best_M_dast,
-            best_action_dast_train,
+            best_action_dast_pilot,
         ) = run_dast_dams(
             X_pilot,
             D_pilot,
@@ -605,13 +606,11 @@ def run_single_experiment(sample_frac, pilot_frac, train_frac, dataset, target_c
             Gamma_val,
             M_candidates,
             min_leaf_size=5,
+            value_type=value_type,
         )
         
         results["dast"]["best_M"] = best_M_dast
-        
-        action_dast = estimate_segment_policy(
-            X_pilot, y_pilot, D_pilot, seg_labels_pilot_dast
-        )
+
         seg_labels_impl_dast = tree_final.assign(X_impl)
         for eval in eval_methods:
             value_dast = eval_classes[eval](
@@ -620,7 +619,7 @@ def run_single_experiment(sample_frac, pilot_frac, train_frac, dataset, target_c
                 y_impl,
                 seg_labels_impl_dast,
                 mu_pilot_models,
-                action_dast,
+                best_action_dast_pilot,
                 propensities=None,
                 log_y=log_y,
             )
@@ -631,7 +630,7 @@ def run_single_experiment(sample_frac, pilot_frac, train_frac, dataset, target_c
         
         print(
             f"DAST - Segments: {len(np.unique(seg_labels_pilot_dast))}, "
-            f"Actions: {action_dast}",
+            f"Actions: {best_action_dast_pilot}",
         )
 
     # MST
@@ -748,7 +747,11 @@ def run_multiple_experiments(
     out_path,
     dataset,
     target_col,
+    model_type,
+    value_type,
 ):
+    
+    
     experiment_data = {
         "params": {
             "sample_frac": sample_frac,
@@ -768,12 +771,16 @@ def run_multiple_experiments(
 
     for s in range(N_sim):
         try:
+            seed = random.randint(0, 1_000_000)
             res = run_single_experiment(
                 sample_frac=sample_frac,
                 pilot_frac=pilot_frac,
                 train_frac=train_frac,
                 dataset=dataset,
                 target_col=target_col,
+                model_type=model_type,
+                value_type=value_type,
+                seed=seed,
             )
 
             experiment_data["results"].append(res)
@@ -826,11 +833,34 @@ if __name__ == "__main__":
         "--sample_frac",
         type=float,
     )
+    
+    parser.add_argument(
+        "--model_type", 
+        type=str,
+        help="Model type for gamma estimation",
+    )
+    
+    parser.add_argument(
+        "--value_type",
+        type=str,
+        help="Value type for DAST ('dr' or 'hybrid')",
+    )
+    
+    # add seed_sequence if needed
+    parser.add_argument(
+        "--seed_sequence",
+        type=int,
+        help="Seed sequence for reproducibility",
+    )
 
     args = parser.parse_args()
 
-    pilot_frac = 0.5  # 20% data for pilot
+    pilot_frac = 0.2  # 20% data for pilot
     train_frac = 0.7  # 70% pilot for training
+    
+    if args.seed_sequence is not None:
+        random.seed(args.seed_sequence)
+        print(f"Using fixed sequence seed: {args.seed_sequence}")
 
     run_multiple_experiments(
         N_sim=100,
@@ -840,4 +870,6 @@ if __name__ == "__main__":
         out_path=args.outpath,
         dataset=args.dataset,
         target_col=args.target,
+        model_type=args.model_type,
+        value_type=args.value_type,
     )

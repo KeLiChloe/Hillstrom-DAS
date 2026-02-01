@@ -227,6 +227,7 @@ def run_dast_dams(
     Gamma_val,
     M_candidates,
     min_leaf_size,
+    value_type,
 ):
     print("\n" + "=" * 60)
     print("STEP 5: DAST - selecting optimal M via DAMS")
@@ -290,6 +291,7 @@ def run_dast_dams(
                 candidate_thresholds=H_full,
                 min_leaf_size=min_leaf_size,
                 max_depth=depth,
+                value_type=value_type,
             )
             tree_original.build()
             actual_leaves = len(tree_original._get_leaf_nodes())
