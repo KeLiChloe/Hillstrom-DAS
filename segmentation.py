@@ -274,10 +274,15 @@ def run_dast_dams(
 
     print(f"\nTesting M candidates: {list(M_candidates)}")
     for M in M_candidates:
-        depth = max(2, int(np.ceil(np.log2(M))))   # <-- 抽出 depth
+        # ===== 修复：正确计算 max_depth，并添加 buffer =====
+        if M == 1:
+            depth = 0
+        else:
+            depth = int(np.ceil(np.log2(M)))
+        
         # ====== 1) 复用相同 depth 的树 ======
         if depth not in tree_cache:
-            tree = DASTree(
+            tree_original = DASTree(
                 x=X_train,
                 y=y_train,
                 D=D_train,
@@ -286,12 +291,13 @@ def run_dast_dams(
                 min_leaf_size=min_leaf_size,
                 max_depth=depth,
             )
-            tree.build()
-            tree_cache[depth] = tree
-        else:
-            # 深度相同 → 复用树（注意：要 copy，一棵树 prune 之后不能再用）
-            tree = tree_cache[depth].copy()   # 你需要保证 DASTree 有 copy()
-                                            # 不能直接用同一个对象，否则 prune 会破坏缓存
+            tree_original.build()
+            actual_leaves = len(tree_original._get_leaf_nodes())
+            print(f"  Built tree for M={M} (max_depth={depth}): actual leaves = {actual_leaves}")
+            tree_cache[depth] = tree_original  # 保存原始树到 cache
+        
+        # ⚠️ 关键修复：每次都从 cache 中 copy，避免 prune 操作修改 cache 中的原始树
+        tree = tree_cache[depth].copy()
         tree.prune_to_M(M)
 
         # segment labels on train + segment-level policy (diff-in-means on y)
@@ -330,7 +336,7 @@ def run_dast_dams(
         gamma=Gamma_pilot,
         candidate_thresholds=H_full,
         min_leaf_size=min_leaf_size,
-        max_depth=max(2, int(np.ceil(np.log2(best_M))) + 1),
+        max_depth=0 if best_M == 1 else int(np.ceil(np.log2(best_M))),
     )
     tree_final.build()
     tree_final.prune_to_M(best_M)
@@ -475,13 +481,17 @@ def run_mst_dams(
 
     print(f"\nTesting M candidates for MST: {list(M_candidates)}")
     for M in M_candidates:
-        depth = max(2, int(np.ceil(np.log2(M))))  # 与 M 对应的深度
+        # ===== 修复：正确计算 max_depth，并添加 buffer =====
+        if M == 1:
+            depth = 0
+        else:
+            depth = int(np.ceil(np.log2(M))) 
 
         # --------------------------------------------------
         # 1) 复用相同 depth 的树 —— 只 build 一次
         # --------------------------------------------------
         if depth not in tree_cache:
-            tree = MSTree(
+            tree_original = MSTree(
                 x=X_train,
                 y=y_train,
                 D=D_train,
@@ -490,12 +500,13 @@ def run_mst_dams(
                 max_depth=depth,
                 epsilon=0.0,
             )
-            tree.build()
-            tree_cache[depth] = tree
-        else:
-            # prune 会修改树，不能直接复用，需要深 copy
-            tree = tree_cache[depth].copy()   # 必须确保 MSTree.copy() 是 deep copy
-
+            tree_original.build()
+            actual_leaves_mst = len(tree_original._get_leaf_nodes())
+            print(f"  Built MST for M={M} (max_depth={depth}): actual leaves = {actual_leaves_mst}")
+            tree_cache[depth] = tree_original  # 保存原始树到 cache
+        
+        # ⚠️ 关键修复：每次都从 cache 中 copy，避免 prune 操作修改 cache 中的原始树
+        tree = tree_cache[depth].copy()
         tree.prune_to_M(M)
 
         # segment labels on train + segment-level policy (diff-in-means on y)
@@ -536,7 +547,7 @@ def run_mst_dams(
         D=D_pilot,
         candidate_thresholds=H_full,
         min_leaf_size=min_leaf_size,
-        max_depth=max(2, int(np.ceil(np.log2(best_M))) + 1),
+        max_depth=0 if best_M == 1 else int(np.ceil(np.log2(best_M))),
         epsilon=0.0,
     )
     tree_final.build()
@@ -599,8 +610,9 @@ def run_policytree_segmentation(
     M_candidates = list(M_candidates)
     print(f"Candidate M's: {M_candidates}")
     # 先算好每个 M 对应的 depth
+    # 修复：正确计算 depth，M=1 时 depth=0，其他情况加 buffer
     depth_for_M = {
-        M: max(2, int(np.ceil(np.log2(M)))) for M in M_candidates
+        M: (0 if M == 1 else int(np.ceil(np.log2(M))) ) for M in M_candidates
     }
 
     # depth -> (tree_r_train, Gamma_train, leaf_parent_map, leaf_ids_train, action_ids_train)
@@ -681,7 +693,8 @@ def run_policytree_segmentation(
 
     # 3) 在 full pilot 上重训一棵 policy tree，并 prune 到 best_M
     print("\nRe-fitting GRF + PolicyTree on FULL pilot ...")
-    depth_best = max(2, int(np.ceil(np.log2(best_M))))
+    # 修复：正确计算 depth
+    depth_best = 0 if best_M == 1 else int(np.ceil(np.log2(best_M)))
     tree_r_full, Gamma_full, leaf_parent_full, leaf_ids_full, action_ids_full = \
         _fit_policytree_with_grf(
             X_pilot, y_pilot, D_pilot, depth=depth_best
