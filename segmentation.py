@@ -339,6 +339,7 @@ def run_dast_dams(
         candidate_thresholds=H_full,
         min_leaf_size=min_leaf_size,
         max_depth=0 if best_M == 1 else int(np.ceil(np.log2(best_M))),
+        value_type=value_type,
     )
     tree_final.build()
     tree_final.prune_to_M(best_M)

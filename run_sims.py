@@ -749,11 +749,13 @@ def run_multiple_experiments(
     target_col,
     model_type,
     value_type,
+    seed_sequence,
 ):
     
     
     experiment_data = {
         "params": {
+            "seed_sequence": seed_sequence,
             "sample_frac": sample_frac,
             "pilot_frac": pilot_frac,
             "train_frac": train_frac,
@@ -763,11 +765,11 @@ def run_multiple_experiments(
         },
         "results": [],
     }
-
-    print("\n" + "=" * 60)
-    print(f"STARTING SIMULATIONS: N_sim = {N_sim}")
-    print(f"Dataset: {dataset}, Target: {target_col}")
-    print("=" * 60)
+    
+    # print experiment_data["params"]
+    print("Experiment parameters:")
+    for k, v in experiment_data["params"].items():
+        print(f"  {k:15s}: {v}")
 
     for s in range(N_sim):
         try:
@@ -872,4 +874,5 @@ if __name__ == "__main__":
         target_col=args.target,
         model_type=args.model_type,
         value_type=args.value_type,
+        seed_sequence=args.seed_sequence if args.seed_sequence is not None else None,
     )
