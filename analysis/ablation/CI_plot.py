@@ -46,14 +46,17 @@ else:
 n_sims = len(results_list)
 
 target = "dast"
-comparators = ["kmeans", "gmm", "clr"]  # 3个 comparator
-baselines = [c for comp in comparators for c in (comp, f"{comp}_dams")]
+comparators = ["kmeans", "gmm", "clr"]
 
-raw_data_map = {m: [] for m in baselines + [target]}
+raw_data_map = {m: [] for m in comparators +
+                [f"{c}_dams" for c in comparators] +
+                [target]}
+
 for run in results_list:
     raw_data_map[target].append(run[target])
-    for b in baselines:
-        raw_data_map[b].append(run[b])
+    for c in comparators:
+        raw_data_map[c].append(run[c])
+        raw_data_map[f"{c}_dams"].append(run[f"{c}_dams"])
 
 def lift_percent(target_vals, base_vals):
     target_vals = np.asarray(target_vals)
@@ -61,57 +64,61 @@ def lift_percent(target_vals, base_vals):
     return ((target_vals - base_vals) / base_vals) * 100
 
 # ==========================================
-# 3. 统计计算（mean, 95% CI, paired t-test）
+# 3. 统计计算（mean, CI, significance）
 # ==========================================
 def get_sig_star(p):
     if p < 0.001: return "***"
     if p < 0.01:  return "**"
     if p < 0.05:  return "*"
-    return None
+    return ""
 
 rows = []
+comp_sig = {}
+
 for comp in comparators:
-    for variant, base_key in [("Non-DAMS", comp), ("DAMS", f"{comp}_dams")]:
-        lifts = lift_percent(raw_data_map[target], raw_data_map[base_key])
-        lifts = np.asarray(lifts)
+    # significance：DAS vs Non-DAMS baseline
+    pval = stats.ttest_rel(
+        raw_data_map[target],
+        raw_data_map[comp]
+    )[1]
+    comp_sig[comp] = get_sig_star(pval)
+
+    for variant, base_key in [
+        ("Non-DAMS", comp),
+        ("DAMS", f"{comp}_dams")
+    ]:
+        lifts = lift_percent(
+            raw_data_map[target],
+            raw_data_map[base_key]
+        )
 
         mean = lifts.mean()
         sem = stats.sem(lifts)
         ci = sem * stats.t.ppf(0.975, len(lifts) - 1)
 
-        # paired t-test: target vs baseline
-        pval = stats.ttest_rel(raw_data_map[target], raw_data_map[base_key])[1]
-        star = get_sig_star(pval)
-
         rows.append({
             "Comparator": comp.upper() if comp != "kmeans" else "K-Means",
             "Variant": variant,
             "Mean": mean,
-            "CI": ci,
-            "P_Star": star
+            "CI": ci
         })
 
 stats_df = pd.DataFrame(rows)
 
 # ==========================================
-# 4. 颜色 & 线型（核心要求）
+# 4. 颜色 / 线型 / offset
 # ==========================================
-COLOR_NON_DAMS = "#000000"  # 黑
-COLOR_DAMS = "#C00000"      # 红
-LINESTYLE_NON_DAMS = "-"    # 实线
-LINESTYLE_DAMS = "--"       # 虚线
+COLOR_NON_DAMS = "#000000"
+COLOR_DAMS = "#C00000"
+LINESTYLE_NON_DAMS = "-"
+LINESTYLE_DAMS = "--"
+offset = 0.15
 
-offset = 0.15  # 你指定的 offset
-
-# 手工画“点 + 水平CI线 + cap”，以确保虚线/实线生效
 def draw_ci_point(ax, mean, ci, y, color, linestyle, cap=0.06, lw=2, ms=9):
     x0, x1 = mean - ci, mean + ci
-    # CI line
     ax.plot([x0, x1], [y, y], color=color, linestyle=linestyle, linewidth=lw)
-    # Caps
     ax.plot([x0, x0], [y - cap, y + cap], color=color, linestyle=linestyle, linewidth=lw)
     ax.plot([x1, x1], [y - cap, y + cap], color=color, linestyle=linestyle, linewidth=lw)
-    # Mean marker
     ax.plot(mean, y, marker="o", color=color, markersize=ms, linestyle="None")
 
 # ==========================================
@@ -119,7 +126,6 @@ def draw_ci_point(ax, mean, ci, y, color, linestyle, cap=0.06, lw=2, ms=9):
 # ==========================================
 fig, ax = plt.subplots(figsize=(10, 6))
 
-# 3个 comparator 的 base y
 comp_order = ["K-Means", "GMM", "CLR"]
 comp_to_y = {c: i for i, c in enumerate(comp_order)}
 
@@ -128,12 +134,13 @@ ax.set_axisbelow(True)
 
 for _, r in stats_df.iterrows():
     base_y = comp_to_y[r["Comparator"]]
+
     if r["Variant"] == "Non-DAMS":
-        y = base_y - offset  # 上
+        y = base_y - offset
         color = COLOR_NON_DAMS
         linestyle = LINESTYLE_NON_DAMS
     else:
-        y = base_y + offset  # 下
+        y = base_y + offset
         color = COLOR_DAMS
         linestyle = LINESTYLE_DAMS
 
@@ -146,22 +153,14 @@ for _, r in stats_df.iterrows():
         linestyle=linestyle
     )
 
-    # 可选：把显著性星号标在点的右侧（不挤占Y轴标签）
-    if r["P_Star"] is not None:
-        ax.text(
-            r["Mean"],
-            y,
-            f" {r['P_Star']}",
-            ha="left",
-            va="center",
-            fontsize=12,
-            fontweight="bold",
-            color=color
-        )
+# Y 轴标签：直接带显著性
+ytick_labels = [
+    f"{c} ({comp_sig[c.lower()]})" if comp_sig[c.lower()] else c
+    for c in comp_order
+]
 
-# Y轴只显示3个 comparator
 ax.set_yticks(range(len(comp_order)))
-ax.set_yticklabels(comp_order, fontweight="bold", fontsize=14, rotation=0)
+ax.set_yticklabels(ytick_labels, fontweight="bold", fontsize=14)
 ax.tick_params(axis="y", length=0)
 
 # 0% 基准线
@@ -173,10 +172,10 @@ ax.invert_yaxis()
 sns.despine(left=True, top=True, right=True)
 
 ax.set_title(
-    f"Averaged DAS Improvement (%) on Profits with 95% CI (Runs={n_sims})",
+    f"Averaged DAS Improvement (%) with 95% CI (Runs={n_sims})",
     fontweight="bold",
-    pad=20,
     fontsize=16,
+    pad=20,
     y=1.12
 )
 
@@ -193,15 +192,17 @@ ax.annotate(
 )
 
 # ==========================================
-# 6. Legend：用 legend 表示 红/黑 区别（你要求）
+# 6. Legend
 # ==========================================
 legend_handles = [
-    Line2D([0], [0], color=COLOR_NON_DAMS, linestyle=LINESTYLE_NON_DAMS, marker="o",
-           linewidth=2, markersize=8, label="Non-DAMS (Baseline)"),
-    Line2D([0], [0], color=COLOR_DAMS, linestyle=LINESTYLE_DAMS, marker="o",
-           linewidth=2, markersize=8, label="DAMS (Baseline)"),
-    Line2D([0], [0], color="#183BD8", linestyle="--", linewidth=1.6, label="No Improvement (0%)"),
-    Line2D([0], [0], color="none", label="*** p < 0.001\n**   p < 0.01\n*     p < 0.05"),
+    Line2D([0], [0], color=COLOR_NON_DAMS, linestyle=LINESTYLE_NON_DAMS,
+           marker="o", linewidth=2, markersize=8, label="Standard"),
+    Line2D([0], [0], color=COLOR_DAMS, linestyle=LINESTYLE_DAMS,
+           marker="o", linewidth=2, markersize=8, label="DAMS"),
+    Line2D([0], [0], color="#183BD8", linestyle="--", linewidth=1.6,
+           label="No Improvement (0%)"),
+    Line2D([0], [0], color="none",
+           label="*** p < 0.001\n**   p < 0.01\n*     p < 0.05"),
 ]
 
 ax.legend(
@@ -211,8 +212,7 @@ ax.legend(
     framealpha=0.95,
     edgecolor="#E0E0E0",
     fancybox=False,
-    fontsize=11,
-    borderpad=1
+    fontsize=11
 )
 
 plt.tight_layout()
