@@ -327,8 +327,8 @@ def run_dast_dams(
             best_score = score_M
             best_M = M
         
-        if best_M <= 4:
-            best_M = 8  # Avoid excessive pruning causing excessive variance
+    if best_M <= 4:
+        best_M = 8  # Avoid excessive pruning causing excessive variance
 
     print(f"\n✓ DAST: selected M = {best_M} with DAMS-score = {best_score:.6f}\n")
 

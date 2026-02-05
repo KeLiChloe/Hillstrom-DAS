@@ -373,16 +373,29 @@ def prepare_pilot_impl(X, y, D, pilot_frac, mu_model_type, log_y):
 
     # ---- 3) build Gamma_pilot: (N, K) ----
     Gamma_pilot = np.zeros((N_pilot, K), dtype=float)
+
     for a in actions:
         mask_a = (D_pilot == a)
-        e_a = mask_a.mean()
-        e_a = max(e_a, 1e-6)
+        e_a = max(mask_a.mean(), 1e-6)
 
-        mu_a_hat = predict_mu(mu_pilot_models[a], X_pilot)  # 在 log 空间 or 原空间
+        model_a, _ = mu_pilot_models[a]
+        is_clf = hasattr(model_a, "predict_proba")
+
+        mu_a_hat = predict_mu(mu_pilot_models[a], X_pilot)  # reg->E[y], clf->P(y=1)
+
         if log_y:
-            mu_a_hat = np.expm1(mu_a_hat)  # 还原到 revenue 空间
+            if is_clf:
+                raise ValueError("log_y=True is incompatible with classifier mu (predicting probabilities).")
+            mu_a_hat = np.expm1(mu_a_hat)
+
+        # （可选）一致性检查：clf 时 y 必须二元
+        if is_clf:
+            uy = np.unique(y_pilot)
+            if not set(uy.tolist()).issubset({0, 1}):
+                raise ValueError("Classifier mu requires y_pilot in {0,1}.")
 
         Gamma_pilot[:, a] = mu_a_hat + (mask_a.astype(float) / e_a) * (y_pilot - mu_a_hat)
+
         
     return (
         X_pilot,

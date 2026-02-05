@@ -3,94 +3,152 @@
 import numpy as np
 from sklearn.linear_model import LinearRegression, LogisticRegression
 from sklearn.neural_network import MLPRegressor
-from lightgbm import LGBMRegressor
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import f1_score
+from lightgbm import LGBMRegressor, LGBMClassifier
 
 
-# =====================================================================
-#  Utility: strict fit for regression（单一取值时直接报错）
-# =====================================================================
+def _is_binary01(y):
+    uniq = np.unique(y)
+    return uniq.size == 2 and set(uniq.tolist()).issubset({0, 1})
 
-def safe_fit_reg(model, X, y):
+
+def _safe_fit(model, X, y, min_pos=10):
     """
-    严格版 fit:
-      - 如果 y 只有一个取值，直接报错（提醒该 action 数据有问题）
-      - 否则正常 fit
+    - y 只有一个取值 => 报错
+    - 若是 {0,1} 二分类 => 正类数 < min_pos 报错（否则后面分层/阈值都不稳）
     """
     y = np.asarray(y)
-    unique_vals = np.unique(y)
-    if unique_vals.size <= 1:
-        raise ValueError(
-            f"safe_fit_reg: y has only a single unique value ({unique_vals[0]}). "
-            "This indicates degenerate data for this action; please check your split / sampling."
-        )
+    uniq = np.unique(y)
+    if uniq.size <= 1:
+        raise ValueError(f"y has only one unique value: {uniq[0]}")
+
+    if set(uniq.tolist()).issubset({0, 1}):
+        n_pos = int((y == 1).sum())
+        if n_pos < int(min_pos):
+            raise ValueError(f"too few positives: n_pos={n_pos} < {min_pos}")
+
     model.fit(X, y)
     return model
 
 
-# =====================================================================
-#  Fit μ_a(x) for Hillstrom (multi-action, regression)
-# =====================================================================
-
-def fit_mu_models(X, D, y, mu_model_type):
+def _pick_threshold_max_f1(y_true, y_prob):
     """
-    Hillstrom 专用版：为每个 action a 拟合回归模型
+    简单扫阈值找 max F1
+    """
+    y_true = np.asarray(y_true).astype(int)
+    y_prob = np.asarray(y_prob).astype(float)
 
-        μ_a(x) = E[Y | X, D = a]
+    best_t, best_f1 = 0.5, -1.0
+    for t in np.linspace(0.0, 1.0, 1001):
+        y_pred = (y_prob >= t).astype(int)
+        f1 = f1_score(y_true, y_pred, zero_division=0)
+        if f1 > best_f1:
+            best_f1, best_t = float(f1), float(t)
+    return best_t
 
-    不区分 binary / continuous y，统统当作回归问题。
-    对于 y∈{0,1} 时，μ_a(x) 仍然是 P(Y=1|X,D=a) 的近似。
+
+def fit_mu_models(X, D, y, mu_model_type, val_size=0.2, random_state=42):
+    """
+    对每个 action a 拟合 μ_a(x) = E[Y|X,D=a]
+    - 回归模型：返回 (model, None)
+    - 分类模型（lightgbm_clf / logistic）：自动选 threshold，返回 (model, threshold)
     """
     X = np.asarray(X)
     D = np.asarray(D)
     y = np.asarray(y)
 
     actions = np.unique(D)
+    mu_models = {}
 
-    def make_model():
+    for a in actions:
+        mask_a = (D == a)
+        Xa, ya = X[mask_a], y[mask_a]
+        if Xa.shape[0] == 0:
+            raise ValueError(f"No samples for action {a}")
+
+        # -------- build model --------
         if mu_model_type == "linear":
-            return LinearRegression()
-        
-        elif mu_model_type == "logistic":
-            return LogisticRegression(max_iter=300)
-
+            model = LinearRegression()
         elif mu_model_type == "mlp_reg":
-            return MLPRegressor(
+            model = MLPRegressor(
                 hidden_layer_sizes=(64, 32),
                 activation="relu",
                 max_iter=10000,
                 early_stopping=True,
             )
-
         elif mu_model_type == "lightgbm_reg":
-            return LGBMRegressor(
-                n_estimators=200,
-                learning_rate=0.05,
-                max_depth=-1,
-            )
+            model = LGBMRegressor(n_estimators=1000, learning_rate=0.05)
 
+        elif mu_model_type == "logistic":
+            model = LogisticRegression(max_iter=1000)
+
+        elif mu_model_type == "lightgbm_clf":
+            n_pos = int((ya == 1).sum())
+            n_neg = int((ya == 0).sum())
+            if n_pos == 0 or n_neg == 0:
+                raise ValueError(f"action={a}: y is degenerate (n_pos={n_pos}, n_neg={n_neg})")
+            pos_weight = n_neg / n_pos
+            model = LGBMClassifier(
+                objective="binary",
+                n_estimators=1000,
+                learning_rate=0.05,
+                scale_pos_weight=pos_weight,
+            )
         else:
             raise ValueError(f"Unknown mu_model_type: {mu_model_type}")
 
-    mu_models = {}
-    for a in actions:
-        mask_a = (D == a)
-        if mask_a.sum() == 0:
-            continue
-        model_a = make_model()
-        # 这里如果该 action 下 y 全一样，会直接抛 ValueError
-        mu_models[int(a)] = safe_fit_reg(model_a, X[mask_a], y[mask_a])
+        # -------- fit + threshold if classifier --------
+        is_clf = hasattr(model, "predict_proba") and set(np.unique(ya).tolist()).issubset({0, 1})
+
+        if is_clf:
+            # 要能做 stratify split：两类都得有、且至少各 2 个更稳
+            if not _is_binary01(ya):
+                raise ValueError(f"action={a}: classifier needs y in {{0,1}} with both classes present")
+
+            # 分层切 val
+            Xtr, Xva, ytr, yva = train_test_split(
+                Xa, ya, test_size=val_size, random_state=random_state, stratify=ya
+            )
+
+            model = _safe_fit(model, Xtr, ytr, min_pos=2)
+            val_prob = model.predict_proba(Xva)[:, 1]
+            thr = _pick_threshold_max_f1(yva, val_prob)
+
+            # 用全量再 fit 一次，threshold 用刚才选的（更常见的做法）
+            model_full = model.__class__(**model.get_params())
+            model_full = _safe_fit(model_full, Xa, ya, min_pos=2)
+
+            mu_models[int(a)] = (model_full, thr)
+        else:
+            model = _safe_fit(model, Xa, ya, min_pos=2)
+            mu_models[int(a)] = (model, None)
 
     return mu_models
 
 
-# =====================================================================
-#  Predict μ(x) = E[Y|X] from a given model
-# =====================================================================
+def predict_mu(model_tuple, X, return_label=False):
+    """
+    model_tuple = (model, threshold)
 
-def predict_mu(mu_model, X):
+    return_label=False: 返回 μ(x)=E[Y|X]
+        - reg: predict
+        - clf: predict_proba[:,1]
+
+    return_label=True: 返回 0/1 label（只对 clf 有效）
     """
-    回归版 predict：
-      - 直接调用 model.predict(X)，得到 E[Y|X]
-      - 对 y 二元 / 连续都适用
-    """
-    return mu_model.predict(X)
+    model, thr = model_tuple
+
+    if hasattr(model, "predict_proba"):
+        prob = model.predict_proba(X)[:, 1]
+        if return_label:
+            if thr is None:
+                raise ValueError("No threshold stored for this classifier.")
+            return (prob >= thr).astype(int)
+        return prob
+
+    # regressor
+    if return_label:
+        raise ValueError("return_label=True is only valid for classifier models.")
+    
+    return model.predict(X)

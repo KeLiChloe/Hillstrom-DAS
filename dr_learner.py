@@ -4,8 +4,6 @@ from sklearn.neural_network import MLPRegressor
 from sklearn.linear_model import Ridge
 from lightgbm import LGBMRegressor
 
-from outcome_model import predict_mu
-
 
 def _make_regressor(model_type: str):
     model_type = model_type.lower()
@@ -84,8 +82,8 @@ def fit_dr_learner_binary(
         mu_models = _fit_mu_models_by_action(X_tr, D_tr, y_tr, K=2, model_type=mu_model_type)
 
         # pseudo on HELD-OUT fold
-        m0 = predict_mu(mu_models[0], X_te)
-        m1 = predict_mu(mu_models[1], X_te)
+        m0 = mu_models[0].predict(X_te)
+        m1 = mu_models[1].predict(X_te)
         mD = D_te * m1 + (1 - D_te) * m0
         pseudo = ((D_te - e) / (e * (1 - e))) * (y_te - mD) + (m1 - m0)
 
@@ -114,7 +112,7 @@ def dr_learner_predict_binary(dr_model, X):
 
 def dr_learner_policy_binary(dr_model, X):
     X = np.asarray(X)
-    mu0 = predict_mu(dr_model["mu_models"][0], X)
+    mu0 = dr_model["mu_models"][0].predict(X)
     tau = dr_learner_predict_binary(dr_model, X)
     mu1 = mu0 + tau
     mu_hat = np.vstack([mu0, mu1]).T
@@ -166,7 +164,7 @@ def fit_dr_learner_k_armed(
         mu_models = _fit_mu_models_by_action(X_tr, D_tr, y_tr, K=K, model_type=mu_model_type)
 
         # pseudo on HELD-OUT fold
-        mu_hat = {a: predict_mu(mu_models[a], X_te) for a in range(K)}
+        mu_hat = {a: mu_models[a].predict(X_te) for a in range(K)}
         mub = mu_hat[baseline]
         Ib = (D_te == baseline).astype(float)
 
@@ -216,7 +214,7 @@ def dr_learner_policy_k_armed(dr_model, X):
     K = dr_model["K"]
     baseline = dr_model["baseline"]
 
-    mub = predict_mu(dr_model["mu_models"][baseline], X)
+    mub = dr_model["mu_models"][baseline].predict(X)
     tau_hat = dr_learner_predict_k_armed(dr_model, X)
 
     mu_hat = mub[:, None] + tau_hat

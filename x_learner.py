@@ -4,8 +4,6 @@ from sklearn.base import clone
 from sklearn.linear_model import LogisticRegression
 from sklearn.neural_network import MLPRegressor
 
-from outcome_model import predict_mu
-
 
 # =========================================================
 # Utils
@@ -22,7 +20,7 @@ def _predict_mu_action(mu_models: dict, X: np.ndarray, a: int, *, log_y: bool) -
     """Predict mu_a(x) on ORIGINAL scale (invert log if needed)."""
     if a not in mu_models:
         raise ValueError(f"mu_models does not contain action {a}. keys={sorted(mu_models.keys())}")
-    yhat = predict_mu(mu_models[a], X)
+    yhat = mu_models[a].(X)
     return _inv_link(np.asarray(yhat, dtype=float), log_y=log_y)
 
 

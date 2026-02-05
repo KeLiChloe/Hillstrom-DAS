@@ -1,5 +1,4 @@
 import numpy as np
-from outcome_model import predict_mu
 
 
 # =========================================================
@@ -76,7 +75,7 @@ def _build_mu_matrix(mu_models, X_impl, K, log_y):
 
     for a, model in mu_models.items():
         a_int = int(a)
-        pred = predict_mu(model, X_impl)
+        pred = model.predict(X_impl)
         if log_y:
             pred = np.expm1(pred)
         mu_mat[:, a_int] = pred
