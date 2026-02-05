@@ -31,7 +31,7 @@ def safe_fit_reg(model, X, y):
 #  Fit μ_a(x) for Hillstrom (multi-action, regression)
 # =====================================================================
 
-def fit_mu_models(X, D, y, model_type):
+def fit_mu_models(X, D, y, mu_model_type):
     """
     Hillstrom 专用版：为每个 action a 拟合回归模型
 
@@ -47,13 +47,13 @@ def fit_mu_models(X, D, y, model_type):
     actions = np.unique(D)
 
     def make_model():
-        if model_type == "linear":
+        if mu_model_type == "linear":
             return LinearRegression()
         
-        elif model_type == "logistic":
+        elif mu_model_type == "logistic":
             return LogisticRegression(max_iter=300)
 
-        elif model_type == "mlp_reg":
+        elif mu_model_type == "mlp_reg":
             return MLPRegressor(
                 hidden_layer_sizes=(64, 32),
                 activation="relu",
@@ -61,7 +61,7 @@ def fit_mu_models(X, D, y, model_type):
                 early_stopping=True,
             )
 
-        elif model_type == "lightgbm_reg":
+        elif mu_model_type == "lightgbm_reg":
             return LGBMRegressor(
                 n_estimators=200,
                 learning_rate=0.05,
@@ -69,7 +69,7 @@ def fit_mu_models(X, D, y, model_type):
             )
 
         else:
-            raise ValueError(f"Unknown model_type: {model_type}")
+            raise ValueError(f"Unknown mu_model_type: {mu_model_type}")
 
     mu_models = {}
     for a in actions:

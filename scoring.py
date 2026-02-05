@@ -22,7 +22,7 @@ def kmeans_silhouette_score(seg_model, X_pilot):
     return silhouette_score(X_pilot, labels)
 
 
-def dams_score(seg_model, X_val, D_val, y_val, Gamma_val, action):
+def dams_score(seg_model, X_val, D_val, y_val, Gamma_val, action, value_type_dams):
     """
     Decision-Aware Model Selection 的 scoring 函数（Algorithm 3），
     K-action 通用版本。
@@ -57,24 +57,19 @@ def dams_score(seg_model, X_val, D_val, y_val, Gamma_val, action):
     # 1) segmentation: assign each i to segment m
     labels = seg_model.assign(X_val)        # shape (N_val,)
 
-    # 2) 应用“之前学好的” segment-level action
     a_i = action[labels].astype(int)        # π^{C_M}(i)，shape (N_val,)
 
-    # 3) DR policy value:
-    #    v̂_i = y_i        if D_i == a_i
-    #         = Γ_{i,a_i}  otherwise
     v_hat = np.empty_like(y_val, dtype=float)
 
     mask_match = (D_val == a_i)
     mask_mismatch = ~mask_match
 
     # factual 部分
-    v_hat[mask_match] = y_val[mask_match]
-
-    # counterfactual: 直接从 Γ_{i,a_i} 取
-    # 这里 Gamma_val 的列索引就是动作 a（0..K-1）
-    idx_mismatch = np.where(mask_mismatch)[0]
-    if idx_mismatch.size > 0:
+    if value_type_dams == "hybrid":
+        v_hat[mask_match] = y_val[mask_match]
+        idx_mismatch = np.where(mask_mismatch)[0]
         v_hat[idx_mismatch] = Gamma_val[idx_mismatch, a_i[idx_mismatch]]
-
+    elif value_type_dams == "dr":
+        N = X_val.shape[0]
+        v_hat = Gamma_val[np.arange(N), a_i]
     return float(v_hat.mean())

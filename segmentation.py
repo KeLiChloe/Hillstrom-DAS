@@ -178,7 +178,8 @@ def run_gmm_dams_segmentation(X_pilot,
                              X_val, D_val, y_val,
                                 Gamma_val,
                               M_candidates,
-                              random_state):
+                              random_state,
+                              value_type_dams):
     print("\n" + "=" * 60)
     print("GMM_DAMS - selecting optimal K")
     print("=" * 60)
@@ -199,7 +200,8 @@ def run_gmm_dams_segmentation(X_pilot,
                            D_val=D_val, 
                            y_val=y_val,
                            Gamma_val=Gamma_val,
-                           action=action)
+                           action=action,
+                           value_type_dams=value_type_dams)
         
         print(f"  GMM_DAMS M={M} score={score:.4f}")
 
@@ -227,7 +229,8 @@ def run_dast_dams(
     Gamma_val,
     M_candidates,
     min_leaf_size,
-    value_type,
+    value_type_dast,
+    value_type_dams
 ):
     print("\n" + "=" * 60)
     print("STEP 5: DAST - selecting optimal M via DAMS")
@@ -291,7 +294,7 @@ def run_dast_dams(
                 candidate_thresholds=H_full,
                 min_leaf_size=min_leaf_size,
                 max_depth=depth,
-                value_type=value_type,
+                value_type_dast=value_type_dast,
             )
             tree_original.build()
             actual_leaves = len(tree_original._get_leaf_nodes())
@@ -316,12 +319,16 @@ def run_dast_dams(
             y_val=y_val,
             Gamma_val=Gamma_val,
             action=action_M,
+            value_type_dams=value_type_dams,
         )
         print(f"  DAST M={M} DAMS-score={score_M:.6f}")
 
         if score_M >= best_score:
             best_score = score_M
             best_M = M
+        
+        if best_M < 4:
+            best_M = 2*best_M  # Avoid excessive pruning causing excessive variance
 
     print(f"\n✓ DAST: selected M = {best_M} with DAMS-score = {best_score:.6f}\n")
 
@@ -339,7 +346,7 @@ def run_dast_dams(
         candidate_thresholds=H_full,
         min_leaf_size=min_leaf_size,
         max_depth=0 if best_M == 1 else int(np.ceil(np.log2(best_M))),
-        value_type=value_type,
+        value_type_dast=value_type_dast,
     )
     tree_final.build()
     tree_final.prune_to_M(best_M)
@@ -388,7 +395,8 @@ def run_clr_dams_segmentation(X_pilot, D_pilot,y_pilot,
                                 X_val, D_val, y_val,
                                 Gamma_val,
                               M_candidates,
-                              random_state):
+                              random_state,
+                              value_type_dams):
     print("\n" + "=" * 60)
     print("CLR_DAMS - selecting optimal K")
     print("=" * 60)
@@ -411,7 +419,8 @@ def run_clr_dams_segmentation(X_pilot, D_pilot,y_pilot,
         score = dams_score(seg_model=seg, X_val=X_val,
                             D_val=D_val, y_val=y_val,
                             Gamma_val=Gamma_val,
-                            action=action)
+                            action=action,
+                            value_type_dams=value_type_dams)
         print(f"  CLR_DAMS M={M} score={score:.4f}")
 
         if score > best_score:
@@ -437,8 +446,8 @@ def run_mst_dams(
     X_val, D_val, y_val,
     Gamma_val,
     M_candidates,
-    min_leaf_size
-    
+    min_leaf_size,
+    value_type_dams
 ):
     print("\n" + "=" * 60)
     print("STEP 5 (MST): selecting optimal M via DAMS (residual-based splits)")
@@ -526,6 +535,7 @@ def run_mst_dams(
             y_val=y_val,
             Gamma_val=Gamma_val,
             action=action_M,
+            value_type_dams=value_type_dams,
         )
         print(f"  MST  M={M} DAMS-score={score_M:.6f}")
 
@@ -581,6 +591,7 @@ def run_policytree_segmentation(
     y_val: np.ndarray,
     Gamma_val,
     M_candidates,
+    value_type_dams
 ):
     """
     POLICYTREE + DAMS 版本（Gamma 由 R 端 GRF 计算）。
@@ -680,6 +691,7 @@ def run_policytree_segmentation(
             y_val=y_val,
             Gamma_val=Gamma_val,
             action=action_M,
+            value_type_dams=value_type_dams
         )
         print(f"    DAMS-score(M={M}) = {score_M:.6f}")
 

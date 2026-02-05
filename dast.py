@@ -60,7 +60,7 @@ class DASTree:
         candidate_thresholds,
         min_leaf_size: int,
         max_depth: int,
-        value_type: str,
+        value_type_dast: str,
         epsilon: float = 0.0,
     ):
         """
@@ -98,7 +98,7 @@ class DASTree:
         # 用于 prune 时的浮点比较
         self.tolerance_pruning = 1e-8
         
-        self.value_type = value_type
+        self.value_type_dast = value_type_dast
 
     # ======================================================================
     # Public API
@@ -270,9 +270,9 @@ class DASTree:
         for a in range(K):
             mask_a = (D_L == a)
             # v̂_i(a)
-            if self.value_type == 'hybrid':
+            if self.value_type_dast == 'hybrid':
                 v_a = np.where(mask_a, y_L, Gamma_L[:, a])
-            elif self.value_type == 'dr':
+            elif self.value_type_dast == 'dr':
                 v_a = Gamma_L[:, a]
             mean_vals[a] = v_a.mean()
             sum_vals[a] = v_a.sum()

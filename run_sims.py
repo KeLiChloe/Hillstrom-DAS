@@ -56,10 +56,10 @@ eval_classes = {
     "ipw": evaluate_policy_ipw
 }
 
-M_candidates = [2, 3, 4, 5, 6, 7, 8]
+M_candidates = [2, 3, 4, 5, 6, 7, 8, 9, 10]
 
 
-def run_single_experiment(sample_frac, pilot_frac, train_frac, dataset, target_col, model_type, value_type, seed):
+def run_single_experiment(sample_frac, pilot_frac, train_frac, dataset, target_col, mu_model_type, value_type_dast, value_type_dams, seed):
     # --------------------------------------------------
     # Load dataset based on parameter
     # --------------------------------------------------
@@ -92,7 +92,7 @@ def run_single_experiment(sample_frac, pilot_frac, train_frac, dataset, target_c
         y_impl,
         mu_pilot_models,   # dict[a] = model_a
         Gamma_pilot,       # (N_pilot, K)
-    ) = prepare_pilot_impl(X, y, D, pilot_frac=pilot_frac, model_type=model_type, log_y=log_y)
+    ) = prepare_pilot_impl(X, y, D, pilot_frac=pilot_frac, mu_model_type=mu_model_type, log_y=log_y)
 
     # K 个动作（0..K-1）
     action_K = Gamma_pilot.shape[1]
@@ -116,12 +116,8 @@ def run_single_experiment(sample_frac, pilot_frac, train_frac, dataset, target_c
     # storage for output
     results = {
         "seed": int(seed),
-        "random": {},
     }
     
-    # 动态添加 "all_a" baseline 占位符（针对每个 action a）
-    for a in actions_all:
-        results[f"all_{a}"] = {}
 
     for algo in ALGO_LIST:
         results[algo] = {}
@@ -394,6 +390,7 @@ def run_single_experiment(sample_frac, pilot_frac, train_frac, dataset, target_c
                 Gamma_val,
                 M_candidates=M_candidates,
                 random_state=seed,
+                value_type_dams=value_type_dams,
             )
         )
         results["kmeans_dams"]["best_M"] = best_M_kmeans_dams
@@ -472,6 +469,7 @@ def run_single_experiment(sample_frac, pilot_frac, train_frac, dataset, target_c
                 Gamma_val,
                 M_candidates,
                 random_state=seed,
+                value_type_dams=value_type_dams,
             )
         )
         
@@ -555,6 +553,7 @@ def run_single_experiment(sample_frac, pilot_frac, train_frac, dataset, target_c
                 Gamma_val,
                 M_candidates,
                 random_state=seed,
+                value_type_dams=value_type_dams,
             )
         )
         results["clr_dams"]["best_M"] = best_M_clr_dams
@@ -606,7 +605,8 @@ def run_single_experiment(sample_frac, pilot_frac, train_frac, dataset, target_c
             Gamma_val,
             M_candidates,
             min_leaf_size=5,
-            value_type=value_type,
+            value_type_dast=value_type_dast,
+            value_type_dams=value_type_dams,
         )
         
         results["dast"]["best_M"] = best_M_dast
@@ -649,6 +649,7 @@ def run_single_experiment(sample_frac, pilot_frac, train_frac, dataset, target_c
             Gamma_val,
             M_candidates,
             min_leaf_size=5,
+            value_type_dams=value_type_dams,
         )
         results["mst"]["best_M"] = best_M_mst
 
@@ -698,6 +699,7 @@ def run_single_experiment(sample_frac, pilot_frac, train_frac, dataset, target_c
             y_val,
             Gamma_val,
             M_candidates,
+            value_type_dams=value_type_dams,
         )
         
         results["policytree"]["best_M"] = best_M_policytree 
@@ -747,8 +749,9 @@ def run_multiple_experiments(
     out_path,
     dataset,
     target_col,
-    model_type,
-    value_type,
+    mu_model_type,
+    value_type_dast,
+    value_type_dams,
     seed_sequence,
 ):
     
@@ -762,6 +765,9 @@ def run_multiple_experiments(
             "N_sim": N_sim,
             "dataset": dataset,
             "target_col": target_col,
+            "value_type_dast": value_type_dast,
+            "value_type_dams": value_type_dams,
+            "mu_model_type": mu_model_type,
         },
         "results": [],
     }
@@ -780,8 +786,9 @@ def run_multiple_experiments(
                 train_frac=train_frac,
                 dataset=dataset,
                 target_col=target_col,
-                model_type=model_type,
-                value_type=value_type,
+                mu_model_type=mu_model_type,
+                value_type_dast=value_type_dast,
+                value_type_dams=value_type_dams,
                 seed=seed,
             )
 
@@ -837,15 +844,21 @@ if __name__ == "__main__":
     )
     
     parser.add_argument(
-        "--model_type", 
+        "--mu_model_type", 
         type=str,
         help="Model type for gamma estimation",
     )
     
     parser.add_argument(
-        "--value_type",
+        "--value_type_dast",
         type=str,
-        help="Value type for DAST ('dr' or 'hybrid')",
+        help="Value type for DAST splitting ('dr' or 'hybrid')",
+    )
+    
+    parser.add_argument(
+        "--value_type_dams",
+        type=str,
+        help="Value type for DAMS criterion ('dr' or 'hybrid')",
     )
     
     # add seed_sequence if needed
@@ -872,7 +885,8 @@ if __name__ == "__main__":
         out_path=args.outpath,
         dataset=args.dataset,
         target_col=args.target,
-        model_type=args.model_type,
-        value_type=args.value_type,
+        mu_model_type=args.mu_model_type,
+        value_type_dast=args.value_type_dast,
+        value_type_dams=args.value_type_dams,
         seed_sequence=args.seed_sequence if args.seed_sequence is not None else None,
     )

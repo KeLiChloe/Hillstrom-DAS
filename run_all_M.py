@@ -46,6 +46,8 @@ def run_dast_dams_all_M(
     M_candidates,
     min_leaf_size,
     log_y,
+    value_type_dast,
+    value_type_dams
 ):
     print("\n" + "=" * 60)
     print("STEP 5: DAST - selecting optimal M via DAMS")
@@ -204,7 +206,7 @@ eval_classes = {
 M_candidates = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
 
 
-def run_single_simulation(sample_frac, pilot_frac, train_frac, dataset, target_col, model_type):
+def run_single_simulation(sample_frac, pilot_frac, train_frac, dataset, target_col, mu_model_type):
     # --------------------------------------------------
     # Load dataset based on parameter
     # --------------------------------------------------
@@ -238,7 +240,7 @@ def run_single_simulation(sample_frac, pilot_frac, train_frac, dataset, target_c
         y_impl,
         mu_pilot_models,   # dict[a] = model_a
         Gamma_pilot,       # (N_pilot, K)
-    ) = prepare_pilot_impl(X, y, D, pilot_frac=pilot_frac, model_type=model_type, log_y=log_y)
+    ) = prepare_pilot_impl(X, y, D, pilot_frac=pilot_frac, mu_model_type=mu_model_type, log_y=log_y)
 
     # K 个动作（0..K-1）
     action_K = Gamma_pilot.shape[1]
@@ -532,7 +534,7 @@ def run_multiple_simulations(
     out_path,
     dataset,
     target_col,
-    model_type,
+    mu_model_type,
 ):
     experiment_data = {
         "params": {
@@ -559,7 +561,7 @@ def run_multiple_simulations(
                 train_frac=train_frac,
                 dataset=dataset,
                 target_col=target_col,
-                model_type=model_type,
+                mu_model_type=mu_model_type,
             )
 
             experiment_data["results"].append(res)
@@ -614,9 +616,22 @@ if __name__ == "__main__":
     )
     
     parser.add_argument(
-        "--model_type", 
+        "--mu_model_type", 
         type=str,
         help="Model type for gamma estimation",
+    )
+    
+    
+    parser.add_argument(
+        "--value_type_dast",
+        type=str,
+        help="Value type for DAST splitting ('dr' or 'hybrid')",
+    )
+    
+    parser.add_argument(
+        "--value_type_dams",
+        type=str,
+        help="Value type for DAMS criterion ('dr' or 'hybrid')",
     )
 
     args = parser.parse_args()
@@ -632,5 +647,5 @@ if __name__ == "__main__":
         out_path=args.outpath,
         dataset=args.dataset,
         target_col=args.target,
-        model_type=args.model_type,
+        mu_model_type=args.mu_model_type,
     )

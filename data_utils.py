@@ -56,7 +56,7 @@ def split_seg_train_test(X_pilot, D_pilot, y_pilot, Gamma_pilot, test_frac):
         # No test split
         return (X_pilot, D_pilot, y_pilot, Gamma_pilot), (None, None, None, None)
 
-    X_tr, X_te, D_tr, D_te, y_tr, y_te, Gamma_tr, Gamma_te = train_test_split(
+    X_tr, X_val, D_tr, D_val, y_tr, y_val, Gamma_tr, Gamma_val = train_test_split(
         X_pilot,
         D_pilot,
         y_pilot,
@@ -67,26 +67,26 @@ def split_seg_train_test(X_pilot, D_pilot, y_pilot, Gamma_pilot, test_frac):
 
     if hasattr(X_tr, "reset_index"):
         X_tr = X_tr.reset_index(drop=True).values
-        X_te = X_te.reset_index(drop=True).values
+        X_val = X_val.reset_index(drop=True).values
     elif hasattr(X_tr, "values"):
         X_tr = X_tr.values
-        X_te = X_te.values
+        X_val = X_val.values
 
     if hasattr(D_tr, "reset_index"):
         D_tr = D_tr.reset_index(drop=True).values
-        D_te = D_te.reset_index(drop=True).values
+        D_val = D_val.reset_index(drop=True).values
     elif hasattr(D_tr, "values"):
         D_tr = D_tr.values
-        D_te = D_te.values
+        D_val = D_val.values
 
     if hasattr(y_tr, "reset_index"):
         y_tr = y_tr.reset_index(drop=True).values
-        y_te = y_te.reset_index(drop=True).values
+        y_val = y_val.reset_index(drop=True).values
     elif hasattr(y_tr, "values"):
         y_tr = y_tr.values
-        y_te = y_te.values
+        y_val = y_val.values
 
-    return (X_tr, D_tr, y_tr, Gamma_tr), (X_te, D_te, y_te, Gamma_te)
+    return (X_tr, D_tr, y_tr, Gamma_tr), (X_val, D_val, y_val, Gamma_val)
 
 
 
@@ -323,7 +323,7 @@ def load_lenta(sample_frac, seed, target_col=None):
 # =========================================================
 # 1. pilot / implementation 划分 + outcome model + Gamma (K-action)
 # =========================================================
-def prepare_pilot_impl(X, y, D, pilot_frac, model_type, log_y):
+def prepare_pilot_impl(X, y, D, pilot_frac, mu_model_type, log_y):
     """
     K-action 版本
     """
@@ -353,7 +353,7 @@ def prepare_pilot_impl(X, y, D, pilot_frac, model_type, log_y):
         X_pilot,
         D_pilot,
         y_fit,
-        model_type=model_type,   
+        mu_model_type=mu_model_type,   
     )
 
     K = int(np.max(D)) + 1   # 用全数据 D，不用 D_pilot
