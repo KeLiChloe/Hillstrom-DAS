@@ -27,7 +27,6 @@ def fit_s_learner(
     y: np.ndarray,
     K: int,
     model_type: str,
-    log_y: bool,
     random_state: int,
 ):
     """
@@ -36,13 +35,11 @@ def fit_s_learner(
     参数
     ----
     K: action 数量（Hillstrom=3）
-    log_y: 是否用 log1p(y) 来训练（适合 heavy-tail spend/revenue）
     """
     X = np.asarray(X)
     D = np.asarray(D).astype(int).ravel()
     y = np.asarray(y).astype(float).ravel()
 
-    y_train = np.log1p(y) if log_y else y
     X_s = _build_slearner_features(X, D, K)
 
     def make_model():
@@ -68,7 +65,7 @@ def fit_s_learner(
         raise ValueError(f"Unknown model_type: {model_type}")
 
     model = make_model()
-    model.fit(X_s, y_train)
+    model.fit(X_s, y)
     return model
 
 
@@ -76,7 +73,6 @@ def predict_mu_s_learner_matrix(
     s_model,
     X: np.ndarray,
     K: int,
-    log_y: bool,
 ):
     """
     返回 mu_mat: (n, K)，其中 mu_mat[i,a] = E[Y|X_i, D=a] 的预测
@@ -89,6 +85,6 @@ def predict_mu_s_learner_matrix(
         D_a = np.full(n, a, dtype=int)
         X_s = _build_slearner_features(X, D_a, K)
         pred = s_model.predict(X_s).astype(float)
-        mu_mat[:, a] = np.expm1(pred) if log_y else pred
+        mu_mat[:, a] = pred
 
     return mu_mat

@@ -9,19 +9,12 @@ from sklearn.neural_network import MLPRegressor
 # Utils
 # =========================================================
 
-def _inv_link(y_hat, log_y: bool):
-    """If outcome model was trained on log1p(y), invert back to original scale."""
-    if not log_y:
-        return y_hat
-    return np.expm1(y_hat)
-
-
-def _predict_mu_action(mu_models: dict, X: np.ndarray, a: int, *, log_y: bool) -> np.ndarray:
+def _predict_mu_action(mu_models: dict, X: np.ndarray, a: int) -> np.ndarray:
     """Predict mu_a(x) on ORIGINAL scale (invert log if needed)."""
     if a not in mu_models:
         raise ValueError(f"mu_models does not contain action {a}. keys={sorted(mu_models.keys())}")
     yhat = mu_models[a].predict(X)
-    return _inv_link(np.asarray(yhat, dtype=float), log_y=log_y)
+    return yhat
 
 
 def _get_gate_vector(gate_obj, n: int, X: np.ndarray) -> np.ndarray:
@@ -48,7 +41,6 @@ def fit_x_learner(
     y_pilot: np.ndarray,
     mu_pilot_models: dict,
     *,
-    log_y: bool,
     control_action: int = 0,
     # effect models
     effect_model=None,
@@ -108,7 +100,7 @@ def fit_x_learner(
     pi = np.clip(pi, 1e-8, 1.0)
 
     # ---- precompute mu_0(x) on ALL pilot, original scale ----
-    mu0_all = _predict_mu_action(mu_pilot_models, X_pilot, int(control_action), log_y=log_y)
+    mu0_all = _predict_mu_action(mu_pilot_models, X_pilot, int(control_action))
 
     models = {
         "control_action": int(control_action),
@@ -132,7 +124,7 @@ def fit_x_learner(
 
         # predictions on pair subset (original scale)
         mu0_pair = mu0_all[mask_pair]
-        mua_pair = _predict_mu_action(mu_pilot_models, X_pair, a, log_y=log_y)
+        mua_pair = _predict_mu_action(mu_pilot_models, X_pair, a)
 
         # treated pseudo-outcome d1 = y - mu0(x)
         mask_t = (D_pair == a)
@@ -173,8 +165,6 @@ def predict_best_action_x_learner(
     x_learner_models: dict,
     X: np.ndarray,
     mu_pilot_models: dict,
-    *,
-    log_y: bool,
 ):
     """
     Predict best action for each x by maximizing:
@@ -195,7 +185,7 @@ def predict_best_action_x_learner(
     K = int(actions.max()) + 1
 
     # base mu0
-    mu0 = _predict_mu_action(mu_pilot_models, X, control, log_y=log_y)
+    mu0 = _predict_mu_action(mu_pilot_models, X, control)
 
     # mu_hat matrix
     mu_hat = np.full((n, K), -np.inf, dtype=float)

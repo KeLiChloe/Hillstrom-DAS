@@ -11,7 +11,6 @@ def fit_t_learner(
     y: np.ndarray,
     K: int,
     model_type: str,
-    log_y: bool,
     random_state: int,
 ):
     """
@@ -57,7 +56,7 @@ def fit_t_learner(
 
         Xa = X[idx]
         ya = y[idx]
-        ya_train = np.log1p(ya) if log_y else ya
+        ya_train = ya
 
         model = make_model()
         model.fit(Xa, ya_train)
@@ -69,7 +68,6 @@ def fit_t_learner(
 def predict_mu_t_learner_matrix(
     t_models,
     X: np.ndarray,
-    log_y: bool,
 ):
     """
     返回 mu_mat: (n, K)，
@@ -83,6 +81,6 @@ def predict_mu_t_learner_matrix(
 
     for a, model in enumerate(t_models):
         pred = model.predict(X).astype(float)
-        mu_mat[:, a] = np.expm1(pred) if log_y else pred
+        mu_mat[:, a] = pred
 
     return mu_mat

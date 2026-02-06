@@ -59,7 +59,7 @@ def fit_mu_models(X, D, y, mu_model_type, val_size=0.2, random_state=42):
     y = np.asarray(y)
 
     actions = np.unique(D)
-    mu_models = {}
+    mu_model_tuples = {}
 
     for a in actions:
         mask_a = (D == a)
@@ -119,12 +119,12 @@ def fit_mu_models(X, D, y, mu_model_type, val_size=0.2, random_state=42):
             model_full = model.__class__(**model.get_params())
             model_full = _safe_fit(model_full, Xa, ya, min_pos=2)
 
-            mu_models[int(a)] = (model_full, thr)
+            mu_model_tuples[int(a)] = (model_full, thr)
         else:
             model = _safe_fit(model, Xa, ya, min_pos=2)
-            mu_models[int(a)] = (model, None)
+            mu_model_tuples[int(a)] = (model, None)
 
-    return mu_models
+    return mu_model_tuples
 
 
 def predict_mu(model_tuple, X, return_label=False):

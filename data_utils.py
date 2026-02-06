@@ -323,7 +323,7 @@ def load_lenta(sample_frac, seed, target_col=None):
 # =========================================================
 # 1. pilot / implementation 划分 + outcome model + Gamma (K-action)
 # =========================================================
-def prepare_pilot_impl(X, y, D, pilot_frac, mu_model_type, log_y):
+def prepare_pilot_impl(X, y, D, pilot_frac, mu_model_type):
     """
     K-action 版本
     """
@@ -340,27 +340,22 @@ def prepare_pilot_impl(X, y, D, pilot_frac, mu_model_type, log_y):
     D_pilot = np.asarray(D_pilot).astype(int)
     y_pilot = np.asarray(y_pilot, dtype=float)
 
-    # ---- 1) log1p 训练目标（只在训练时变换）----
-    if log_y:
-        if (y_pilot < 0).any():
-            raise ValueError("log1p requires non-negative y, but found y<0 in pilot.")
-        y_fit = np.log1p(y_pilot)
-    else:
-        y_fit = y_pilot
+    y_fit = y_pilot
 
     # ---- 2) fit μ_a models----
-    mu_pilot_models = fit_mu_models(
+    mu_pilot_model_tuples = fit_mu_models(
         X_pilot,
         D_pilot,
         y_fit,
         mu_model_type=mu_model_type,   
     )
+    mu_pilot_models = {a: model for a, (model, _) in mu_pilot_model_tuples.items()}
 
     K = int(np.max(D)) + 1   # 用全数据 D，不用 D_pilot
     actions = np.arange(K, dtype=int)
     
     # ---- 检查所有 action 是否都有模型 ----
-    missing_actions = set(actions.tolist()) - set(mu_pilot_models.keys())
+    missing_actions = set(actions.tolist()) - set(mu_pilot_model_tuples.keys())
     if missing_actions:
         raise ValueError(
             f"Pilot split resulted in missing actions: {sorted(missing_actions)}. "
@@ -369,7 +364,7 @@ def prepare_pilot_impl(X, y, D, pilot_frac, mu_model_type, log_y):
         )
 
     N_pilot = X_pilot.shape[0]
-    print(f"Detected actions: {actions.tolist()} (K={K}), log_y={log_y}")
+    print(f"Detected actions: {actions.tolist()} (K={K})")
 
     # ---- 3) build Gamma_pilot: (N, K) ----
     Gamma_pilot = np.zeros((N_pilot, K), dtype=float)
@@ -378,15 +373,10 @@ def prepare_pilot_impl(X, y, D, pilot_frac, mu_model_type, log_y):
         mask_a = (D_pilot == a)
         e_a = max(mask_a.mean(), 1e-6)
 
-        model_a, _ = mu_pilot_models[a]
+        model_a = mu_pilot_models[a]
         is_clf = hasattr(model_a, "predict_proba")
 
-        mu_a_hat = predict_mu(mu_pilot_models[a], X_pilot)  # reg->E[y], clf->P(y=1)
-
-        if log_y:
-            if is_clf:
-                raise ValueError("log_y=True is incompatible with classifier mu (predicting probabilities).")
-            mu_a_hat = np.expm1(mu_a_hat)
+        mu_a_hat = predict_mu(mu_pilot_model_tuples[a], X_pilot)  # reg->E[y], clf->P(y=1)
 
         # （可选）一致性检查：clf 时 y 必须二元
         if is_clf:

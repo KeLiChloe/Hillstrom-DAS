@@ -69,15 +69,13 @@ def _get_propensity_per_action(D_impl, actions, propensities):
     return e
 
 
-def _build_mu_matrix(mu_models, X_impl, K, log_y):
+def _build_mu_matrix(mu_models, X_impl, K):
     n = X_impl.shape[0]
     mu_mat = np.zeros((n, K), dtype=float)
 
     for a, model in mu_models.items():
         a_int = int(a)
         pred = model.predict(X_impl)
-        if log_y:
-            pred = np.expm1(pred)
         mu_mat[:, a_int] = pred
 
     return mu_mat
@@ -91,7 +89,6 @@ def evaluate_policy(
         seg_labels_impl,
         mu_models,
         action,
-        log_y,
     ):
     """
     K-action 非 DR policy evaluation：
@@ -109,7 +106,7 @@ def evaluate_policy(
     action = np.asarray(action, dtype=int)
 
     actions, K = _infer_actions(D_impl, mu_models)
-    mu_mat = _build_mu_matrix(mu_models, X_impl, K, log_y=log_y)  # shape (n, K)
+    mu_mat = _build_mu_matrix(mu_models, X_impl, K)  # shape (n, K)
 
     # 边界检查：确保 segment labels 在有效范围内
     if seg_labels_impl.max() >= len(action):
@@ -144,7 +141,6 @@ def evaluate_policy_dual_dr(
         mu_models,
         action,
         propensities,
-        log_y,
     ):
     """
     K-action dual DR policy evaluation.
@@ -184,7 +180,7 @@ def evaluate_policy_dual_dr(
     e = _get_propensity_per_action(D_impl, actions, propensities)  # shape (K,)
 
     # 2. μ_a(x_i) 矩阵
-    mu_mat = _build_mu_matrix(mu_models, X_impl, K, log_y=log_y)  # (n, K)
+    mu_mat = _build_mu_matrix(mu_models, X_impl, K)  # (n, K)
 
     # 边界检查：确保 segment labels 在有效范围内
     if seg_labels_impl.max() >= len(action):
@@ -230,7 +226,6 @@ def evaluate_policy_dr(
         mu_models,
         action,
         propensities,
-        log_y,
     ):
     """
     K-action doubly-robust off-policy evaluation.
@@ -254,7 +249,7 @@ def evaluate_policy_dr(
     e = _get_propensity_per_action(D_impl, actions, propensities)  # (K,)
 
     # 2. μ_a(x_i) 矩阵
-    mu_mat = _build_mu_matrix(mu_models, X_impl, K, log_y=log_y)
+    mu_mat = _build_mu_matrix(mu_models, X_impl, K)
 
     # 边界检查：确保 segment labels 在有效范围内
     if seg_labels_impl.max() >= len(action):
@@ -291,7 +286,6 @@ def evaluate_policy_ipw(
         mu_models, # placeholder, no use
         action,
         propensities,
-        log_y # placeholder, no use
     ):
     """
     纯 IPW policy evaluation，只用 y，不用 outcome model / Gamma。
@@ -349,7 +343,6 @@ def evaluate_policy_for_random_baseline(
         a_random,
         mu_models,
         propensities,
-        log_y,
     ):
     """
     Evaluate an individual-level random policy using multi-action dual DR estimator.
@@ -376,7 +369,7 @@ def evaluate_policy_for_random_baseline(
     e = _get_propensity_per_action(D_impl, actions, propensities)
 
     # μ 矩阵
-    mu_mat = _build_mu_matrix(mu_models, X_impl, K, log_y=log_y)
+    mu_mat = _build_mu_matrix(mu_models, X_impl, K)
 
     # 构造 DR Γ_{i,a}
     Gamma = np.zeros((n, K), dtype=float)

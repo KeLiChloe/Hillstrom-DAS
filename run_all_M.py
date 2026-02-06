@@ -19,7 +19,7 @@ from data_utils import (
 )
 
 from estimation import estimate_segment_policy
-from evaluation import evaluate_policy_dual_dr, _build_mu_matrix, evaluate_policy_dr, evaluate_policy_ipw, _get_propensity_per_action  # 已改成多 action 版
+from evaluation import evaluate_policy_dual_dr, evaluate_policy_dr, evaluate_policy_ipw, _get_propensity_per_action  # 已改成多 action 版
 from t_learner import fit_t_learner, predict_mu_t_learner_matrix
 from s_learner import fit_s_learner, predict_mu_s_learner_matrix
 from dr_learner import ( dr_learner_policy_binary, fit_dr_learner_binary,
@@ -45,7 +45,6 @@ def run_dast_dams_all_M(
     Gamma_pilot,
     M_candidates,
     min_leaf_size,
-    log_y,
     value_type_dast,
     value_type_dams
 ):
@@ -184,7 +183,7 @@ def run_dast_dams_all_M(
                 mu_pilot_models,
                 action_M,
                 propensities=None,
-                log_y=log_y,
+                 
             )
             results["dast"][f"{eval}"][f"{M}"] = float(value_dast["value_mean"])
 
@@ -229,7 +228,6 @@ def run_single_simulation(sample_frac, pilot_frac, train_frac, dataset, target_c
     # --------------------------------------------------
     # 1–3. pilot + outcome models + Gamma_pilot (K-action DR)
     # --------------------------------------------------
-    log_y = False
     
     (
         X_pilot,
@@ -240,7 +238,7 @@ def run_single_simulation(sample_frac, pilot_frac, train_frac, dataset, target_c
         y_impl,
         mu_pilot_models,   # dict[a] = model_a
         Gamma_pilot,       # (N_pilot, K)
-    ) = prepare_pilot_impl(X, y, D, pilot_frac=pilot_frac, mu_model_type=mu_model_type, log_y=log_y)
+    ) = prepare_pilot_impl(X, y, D, pilot_frac=pilot_frac, mu_model_type=mu_model_type)
 
     # K 个动作（0..K-1）
     action_K = Gamma_pilot.shape[1]
@@ -290,14 +288,14 @@ def run_single_simulation(sample_frac, pilot_frac, train_frac, dataset, target_c
             y_pilot,
             K=action_K,
             model_type="mlp_reg",    # "ridge" / "mlp_reg" / "lightgbm_reg"
-            log_y=log_y,
+             
             random_state=seed,
         )
 
         mu_mat_impl_t = predict_mu_t_learner_matrix(
             t_models,
             X_impl,
-            log_y=log_y,
+             
         )
 
         a_hat_t = np.argmax(mu_mat_impl_t, axis=1).astype(int)
@@ -313,7 +311,7 @@ def run_single_simulation(sample_frac, pilot_frac, train_frac, dataset, target_c
                 mu_pilot_models,
                 action_identity,
                 propensities=None,
-                log_y=log_y,
+                 
             )
             results["t_learner"][f"{eval}"] = float(value_t["value_mean"])
 
@@ -333,7 +331,7 @@ def run_single_simulation(sample_frac, pilot_frac, train_frac, dataset, target_c
             y_pilot,
             K=action_K,
             model_type="mlp_reg",    # "ridge" / "mlp_reg" / "lightgbm_reg"
-            log_y=log_y,
+             
             random_state=seed,
         )
 
@@ -341,7 +339,7 @@ def run_single_simulation(sample_frac, pilot_frac, train_frac, dataset, target_c
             s_model,
             X_impl,
             K=action_K,
-            log_y=log_y,
+             
         )
         a_hat_s = np.argmax(mu_mat_impl_s, axis=1).astype(int)
         seg_labels_impl_s = a_hat_s
@@ -353,7 +351,7 @@ def run_single_simulation(sample_frac, pilot_frac, train_frac, dataset, target_c
                 mu_pilot_models,        
                 action_identity,
                 propensities=None,
-                log_y=log_y,
+                 
             )
             results["s_learner"][f"{eval}"] = float(value_s["value_mean"])
 
@@ -372,7 +370,7 @@ def run_single_simulation(sample_frac, pilot_frac, train_frac, dataset, target_c
             D_pilot=D_pilot,
             y_pilot=y_pilot,
             mu_pilot_models=mu_pilot_models,
-            log_y=log_y,
+             
             control_action=0,        # Hillstrom: 通常 0 是 control
             random_state=seed,
         )
@@ -382,7 +380,7 @@ def run_single_simulation(sample_frac, pilot_frac, train_frac, dataset, target_c
             x_learner_models=x_models,
             X=X_impl,
             mu_pilot_models=mu_pilot_models,
-            log_y=log_y,
+             
         )
 
         # 3) evaluate with your existing multi-action dual DR evaluator
@@ -397,7 +395,7 @@ def run_single_simulation(sample_frac, pilot_frac, train_frac, dataset, target_c
                 mu_pilot_models,
                 action_identity,
                 propensities=None,
-                log_y=log_y,
+                 
             )
             results["x_learner"][f"{eval}"] = float(value_x["value_mean"])  
         
@@ -455,7 +453,7 @@ def run_single_simulation(sample_frac, pilot_frac, train_frac, dataset, target_c
                 mu_pilot_models,
                 action_identity,
                 propensities=None,
-                log_y=log_y,
+                 
             )
             results["dr_learner"][f"{eval}"] = float(value_dr["value_mean"])
 
@@ -482,7 +480,7 @@ def run_single_simulation(sample_frac, pilot_frac, train_frac, dataset, target_c
                 mu_pilot_models,
                 action_identity,
                 propensities=None,
-                log_y=log_y,
+                 
             )
             results["causal_forest"][f"{eval}"] = float(value_cf["value_mean"])
            
@@ -510,7 +508,7 @@ def run_single_simulation(sample_frac, pilot_frac, train_frac, dataset, target_c
             Gamma_pilot,
             M_candidates,
             min_leaf_size=5,
-            log_y=log_y,
+             
         )
 
 
