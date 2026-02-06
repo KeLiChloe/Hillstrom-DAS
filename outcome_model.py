@@ -78,10 +78,10 @@ def fit_mu_models(X, D, y, mu_model_type, val_size=0.2, random_state=42):
                 early_stopping=True,
             )
         elif mu_model_type == "lightgbm_reg":
-            model = LGBMRegressor(n_estimators=1000, learning_rate=0.05)
+            model = LGBMRegressor(n_estimators=200, learning_rate=0.05)
 
         elif mu_model_type == "logistic":
-            model = LogisticRegression(max_iter=1000)
+            model = LogisticRegression(max_iter=500)
 
         elif mu_model_type == "lightgbm_clf":
             n_pos = int((ya == 1).sum())
@@ -91,7 +91,7 @@ def fit_mu_models(X, D, y, mu_model_type, val_size=0.2, random_state=42):
             pos_weight = n_neg / n_pos
             model = LGBMClassifier(
                 objective="binary",
-                n_estimators=1000,
+                n_estimators=300,
                 learning_rate=0.05,
                 scale_pos_weight=pos_weight,
             )
