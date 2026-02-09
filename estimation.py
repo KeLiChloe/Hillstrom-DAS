@@ -41,10 +41,6 @@ def estimate_segment_policy(X, y, D, seg_labels):
 
     for m in range(M):
         idx_m = (seg_labels == m)
-        if not np.any(idx_m):
-            # 理论上不应该发生：该 segment 没有样本，随便给一个 action
-            action_M[m] = np.random.choice(actions)
-            continue
 
         D_seg = D[idx_m]
         y_seg = y[idx_m]
