@@ -460,7 +460,7 @@ def run_mst_dams(
     # candidate thresholds: 跟 run_dast_dams 一样
     # --------------------------------------------------
     d_full = X_pilot.shape[1]
-    bins = 100
+    bins = 200
     H_full = {}
 
     for j in range(d_full):
@@ -476,11 +476,8 @@ def run_mst_dams(
                 grid = np.unique(grid)
             else:
                 grid = unique_values
-
-            if len(grid) > 1:
-                H_full[j] = (grid[:-1] + grid[1:]) / 2.0
-            else:
-                H_full[j] = grid
+            
+            H_full[j] = grid
 
     print(f"Candidate thresholds computed for {d} features.")
 
