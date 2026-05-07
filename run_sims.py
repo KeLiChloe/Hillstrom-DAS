@@ -861,6 +861,42 @@ def run_multiple_experiments(
     else:
         # 并行：主进程负责按完成顺序收集结果并覆盖保存（同样抗中断）
         _set_thread_env(inner_threads)
+
+        # 重要：并行 worker 里会同时调用 sklift 的 fetch_* 下载/解压数据，
+        # 在首次运行/无缓存时容易发生并发下载冲突或长时间无输出。
+        # 这里先在主进程预取一次数据，确保缓存就绪，再启动进程池。
+        try:
+            if dataset == "criteo":
+                from sklift.datasets import fetch_criteo
+
+                print("Prefetching Criteo dataset cache (main process)...", flush=True)
+                fetch_criteo(
+                    target_col=target_col,
+                    treatment_col="treatment",
+                    percent10=True,
+                    return_X_y_t=True,
+                )
+            elif dataset == "hillstrom":
+                from sklift.datasets import fetch_hillstrom
+
+                print("Prefetching Hillstrom dataset cache (main process)...", flush=True)
+                fetch_hillstrom(
+                    target_col=target_col,
+                    treatment_col="segment",
+                    return_X_y_t=True,
+                )
+            elif dataset == "lenta":
+                from sklift.datasets import fetch_lenta
+
+                print("Prefetching Lenta dataset cache (main process)...", flush=True)
+                fetch_lenta(
+                    target_col=target_col,
+                    treatment_col="treatment",
+                    return_X_y_t=True,
+                )
+        except Exception as e:
+            print(f"Prefetch failed (will continue anyway): {e}", flush=True)
+
         t_start = time.perf_counter()
         completed = 0
         with cf.ProcessPoolExecutor(max_workers=int(n_jobs)) as ex:
@@ -970,7 +1006,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--n_jobs",
         type=int,
-        default=max(1, (os.cpu_count() or 1) // 2),
+        default=1,
         help="Number of parallel simulations to run (outer parallelism).",
     )
 
