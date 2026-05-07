@@ -48,7 +48,7 @@ def estimate_segment_policy(X, y, D, seg_labels):
         for a in actions:
             mask_a = (D_seg == a)
             if mask_a.sum() == 0:
-                # 不再报错；在上面已处理“缺 action”的情况
+                # 不再报错；已处理“缺 action”的情况
                 est_means.append(0)
             else:
                 est_means.append(y_seg[mask_a].mean())
