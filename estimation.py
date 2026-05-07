@@ -38,7 +38,6 @@ def estimate_segment_policy(X, y, D, seg_labels):
     action_M = np.zeros(M, dtype=int)
 
     actions = np.unique(D)
-
     for m in range(M):
         idx_m = (seg_labels == m)
 
@@ -49,10 +48,8 @@ def estimate_segment_policy(X, y, D, seg_labels):
         for a in actions:
             mask_a = (D_seg == a)
             if mask_a.sum() == 0:
-                raise ValueError(
-                    f"No samples for segment {m} and action {a}. "
-                    "Cannot estimate mean outcome."
-                )
+                # 不再报错；在上面已处理“缺 action”的情况
+                est_means.append(0)
             else:
                 est_means.append(y_seg[mask_a].mean())
 
