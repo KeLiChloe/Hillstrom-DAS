@@ -14,7 +14,6 @@ from rpy2.robjects.vectors import FloatVector
 
 grf = importr("grf")
 policytree = importr("policytree")
-DiagrammeRsvg = importr("DiagrammeRsvg")
 
 # 定义一个 R 端的辅助函数：提取 leaf → parent 映射
 ro.r(
