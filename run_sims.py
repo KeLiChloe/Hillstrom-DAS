@@ -880,6 +880,27 @@ def run_multiple_experiments(
                         end="",
                         flush=True,
                     )
+
+                    # 每完成 1 个 sim，额外打印摘要（主进程输出，避免 worker 刷屏）
+                    seed_done = int(res.get("seed", future_to_seed.get(fut, -1)))
+                    total_time = 0.0
+                    for algo in ALGO_LIST:
+                        if isinstance(res.get(algo), dict):
+                            total_time += float(res[algo].get("time", 0.0) or 0.0)
+
+                    parts = [f"seed={seed_done}", f"total_time={total_time:.1f}s"]
+                    for algo in ALGO_LIST:
+                        if not isinstance(res.get(algo), dict):
+                            continue
+                        # 优先显示 dual_dr；没有就退回 dr/ipw
+                        if "dual_dr" in res[algo]:
+                            parts.append(f"{algo}.dual_dr={res[algo]['dual_dr']:.4g}")
+                        elif "dr" in res[algo]:
+                            parts.append(f"{algo}.dr={res[algo]['dr']:.4g}")
+                        elif "ipw" in res[algo]:
+                            parts.append(f"{algo}.ipw={res[algo]['ipw']:.4g}")
+
+                    print("\n  " + " | ".join(parts), flush=True)
                 except Exception:
                     import traceback
                     traceback.print_exc()
