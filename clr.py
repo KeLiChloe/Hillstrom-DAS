@@ -1,3 +1,4 @@
+import os
 import numpy as np
 from sklearn.base import BaseEstimator, clone
 from sklearn.ensemble import RandomForestClassifier
@@ -44,7 +45,7 @@ class CLRpRegressor(BaseEstimator):
                 n_estimators=50,
                 max_depth=None,
                 random_state=random_state,
-                n_jobs=-1,
+                n_jobs=1,
             )
         else:
             self.clf = clf

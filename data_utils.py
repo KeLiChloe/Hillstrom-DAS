@@ -364,7 +364,6 @@ def prepare_pilot_impl(X, y, D, pilot_frac, mu_model_type):
         )
 
     N_pilot = X_pilot.shape[0]
-    print(f"Detected actions: {actions.tolist()} (K={K})")
 
     # ---- 3) build Gamma_pilot: (N, K) ----
     Gamma_pilot = np.zeros((N_pilot, K), dtype=float)

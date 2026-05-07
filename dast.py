@@ -158,14 +158,6 @@ class DASTree:
             self.leaf_nodes.append(left_node)
             self.leaf_nodes.append(right_node)
 
-            if debug:
-                print(
-                    f"  Split leaf depth={best_leaf.depth} (N={len(best_leaf.indices)})"
-                    f"  X[{feat}] <= {thresh:.4f}"
-                    f"  → L={len(left_idx)}, R={len(right_idx)}"
-                    f"  gain={best_global_gain:.4f}"
-                    f"  leaves={len(self.leaf_nodes)}"
-                )
 
         # The two newly-created leaves from the last split have value=None
         # (they were appended after the inner loop ran). Also handles M=1.
@@ -177,8 +169,6 @@ class DASTree:
         for seg_id, node in enumerate(self.leaf_nodes):
             node.segment_id = seg_id
 
-        if debug:
-            print(f"\nTree built: {len(self.leaf_nodes)} leaves")
 
     def copy(self):
         return copy.deepcopy(self)

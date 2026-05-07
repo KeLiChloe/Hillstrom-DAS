@@ -13,6 +13,9 @@ import pickle
 import os
 import time
 import random
+import concurrent.futures as cf
+import contextlib
+import io
 
 from data_utils import (
     load_criteo, load_hillstrom, load_lenta,
@@ -148,8 +151,6 @@ def run_single_experiment(sample_frac, pilot_frac, train_frac, dataset, target_c
         a_hat_t = np.argmax(mu_mat_impl_t, axis=1).astype(int)
         seg_labels_impl_t = a_hat_t
         action_identity = np.arange(action_K, dtype=int)
-        # analyzing t_learner results
-        print(f"T-learner: Predicted actions distribution: {np.bincount(a_hat_t)}")
 
         for eval in eval_methods:
             value_t = eval_classes[eval](
@@ -308,6 +309,7 @@ def run_single_experiment(sample_frac, pilot_frac, train_frac, dataset, target_c
         results["dr_learner"]["time"] = float(t1 - t0)
     
     if "causal_forest" in ALGO_LIST:
+        print("causal forest started")
         t0 = time.perf_counter()
         cf_model = fit_multiarm_causal_forest(
             X_pilot,
@@ -334,8 +336,8 @@ def run_single_experiment(sample_frac, pilot_frac, train_frac, dataset, target_c
             
         t1 = time.perf_counter()
         results["causal_forest"]["time"] = float(t1 - t0)
-    
         print("causal forest finished")
+
     
 
 
@@ -750,6 +752,7 @@ def run_multiple_experiments(
     value_type_dast,
     value_type_dams,
     seed_sequence,
+    n_jobs,
 ):
     
     
@@ -774,10 +777,28 @@ def run_multiple_experiments(
     for k, v in experiment_data["params"].items():
         print(f"  {k:15s}: {v}")
 
-    for s in range(N_sim):
-        try:
-            seed = random.randint(0, 1_000_000)
-            res = run_single_experiment(
+    # 并行配置：
+    # - inner_threads 写死为 1，避免每个进程内部再开多线程导致过度并行
+    inner_threads = 1
+    n_jobs = int(n_jobs)
+
+    # 预先生成每一轮的 seed（并行时不要在 worker 里用全局 random）
+    seeds = [random.randint(0, 1_000_000) for _ in range(N_sim)]
+
+    def _set_thread_env(n: int):
+        n = int(n)
+        os.environ["OMP_NUM_THREADS"] = str(n)
+        os.environ["OPENBLAS_NUM_THREADS"] = str(n)
+        os.environ["MKL_NUM_THREADS"] = str(n)
+        os.environ["VECLIB_MAXIMUM_THREADS"] = str(n)
+        os.environ["NUMEXPR_NUM_THREADS"] = str(n)
+        os.environ["HILLSTORM_SKLEARN_N_JOBS"] = str(n)
+
+    def _worker(seed: int):
+        _set_thread_env(inner_threads)
+        # 并行时避免 worker 日志互相打架：把 stdout/stderr 静默掉
+        with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
+            return run_single_experiment(
                 sample_frac=sample_frac,
                 pilot_frac=pilot_frac,
                 train_frac=train_frac,
@@ -786,23 +807,51 @@ def run_multiple_experiments(
                 mu_model_type=mu_model_type,
                 value_type_dast=value_type_dast,
                 value_type_dams=value_type_dams,
-                seed=seed,
+                seed=int(seed),
             )
 
-            experiment_data["results"].append(res)
-
-            # 每轮覆盖保存
-            with open(out_path, "wb") as f:
-                pickle.dump(experiment_data, f)
-
-            print(f'[SIM {len(experiment_data["results"])}/{N_sim}] saved → {out_path}')
-            print("-" * 60)
-
-        except Exception:
-            import traceback
-
-            traceback.print_exc()
-            continue
+    # 串行：保持原来的“每轮覆盖保存”（更抗中断）
+    if int(n_jobs) <= 1:
+        _set_thread_env(inner_threads)
+        for s, seed in enumerate(seeds):
+            try:
+                res = _worker(seed)
+                experiment_data["results"].append(res)
+                with open(out_path, "wb") as f:
+                    pickle.dump(experiment_data, f)
+                print(f'[SIM {len(experiment_data["results"])}/{N_sim}] saved → {out_path}')
+                print("-" * 60)
+            except Exception:
+                import traceback
+                traceback.print_exc()
+                continue
+    else:
+        # 并行：主进程负责按完成顺序收集结果并覆盖保存（同样抗中断）
+        _set_thread_env(inner_threads)
+        t_start = time.perf_counter()
+        completed = 0
+        with cf.ProcessPoolExecutor(max_workers=int(n_jobs)) as ex:
+            future_to_seed = {ex.submit(_worker, seed): seed for seed in seeds}
+            for fut in cf.as_completed(future_to_seed):
+                try:
+                    res = fut.result()
+                    experiment_data["results"].append(res)
+                    with open(out_path, "wb") as f:
+                        pickle.dump(experiment_data, f)
+                    completed += 1
+                    elapsed = time.perf_counter() - t_start
+                    pct = 100.0 * completed / float(N_sim)
+                    # 动态进度行（同一行刷新）
+                    print(
+                        f"\r[SIM {completed}/{N_sim}] {pct:6.2f}% | elapsed {elapsed:8.1f}s | saved → {out_path}",
+                        end="",
+                        flush=True,
+                    )
+                except Exception:
+                    import traceback
+                    traceback.print_exc()
+                    continue
+        print("")  # 换行收尾
 
     print("\nALL SIMULATIONS DONE.")
     print(f"Results saved in '{out_path}'")
@@ -864,6 +913,12 @@ if __name__ == "__main__":
         type=int,
         help="Seed sequence for reproducibility",
     )
+    parser.add_argument(
+        "--n_jobs",
+        type=int,
+        default=max(1, (os.cpu_count() or 1) // 2),
+        help="Number of parallel simulations to run (outer parallelism).",
+    )
 
     args = parser.parse_args()
 
@@ -886,4 +941,5 @@ if __name__ == "__main__":
         value_type_dast=args.value_type_dast,
         value_type_dams=args.value_type_dams,
         seed_sequence=args.seed_sequence if args.seed_sequence is not None else None,
+        n_jobs=args.n_jobs,
     )

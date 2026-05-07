@@ -92,14 +92,12 @@ def run_kmeans_segmentation(X_pilot, M_candidates, random_state):
         seg.fit(X_pilot)
 
         score = kmeans_silhouette_score(seg_model=seg, X_pilot=X_pilot)
-        print(f"  KMeans K={M} score={score:.4f}")
 
         if score > best_score:
             best_score = score
             best_M = M
             best_seg = seg
 
-    print(f"\n✓ KMeans: selected K = {best_M} with score = {best_score:.4f}\n")
     seg_labels_pilot = best_seg.assign(X_pilot)
     return best_seg, seg_labels_pilot, best_M
 
@@ -151,7 +149,7 @@ def run_kmeans_dams_segmentation(X_pilot,
 # =========================================================
 def run_gmm_segmentation(X_pilot, M_candidates, random_state):
     print("\n" + "=" * 60)
-    print("STEP 4b: GMM - selecting optimal M via BIC")
+    print("GMM - selecting optimal M via BIC")
     print("=" * 60)
 
     best_M = None
@@ -163,14 +161,12 @@ def run_gmm_segmentation(X_pilot, M_candidates, random_state):
         seg.fit(X_pilot)
 
         bic = seg.model.bic(X_pilot)
-        print(f"  GMM M={M} BIC={bic:.1f}")
 
         if bic < best_bic:
             best_bic = bic
             best_M = M
             best_seg = seg
 
-    print(f"\n✓ GMM: selected M = {best_M} with BIC = {best_bic:.1f}\n")
     seg_labels_pilot = best_seg.assign(X_pilot)
     return best_seg, seg_labels_pilot, best_M
 
