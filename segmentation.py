@@ -128,13 +128,11 @@ def run_kmeans_dams_segmentation(X_pilot,
                            action=action,
                            value_type_dams=value_type_dams)
         
-        print(f"  KMeans_DAMS M={M} score={score:.4f}")
 
         if score > best_score:
             best_score = score
             best_M = M
 
-    print(f"\n✓ KMeans_DAMS: selected M = {best_M} with score = {best_score:.4f}\n")
 
     final_seg = KMeansSeg(best_M, random_state=random_state)
     final_seg.fit(X_pilot)
@@ -201,13 +199,11 @@ def run_gmm_dams_segmentation(X_pilot,
                            action=action,
                            value_type_dams=value_type_dams)
         
-        print(f"  GMM_DAMS M={M} score={score:.4f}")
 
         if score > best_score:
             best_score = score
             best_M = M
 
-    print(f"\n✓ GMM_DAMS: selected M = {best_M} with score = {best_score:.4f}\n")
 
     final_seg = GMMSeg(best_M, random_state=random_state)
     final_seg.fit(X_pilot)
@@ -293,7 +289,6 @@ def run_dast_dams(
             action=action_M,
             value_type_dams=value_type_dams,
         )
-        print(f"  DAST M={M} DAMS-score={score_M:.6f}")
 
         if score_M >= best_score:
             best_score = score_M
@@ -356,7 +351,6 @@ def run_clr_segmentation(
             best_seg = seg
             best_labels = seg.assign(X_pilot)
 
-    print(f"\n✓ CLR selected M={best_M} with BIC={best_score:.3f}\n")
     return best_seg, best_labels, best_M
 
 def run_clr_dams_segmentation(X_pilot, D_pilot,y_pilot,
@@ -390,13 +384,11 @@ def run_clr_dams_segmentation(X_pilot, D_pilot,y_pilot,
                             Gamma_val=Gamma_val,
                             action=action,
                             value_type_dams=value_type_dams)
-        print(f"  CLR_DAMS M={M} score={score:.4f}")
 
         if score > best_score:
             best_score = score
             best_M = M
 
-    print(f"\n✓ CLR_DAMS: selected M = {best_M} with score = {best_score:.4f}\n")
 
     final_seg = CLRSeg(
         n_segments=best_M,
@@ -480,7 +472,6 @@ def run_mst_dams(
             )
             tree_original.build()
             actual_leaves_mst = len(tree_original._get_leaf_nodes())
-            print(f"  Built MST for M={M} (max_depth={depth}): actual leaves = {actual_leaves_mst}")
             tree_cache[depth] = tree_original  # 保存原始树到 cache
         
         # ⚠️ 关键修复：每次都从 cache 中 copy，避免 prune 操作修改 cache 中的原始树
@@ -503,13 +494,11 @@ def run_mst_dams(
             action=action_M,
             value_type_dams=value_type_dams,
         )
-        print(f"  MST  M={M} DAMS-score={score_M:.6f}")
 
         if score_M > best_score:
             best_score = score_M
             best_M = M
 
-    print(f"\n✓ MST: selected M = {best_M} with DAMS-score = {best_score:.6f}\n")
 
     # --------------------------------------------------
     # 用 full pilot 重新 fit
@@ -659,7 +648,6 @@ def run_policytree_segmentation(
             action=action_M,
             value_type_dams=value_type_dams
         )
-        print(f"    DAMS-score(M={M}) = {score_M:.6f}")
 
         if score_M > best_score:
             best_score = score_M
@@ -670,7 +658,6 @@ def run_policytree_segmentation(
             "PolicyTree: no valid M found (all M_cand > leaf_count on train)."
         )
 
-    print(f"\n✓ POLICYTREE: selected M = {best_M} with DAMS-score = {best_score:.6f}")
 
     # 3) 在 full pilot 上重训一棵 policy tree，并 prune 到 best_M
     print("\nRe-fitting GRF + PolicyTree on FULL pilot ...")
