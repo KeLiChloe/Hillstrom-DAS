@@ -17,6 +17,39 @@ import concurrent.futures as cf
 import contextlib
 import io
 
+
+def _set_thread_env(n: int):
+    n = int(n)
+    os.environ["OMP_NUM_THREADS"] = str(n)
+    os.environ["OPENBLAS_NUM_THREADS"] = str(n)
+    os.environ["MKL_NUM_THREADS"] = str(n)
+    os.environ["VECLIB_MAXIMUM_THREADS"] = str(n)
+    os.environ["NUMEXPR_NUM_THREADS"] = str(n)
+    os.environ["HILLSTORM_SKLEARN_N_JOBS"] = str(n)
+
+
+def _run_single_experiment_worker(payload: dict):
+    """
+    Top-level function so ProcessPoolExecutor can pickle it.
+    payload must be pickleable.
+    """
+    inner_threads = int(payload.get("inner_threads", 1))
+    _set_thread_env(inner_threads)
+
+    # 并行时避免 worker 日志互相打架：把 stdout/stderr 静默掉
+    with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
+        return run_single_experiment(
+            sample_frac=payload["sample_frac"],
+            pilot_frac=payload["pilot_frac"],
+            train_frac=payload["train_frac"],
+            dataset=payload["dataset"],
+            target_col=payload["target_col"],
+            mu_model_type=payload["mu_model_type"],
+            value_type_dast=payload["value_type_dast"],
+            value_type_dams=payload["value_type_dams"],
+            seed=int(payload["seed"]),
+        )
+
 from data_utils import (
     load_criteo, load_hillstrom, load_lenta,
     split_seg_train_test, prepare_pilot_impl
@@ -785,37 +818,37 @@ def run_multiple_experiments(
     # 预先生成每一轮的 seed（并行时不要在 worker 里用全局 random）
     seeds = [random.randint(0, 1_000_000) for _ in range(N_sim)]
 
-    def _set_thread_env(n: int):
-        n = int(n)
-        os.environ["OMP_NUM_THREADS"] = str(n)
-        os.environ["OPENBLAS_NUM_THREADS"] = str(n)
-        os.environ["MKL_NUM_THREADS"] = str(n)
-        os.environ["VECLIB_MAXIMUM_THREADS"] = str(n)
-        os.environ["NUMEXPR_NUM_THREADS"] = str(n)
-        os.environ["HILLSTORM_SKLEARN_N_JOBS"] = str(n)
-
-    def _worker(seed: int):
-        _set_thread_env(inner_threads)
-        # 并行时避免 worker 日志互相打架：把 stdout/stderr 静默掉
-        with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
-            return run_single_experiment(
-                sample_frac=sample_frac,
-                pilot_frac=pilot_frac,
-                train_frac=train_frac,
-                dataset=dataset,
-                target_col=target_col,
-                mu_model_type=mu_model_type,
-                value_type_dast=value_type_dast,
-                value_type_dams=value_type_dams,
-                seed=int(seed),
-            )
+    def _payload(seed: int) -> dict:
+        return {
+            "sample_frac": sample_frac,
+            "pilot_frac": pilot_frac,
+            "train_frac": train_frac,
+            "dataset": dataset,
+            "target_col": target_col,
+            "mu_model_type": mu_model_type,
+            "value_type_dast": value_type_dast,
+            "value_type_dams": value_type_dams,
+            "seed": int(seed),
+            "inner_threads": int(inner_threads),
+        }
 
     # 串行：保持原来的“每轮覆盖保存”（更抗中断）
     if int(n_jobs) <= 1:
         _set_thread_env(inner_threads)
         for s, seed in enumerate(seeds):
             try:
-                res = _worker(seed)
+                # 串行模式保留详细日志，便于调试
+                res = run_single_experiment(
+                    sample_frac=sample_frac,
+                    pilot_frac=pilot_frac,
+                    train_frac=train_frac,
+                    dataset=dataset,
+                    target_col=target_col,
+                    mu_model_type=mu_model_type,
+                    value_type_dast=value_type_dast,
+                    value_type_dams=value_type_dams,
+                    seed=int(seed),
+                )
                 experiment_data["results"].append(res)
                 with open(out_path, "wb") as f:
                     pickle.dump(experiment_data, f)
@@ -831,7 +864,7 @@ def run_multiple_experiments(
         t_start = time.perf_counter()
         completed = 0
         with cf.ProcessPoolExecutor(max_workers=int(n_jobs)) as ex:
-            future_to_seed = {ex.submit(_worker, seed): seed for seed in seeds}
+            future_to_seed = {ex.submit(_run_single_experiment_worker, _payload(seed)): seed for seed in seeds}
             for fut in cf.as_completed(future_to_seed):
                 try:
                     res = fut.result()
