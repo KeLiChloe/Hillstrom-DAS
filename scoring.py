@@ -64,7 +64,6 @@ def dams_score(seg_model, X_val, D_val, y_val, Gamma_val, action, value_type_dam
     mask_match = (D_val == a_i)
     mask_mismatch = ~mask_match
 
-    # factual 部分
     if value_type_dams == "hybrid":
         v_hat[mask_match] = y_val[mask_match]
         idx_mismatch = np.where(mask_mismatch)[0]
@@ -72,4 +71,8 @@ def dams_score(seg_model, X_val, D_val, y_val, Gamma_val, action, value_type_dam
     elif value_type_dams == "dr":
         N = X_val.shape[0]
         v_hat = Gamma_val[np.arange(N), a_i]
+    else:
+        raise ValueError(
+            f"Unknown value_type_dams='{value_type_dams}'. Expected 'hybrid' or 'dr'."
+        )
     return float(v_hat.mean())

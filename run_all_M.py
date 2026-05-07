@@ -52,28 +52,20 @@ def run_dast_dams_all_M(
     print("STEP 5: DAST - selecting optimal M via DAMS")
     print("=" * 60)
 
-    d = X_pilot.shape[1]
-
-    # candidate thresholds
     d_full = X_pilot.shape[1]
-    
-    # Generate candidate thresholds (midpoints between unique values)
 
+    # Generate candidate thresholds (midpoints between unique values)
     bins = 200
     H_full = {}
 
     for j in range(d_full):
         col = X_pilot[:, j]
-        # 去掉nan的话可以先 col = col[~np.isnan(col)]
         unique_values = np.unique(col)
 
-        # 如果 unique 太多，只取 K+1 个“代表点”，再在中间算 midpoints
         if len(unique_values) > bins + 1:
-            # 取 K+1 个分位数，比如 [0, 1/K, 2/K, ..., 1]
-            qs = np.linspace(0, 1, num=bins+1)
-            # 用 quantile 近似 unique-values 的分布
+            qs = np.linspace(0, 1, num=bins + 1)
             grid = np.quantile(col, qs)
-            grid = np.unique(grid)  # 可能有重复
+            grid = np.unique(grid)
         else:
             grid = unique_values
 
@@ -84,34 +76,21 @@ def run_dast_dams_all_M(
 
     best_M = None
     best_score = -np.inf
-    tree_cache = {}  
+
     for M in M_candidates:
-        # ===== 修复：正确计算 max_depth，并添加 buffer =====
-        # 理论最小深度：ceil(log2(M))，但加 +3 buffer 确保能 grow 足够多的叶子
-        if M == 1:
-            depth = 0
-        else:
-            depth = int(np.ceil(np.log2(M))) 
-        
-        # ====== 1) 复用相同 depth 的树 ======
-        if depth not in tree_cache:
-            tree_original = DASTree(
-                x=X_train,
-                y=y_train,
-                D=D_train,
-                gamma=Gamma_train,
-                candidate_thresholds=H_full,
-                min_leaf_size=min_leaf_size,
-                max_depth=depth,
-            )
-            tree_original.build()
-            actual_leaves = len(tree_original._get_leaf_nodes())
-            print(f"  Built tree for M={M} (max_depth={depth}): actual leaves = {actual_leaves}")
-            tree_cache[depth] = tree_original  # 保存原始树到 cache
-        
-        # ⚠️ 关键修复：每次都从 cache 中 copy，避免 prune 操作修改 cache 中的原始树
-        tree = tree_cache[depth].copy()
-        tree.prune_to_M(M)
+        # Best-first growth: build a fresh tree directly to M leaves
+        tree = DASTree(
+            x=X_train,
+            y=y_train,
+            D=D_train,
+            gamma=Gamma_train,
+            candidate_thresholds=H_full,
+            min_leaf_size=min_leaf_size,
+            value_type_dast=value_type_dast,
+        )
+        tree.build(M)
+        actual_leaves = len(tree._get_leaf_nodes())
+        print(f"  Built tree for M={M}: actual leaves = {actual_leaves}")
 
         # segment labels on train + segment-level policy (diff-in-means on y)
         labels_train = tree.assign(X_train)
@@ -119,7 +98,7 @@ def run_dast_dams_all_M(
             X_train, y_train, D_train, labels_train
         )
 
-        # DAMS scoring on validation (dual)
+        # DAMS scoring on validation
         score_M = dams_score(
             seg_model=tree,
             X_val=X_val,
@@ -127,6 +106,7 @@ def run_dast_dams_all_M(
             y_val=y_val,
             Gamma_val=Gamma_val,
             action=action_M,
+            value_type_dams=value_type_dams,
         )
         print(f"  DAST M={M} DAMS-score={score_M:.6f}")
 
@@ -137,40 +117,27 @@ def run_dast_dams_all_M(
     results["dast"]["best_M"] = int(best_M)
     print(f"  Selected best M = {best_M} with DAMS score = {best_score:.6f}")
 
-    tree_cache_pilot = {}   # key = depth, value = built tree object
     for M in M_candidates:
-        # ===== 修复：正确计算 max_depth，并添加 buffer =====
-        if M == 1:
-            depth = 0
-        else:
-            depth = int(np.ceil(np.log2(M)))
-        
-        # ====== 1) 复用相同 depth 的树 ======
-        if depth not in tree_cache_pilot:
-            tree_pilot_original = DASTree(
-                x=X_pilot,
-                y=y_pilot,
-                D=D_pilot,
-                gamma=Gamma_pilot,
-                candidate_thresholds=H_full,
-                min_leaf_size=min_leaf_size,
-                max_depth=depth,
-            )
-            tree_pilot_original.build()
-            actual_leaves_pilot = len(tree_pilot_original._get_leaf_nodes())
-            print(f"  Built pilot tree for M={M} (max_depth={depth}): actual leaves = {actual_leaves_pilot}")
-            tree_cache_pilot[depth] = tree_pilot_original  # 保存原始树到 cache
-        
-        # ⚠️ 关键修复：每次都从 cache 中 copy，避免 prune 操作修改 cache 中的原始树
-        tree_pilot = tree_cache_pilot[depth].copy()
-        tree_pilot.prune_to_M(M)
+        # Best-first growth on pilot data
+        tree_pilot = DASTree(
+            x=X_pilot,
+            y=y_pilot,
+            D=D_pilot,
+            gamma=Gamma_pilot,
+            candidate_thresholds=H_full,
+            min_leaf_size=min_leaf_size,
+            value_type_dast=value_type_dast,
+        )
+        tree_pilot.build(M)
+        actual_leaves_pilot = len(tree_pilot._get_leaf_nodes())
+        print(f"  Built pilot tree for M={M}: actual leaves = {actual_leaves_pilot}")
 
-        # segment labels on train + segment-level policy (diff-in-means on y)
+        # segment labels on pilot + segment-level policy (diff-in-means on y)
         labels_M = tree_pilot.assign(X_pilot)
         action_M = estimate_segment_policy(
             X_pilot, y_pilot, D_pilot, labels_M
         )
-        
+
         seg_labels_impl_dast = tree_pilot.assign(X_impl)
         for eval in eval_methods:
             if eval not in results["dast"]:
@@ -186,6 +153,7 @@ def run_dast_dams_all_M(
                  
             )
             results["dast"][f"{eval}"][f"{M}"] = float(value_dast["value_mean"])
+
 
 
 
@@ -497,9 +465,9 @@ def run_single_simulation(sample_frac, pilot_frac, train_frac, dataset, target_c
     # --------------------------------------------------
     if "dast" in ALGO_LIST:
         run_dast_dams_all_M(
-            X_train, D_train, y_train,  
+            X_train, D_train, y_train,
             X_val, D_val, y_val,
-            X_pilot, D_pilot,y_pilot,
+            X_pilot, D_pilot, y_pilot,
             X_impl, D_impl, y_impl,
             results,
             mu_pilot_models,
@@ -508,7 +476,8 @@ def run_single_simulation(sample_frac, pilot_frac, train_frac, dataset, target_c
             Gamma_pilot,
             M_candidates,
             min_leaf_size=5,
-             
+            value_type_dast="dr",
+            value_type_dams="dr",
         )
 
 

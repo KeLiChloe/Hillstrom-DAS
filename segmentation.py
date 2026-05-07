@@ -108,7 +108,8 @@ def run_kmeans_dams_segmentation(X_pilot,
                                  X_val, D_val, y_val,
                                  Gamma_val,
                                  M_candidates,
-                                 random_state):
+                                 random_state,
+                                 value_type_dams):
     print("\n" + "=" * 60)
     print("KMeans_DAMS - selecting optimal K")
     print("=" * 60)
@@ -123,10 +124,11 @@ def run_kmeans_dams_segmentation(X_pilot,
             X_train, y_train, D_train, seg.assign(X_train)
         )
 
-        score = dams_score(seg_model = seg, 
-                           X_val = X_val, D_val = D_val, y_val = y_val, 
-                           Gamma_val = Gamma_val, 
-                           action = action)
+        score = dams_score(seg_model=seg,
+                           X_val=X_val, D_val=D_val, y_val=y_val,
+                           Gamma_val=Gamma_val,
+                           action=action,
+                           value_type_dams=value_type_dams)
         
         print(f"  KMeans_DAMS M={M} score={score:.4f}")
 
@@ -236,29 +238,20 @@ def run_dast_dams(
     print("STEP 5: DAST - selecting optimal M via DAMS")
     print("=" * 60)
 
-    d = X_pilot.shape[1]
-
-    # candidate thresholds
     d_full = X_pilot.shape[1]
-    
-    # Generate candidate thresholds (midpoints between unique values)
 
+    # Generate candidate thresholds (midpoints between unique values)
     bins = 200
     H_full = {}
 
     for j in range(d_full):
         col = X_pilot[:, j]
-        # 去掉nan的话可以先 col = col[~np.isnan(col)]
         unique_values = np.unique(col)
 
-
-        # 如果 unique 太多，只取 K+1 个“代表点”，再在中间算 midpoints
         if len(unique_values) > bins + 1:
-            # 取 K+1 个分位数，比如 [0, 1/K, 2/K, ..., 1]
-            qs = np.linspace(0, 1, num=bins+1)
-            # 用 quantile 近似 unique-values 的分布
+            qs = np.linspace(0, 1, num=bins + 1)
             grid = np.quantile(col, qs)
-            grid = np.unique(grid)  # 可能有重复
+            grid = np.unique(grid)
         else:
             grid = unique_values
 
@@ -267,43 +260,26 @@ def run_dast_dams(
         else:
             H_full[j] = grid
 
-
-    print(f"Candidate thresholds computed for {d} features.")
+    print(f"Candidate thresholds computed for {d_full} features.")
 
     best_M = None
     best_score = -np.inf
 
-    tree_cache = {}   # key = depth, value = built tree object
-
-
     print(f"\nTesting M candidates: {list(M_candidates)}")
     for M in M_candidates:
-        # ===== 修复：正确计算 max_depth，并添加 buffer =====
-        if M == 1:
-            depth = 0
-        else:
-            depth = int(np.ceil(np.log2(M)))
-        
-        # ====== 1) 复用相同 depth 的树 ======
-        if depth not in tree_cache:
-            tree_original = DASTree(
-                x=X_train,
-                y=y_train,
-                D=D_train,
-                gamma=Gamma_train,
-                candidate_thresholds=H_full,
-                min_leaf_size=min_leaf_size,
-                max_depth=depth,
-                value_type_dast=value_type_dast,
-            )
-            tree_original.build()
-            actual_leaves = len(tree_original._get_leaf_nodes())
-            print(f"  Built tree for M={M} (max_depth={depth}): actual leaves = {actual_leaves}")
-            tree_cache[depth] = tree_original  # 保存原始树到 cache
-        
-        # ⚠️ 关键修复：每次都从 cache 中 copy，避免 prune 操作修改 cache 中的原始树
-        tree = tree_cache[depth].copy()
-        tree.prune_to_M(M)
+        # Best-first growth: build a fresh tree directly to M leaves
+        tree = DASTree(
+            x=X_train,
+            y=y_train,
+            D=D_train,
+            gamma=Gamma_train,
+            candidate_thresholds=H_full,
+            min_leaf_size=min_leaf_size,
+            value_type_dast=value_type_dast,
+        )
+        tree.build(M)
+        actual_leaves = len(tree._get_leaf_nodes())
+        print(f"  Built tree for M={M}: actual leaves = {actual_leaves}")
 
         # segment labels on train + segment-level policy (diff-in-means on y)
         labels_train = tree.assign(X_train)
@@ -311,7 +287,7 @@ def run_dast_dams(
             X_train, y_train, D_train, labels_train
         )
 
-        # DAMS scoring on validation (dual)
+        # DAMS scoring on validation
         score_M = dams_score(
             seg_model=tree,
             X_val=X_val,
@@ -326,18 +302,17 @@ def run_dast_dams(
         if score_M >= best_score:
             best_score = score_M
             best_M = M
-        
+
     if best_M <= 4:
         best_M = 8  # Avoid excessive pruning causing excessive variance
 
     print(f"\n✓ DAST: selected M = {best_M} with DAMS-score = {best_score:.6f}\n")
 
-    # 用 full pilot 重新 fit
+    # Re-fit final tree on full pilot data
     print("\n" + "=" * 60)
     print("STEP 6: Fitting final DAST on full pilot")
     print("=" * 60)
 
-    
     tree_final = DASTree(
         x=X_pilot,
         y=y_pilot,
@@ -345,11 +320,9 @@ def run_dast_dams(
         gamma=Gamma_pilot,
         candidate_thresholds=H_full,
         min_leaf_size=min_leaf_size,
-        max_depth=0 if best_M == 1 else int(np.ceil(np.log2(best_M))),
         value_type_dast=value_type_dast,
     )
-    tree_final.build()
-    tree_final.prune_to_M(best_M)
+    tree_final.build(best_M)
     seg_labels_pilot = tree_final.assign(X_pilot)
     action_full_pilot = estimate_segment_policy(
         X_pilot, y_pilot, D_pilot, seg_labels_pilot
