@@ -226,9 +226,6 @@ def run_dast_dams(
     value_type_dast,
     value_type_dams
 ):
-    print("\n" + "=" * 60)
-    print("STEP 5: DAST - selecting optimal M via DAMS")
-    print("=" * 60)
 
     d_full = X_pilot.shape[1]
 
@@ -300,9 +297,6 @@ def run_dast_dams(
     print(f"\n✓ DAST: selected M = {best_M} with DAMS-score = {best_score:.6f}\n")
 
     # Re-fit final tree on full pilot data
-    print("\n" + "=" * 60)
-    print("STEP 6: Fitting final DAST on full pilot")
-    print("=" * 60)
 
     tree_final = DASTree(
         x=X_pilot,
@@ -410,9 +404,6 @@ def run_mst_dams(
     min_leaf_size,
     value_type_dams
 ):
-    print("\n" + "=" * 60)
-    print("STEP 5 (MST): selecting optimal M via DAMS (residual-based splits)")
-    print("=" * 60)
 
     d = X_pilot.shape[1]
 
@@ -502,11 +493,7 @@ def run_mst_dams(
 
     # --------------------------------------------------
     # 用 full pilot 重新 fit
-    # --------------------------------------------------
-    print("\n" + "=" * 60)
-    print("STEP 6 (MST): Fitting final MST on full pilot")
-    print("=" * 60)
-
+    # --------------------------------------------------ß
     print("Reusing candidate thresholds H_full on full pilot...")
 
     tree_final = MSTree(
