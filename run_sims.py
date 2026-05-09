@@ -787,8 +787,14 @@ def run_multiple_experiments(
     seed_sequence,
     n_jobs,
 ):
-    
-    
+    # 并行配置：
+    # - inner_threads 写死为 1，避免每个进程内部再开多线程导致过度并行
+    inner_threads = 1
+    n_jobs = int(n_jobs)
+
+    # 预先生成每一轮的 seed（并行时不要在 worker 里用全局 random）
+    seeds = [random.randint(0, 1_000_000) for _ in range(N_sim)]
+
     experiment_data = {
         "params": {
             "seed_sequence": seed_sequence,
@@ -801,22 +807,24 @@ def run_multiple_experiments(
             "value_type_dast": value_type_dast,
             "value_type_dams": value_type_dams,
             "mu_model_type": mu_model_type,
+            "out_path": out_path,
+            "n_jobs": n_jobs,
+            "inner_threads": inner_threads,
+            "ALGO_LIST": list(ALGO_LIST),
+            "eval_methods": list(eval_methods),
+            "M_candidates": list(M_candidates),
+            "seeds": list(seeds),
         },
         "results": [],
     }
-    
-    # print experiment_data["params"]
+
     print("Experiment parameters:")
     for k, v in experiment_data["params"].items():
-        print(f"  {k:15s}: {v}")
-
-    # 并行配置：
-    # - inner_threads 写死为 1，避免每个进程内部再开多线程导致过度并行
-    inner_threads = 1
-    n_jobs = int(n_jobs)
-
-    # 预先生成每一轮的 seed（并行时不要在 worker 里用全局 random）
-    seeds = [random.randint(0, 1_000_000) for _ in range(N_sim)]
+        # seeds 太长，打印时折叠
+        if k == "seeds":
+            print(f"  {k:15s}: <list len={len(v)}>")
+        else:
+            print(f"  {k:15s}: {v}")
 
     def _payload(seed: int) -> dict:
         return {
