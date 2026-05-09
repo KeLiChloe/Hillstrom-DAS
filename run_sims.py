@@ -791,10 +791,9 @@ def run_multiple_experiments(
     # - inner_threads 写死为 1，避免每个进程内部再开多线程导致过度并行
     inner_threads = 1
     n_jobs = int(n_jobs)
+    max_attempts = int(N_sim) * 5
 
-    # 预先生成每一轮的 seed（并行时不要在 worker 里用全局 random）
-    seeds = [random.randint(0, 1_000_000) for _ in range(N_sim)]
-
+    # 成功完成的 simulation 所用 seed 顺序写入 params["seeds"]（失败会重试新 seed，直到满 N_sim 条结果）
     experiment_data = {
         "params": {
             "seed_sequence": seed_sequence,
@@ -802,6 +801,7 @@ def run_multiple_experiments(
             "pilot_frac": pilot_frac,
             "train_frac": train_frac,
             "N_sim": N_sim,
+            "max_attempts": max_attempts,
             "dataset": dataset,
             "target_col": target_col,
             "value_type_dast": value_type_dast,
@@ -813,7 +813,8 @@ def run_multiple_experiments(
             "ALGO_LIST": list(ALGO_LIST),
             "eval_methods": list(eval_methods),
             "M_candidates": list(M_candidates),
-            "seeds": list(seeds),
+            "seeds": [],
+            "attempts_used": 0,
         },
         "results": [],
     }
@@ -822,7 +823,7 @@ def run_multiple_experiments(
     for k, v in experiment_data["params"].items():
         # seeds 太长，打印时折叠
         if k == "seeds":
-            print(f"  {k:15s}: <list len={len(v)}>")
+            print(f"  {k:15s}: <successful seeds, filled as runs complete>")
         else:
             print(f"  {k:15s}: {v}")
 
@@ -840,12 +841,24 @@ def run_multiple_experiments(
             "inner_threads": int(inner_threads),
         }
 
-    # 串行：保持原来的“每轮覆盖保存”（更抗中断）
+    # 串行：直到凑满 N_sim 条成功结果（单次失败则换新 seed 重试）；最多 max_attempts 次单次运行
     if int(n_jobs) <= 1:
         _set_thread_env(inner_threads)
-        for s, seed in enumerate(seeds):
+        attempts_used = 0
+        while len(experiment_data["results"]) < N_sim:
+            if attempts_used >= max_attempts:
+                experiment_data["params"]["attempts_used"] = attempts_used
+                with open(out_path, "wb") as f:
+                    pickle.dump(experiment_data, f)
+                raise RuntimeError(
+                    f"Exceeded max_attempts={max_attempts} (completed runs); "
+                    f"only {len(experiment_data['results'])}/{N_sim} successes. "
+                    f"Partial results saved to {out_path!r}."
+                )
+            attempts_used += 1
+            experiment_data["params"]["attempts_used"] = attempts_used
+            seed = random.randint(0, 1_000_000)
             try:
-                # 串行模式保留详细日志，便于调试
                 res = run_single_experiment(
                     sample_frac=sample_frac,
                     pilot_frac=pilot_frac,
@@ -858,13 +871,17 @@ def run_multiple_experiments(
                     seed=int(seed),
                 )
                 experiment_data["results"].append(res)
+                experiment_data["params"]["seeds"].append(int(seed))
                 with open(out_path, "wb") as f:
                     pickle.dump(experiment_data, f)
                 print(f'[SIM {len(experiment_data["results"])}/{N_sim}] saved → {out_path}')
                 print("-" * 60)
             except Exception:
                 import traceback
+
                 traceback.print_exc()
+                with open(out_path, "wb") as f:
+                    pickle.dump(experiment_data, f)
                 continue
     else:
         # 并行：主进程负责按完成顺序收集结果并覆盖保存（同样抗中断）
@@ -906,49 +923,108 @@ def run_multiple_experiments(
             print(f"Prefetch failed (will continue anyway): {e}", flush=True)
 
         t_start = time.perf_counter()
-        completed = 0
+        pending = {}
+        # 与串行一致：上限统计「发起的单次实验次数」（submit），避免因并行在途任务导致远超 max_attempts 次实际运行
+        attempts_used = 0
+
+        def submit_one(pool_ex):
+            nonlocal attempts_used
+            if attempts_used >= max_attempts:
+                return False
+            s = random.randint(0, 1_000_000)
+            fut = pool_ex.submit(_run_single_experiment_worker, _payload(s))
+            pending[fut] = s
+            attempts_used += 1
+            experiment_data["params"]["attempts_used"] = attempts_used
+            return True
+
         with cf.ProcessPoolExecutor(max_workers=int(n_jobs)) as ex:
-            future_to_seed = {ex.submit(_run_single_experiment_worker, _payload(seed)): seed for seed in seeds}
-            for fut in cf.as_completed(future_to_seed):
-                try:
-                    res = fut.result()
-                    experiment_data["results"].append(res)
-                    with open(out_path, "wb") as f:
-                        pickle.dump(experiment_data, f)
-                    completed += 1
-                    elapsed = time.perf_counter() - t_start
-                    pct = 100.0 * completed / float(N_sim)
-                    # 动态进度行（同一行刷新）
-                    print(
-                        f"\r[SIM {completed}/{N_sim}] {pct:6.2f}% | elapsed {elapsed:8.1f}s | saved → {out_path}",
-                        end="",
-                        flush=True,
-                    )
+            for _ in range(min(int(n_jobs), N_sim)):
+                if not submit_one(ex):
+                    break
 
-                    # 每完成 1 个 sim，额外打印摘要（主进程输出，避免 worker 刷屏）
-                    seed_done = int(res.get("seed", future_to_seed.get(fut, -1)))
-                    total_time = 0.0
-                    for algo in ALGO_LIST:
-                        if isinstance(res.get(algo), dict):
-                            total_time += float(res[algo].get("time", 0.0) or 0.0)
+            # 已满 N_sim 成功则退出；否则在仍有预算时保持 pending 非空。
+            while len(experiment_data["results"]) < N_sim:
+                if not pending:
+                    if attempts_used >= max_attempts:
+                        break
+                    if not submit_one(ex):
+                        break
+                done, _ = cf.wait(set(pending.keys()), return_when=cf.FIRST_COMPLETED)
+                for fut in done:
+                    seed_used = pending.pop(fut)
 
-                    parts = [f"seed={seed_done}", f"total_time={total_time:.1f}s"]
-                    for algo in ALGO_LIST:
-                        if not isinstance(res.get(algo), dict):
-                            continue
-                        # 优先显示 dual_dr；没有就退回 dr/ipw
-                        if "dual_dr" in res[algo]:
-                            parts.append(f"{algo}.dual_dr={res[algo]['dual_dr']:.4g}")
-                        elif "dr" in res[algo]:
-                            parts.append(f"{algo}.dr={res[algo]['dr']:.4g}")
-                        elif "ipw" in res[algo]:
-                            parts.append(f"{algo}.ipw={res[algo]['ipw']:.4g}")
+                    # 同一轮可能多个 future 同时完成；已满 N_sim 后丢弃多余结果
+                    if len(experiment_data["results"]) >= N_sim:
+                        try:
+                            fut.result()
+                        except Exception:
+                            pass
+                        continue
 
-                    print("\n  " + " | ".join(parts), flush=True)
-                except Exception:
-                    import traceback
-                    traceback.print_exc()
-                    continue
+                    try:
+                        res = fut.result()
+                        experiment_data["results"].append(res)
+                        experiment_data["params"]["seeds"].append(int(seed_used))
+                        with open(out_path, "wb") as f:
+                            pickle.dump(experiment_data, f)
+                        completed = len(experiment_data["results"])
+                        elapsed = time.perf_counter() - t_start
+                        pct = 100.0 * completed / float(N_sim)
+                        print(
+                            f"\r[SIM {completed}/{N_sim}] {pct:6.2f}% | elapsed {elapsed:8.1f}s | saved → {out_path}",
+                            end="",
+                            flush=True,
+                        )
+
+                        seed_done = int(res.get("seed", seed_used))
+                        total_time = 0.0
+                        for algo in ALGO_LIST:
+                            if isinstance(res.get(algo), dict):
+                                total_time += float(res[algo].get("time", 0.0) or 0.0)
+
+                        parts = [f"seed={seed_done}", f"total_time={total_time:.1f}s"]
+                        for algo in ALGO_LIST:
+                            if not isinstance(res.get(algo), dict):
+                                continue
+                            if "dual_dr" in res[algo]:
+                                parts.append(f"{algo}.dual_dr={res[algo]['dual_dr']:.4g}")
+                            elif "dr" in res[algo]:
+                                parts.append(f"{algo}.dr={res[algo]['dr']:.4g}")
+                            elif "ipw" in res[algo]:
+                                parts.append(f"{algo}.ipw={res[algo]['ipw']:.4g}")
+
+                        print("\n  " + " | ".join(parts), flush=True)
+                    except Exception:
+                        import traceback
+
+                        traceback.print_exc()
+                        with open(out_path, "wb") as f:
+                            pickle.dump(experiment_data, f)
+
+                    if len(experiment_data["results"]) < N_sim and attempts_used < max_attempts:
+                        submit_one(ex)
+
+            # 已有 N_sim 条成功结果，或已达尝试上限：吞掉仍在跑的任务
+            while pending:
+                done, _ = cf.wait(set(pending.keys()), return_when=cf.FIRST_COMPLETED)
+                for fut in done:
+                    pending.pop(fut)
+                    try:
+                        fut.result()
+                    except Exception:
+                        pass
+
+            if len(experiment_data["results"]) < N_sim:
+                experiment_data["params"]["attempts_used"] = attempts_used
+                with open(out_path, "wb") as f:
+                    pickle.dump(experiment_data, f)
+                raise RuntimeError(
+                    f"Exceeded max_attempts={max_attempts} (submitted runs); "
+                    f"only {len(experiment_data['results'])}/{N_sim} successes. "
+                    f"Partial results saved to {out_path!r}."
+                )
+
         print("")  # 换行收尾
 
     print("\nALL SIMULATIONS DONE.")
