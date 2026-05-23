@@ -287,7 +287,7 @@ def run_dast_dams(
             value_type_dams=value_type_dams,
         )
 
-        if score_M >= best_score:
+        if score_M >= best_score: # tie break by larger M (more segments)
             best_score = score_M
             best_M = M
 

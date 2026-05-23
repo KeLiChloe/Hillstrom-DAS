@@ -1062,6 +1062,13 @@ if __name__ == "__main__":
         "--sample_frac",
         type=float,
     )
+
+    parser.add_argument(
+        "--pilot_frac",
+        type=float,
+        default=0.2,
+        help="Fraction of data used as pilot set (default: 0.2)",
+    )
     
     parser.add_argument(
         "--mu_model_type", 
@@ -1096,7 +1103,7 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    pilot_frac = 0.2  # 20% data for pilot
+    pilot_frac = args.pilot_frac  # fraction of data for pilot
     train_frac = 0.7  # 70% pilot for training
     
     if args.seed_sequence is not None:

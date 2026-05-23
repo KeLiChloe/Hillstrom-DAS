@@ -1,3 +1,4 @@
+import argparse
 import os
 import pickle
 import warnings
@@ -11,7 +12,17 @@ from matplotlib.lines import Line2D
 # ==========================================
 # 0. I/O
 # ==========================================
-PKL_PATH = "exp_results_hillstrom/conversion/exp0.pkl"
+parser = argparse.ArgumentParser(description="Plot confidence interval figures from experiment results.")
+parser.add_argument(
+    "--pkl-path",
+    "--pkl_path",
+    required=True,
+    dest="pkl_path",
+    help="Path to the experiment pickle file.",
+)
+args = parser.parse_args()
+
+PKL_PATH = args.pkl_path
 FIG_DIR = "figures"
 os.makedirs(FIG_DIR, exist_ok=True)
 
@@ -113,20 +124,36 @@ preferred_order = [
     
 ]
 
+# palette = {
+#     "vs. All Action=0": "#2CA02C99",
+#     "vs. All Action=1": "#4C72B099",
+#     "vs. All Action=2": "#8172B299",
+#     "vs. Random": "#8C613C99",
+#     "vs. K-Means": "#CCB97499",
+#     "vs. GMM": "#64B5CD99",
+#     "vs. CLR": "#9467BD99",
+#     "vs. MST": "#93786099",
+#     "vs. Causal Forest": "#1F77B499",
+#     "vs. T-learner": "#FF7F0E99",
+#     "vs. S-learner": "#55A86899",
+#     "vs. X-learner": "#4EBEC499",
+#     "vs. DR-learner": "#D6272899",
+# }
+
 palette = {
-    "vs. All Action=0": "#2CA02C99",
-    "vs. All Action=1": "#4C72B099",
-    "vs. All Action=2": "#8172B299",
-    "vs. Random": "#8C613C99",
-    "vs. K-Means": "#CCB97499",
-    "vs. GMM": "#64B5CD99",
-    "vs. CLR": "#9467BD99",
-    "vs. MST": "#93786099",
-    "vs. Causal Forest": "#1F77B499",
-    "vs. T-learner": "#FF7F0E99",
-    "vs. S-learner": "#55A86899",
-    "vs. X-learner": "#4EBEC499",
-    "vs. DR-learner": "#D6272899",
+    "vs. All Action=0": "#00000099", # black with slight transparency
+    "vs. All Action=1": "#00000099",
+    "vs. All Action=2": "#00000099",
+    "vs. Random": "#00000099",
+    "vs. K-Means": "#00000099",
+    "vs. GMM": "#00000099",
+    "vs. CLR": "#00000099",
+    "vs. MST": "#00000099",
+    "vs. Causal Forest": "#00000099",
+    "vs. T-learner": "#00000099",
+    "vs. S-learner": "#00000099",
+    "vs. X-learner": "#00000099",
+    "vs. DR-learner": "#00000099",
 }
 
 def get_sig_star(p):
@@ -234,6 +261,9 @@ for EV in eval_methods:
         print(f"[WARN] stats_df empty for eval={EV}. Skip plotting.")
         continue
 
+    # Sort by mean lift ascending so top-to-bottom order is small-to-large
+    stats_df = stats_df.sort_values("Mean", ascending=True).reset_index(drop=True)
+
     # ------------------------------------------
     # 5.4 Plot
     # ------------------------------------------
@@ -265,7 +295,7 @@ for EV in eval_methods:
     ]
 
     ax.set_yticks(y_pos)
-    ax.set_yticklabels(ytick_labels, fontweight="bold", fontsize=13)
+    ax.set_yticklabels(ytick_labels, fontweight="bold", fontsize=16)
     ax.tick_params(axis="y", length=0)
 
     ax.axvline(0, color="#E40606", linestyle="--", linewidth=1.6, alpha=0.8)
@@ -274,6 +304,7 @@ for EV in eval_methods:
         "Averaged DAS Improvement (%) Over Comparators",
         fontweight="bold",
         labelpad=12,
+        fontsize=18,
     )
 
     ax.invert_yaxis()
@@ -289,21 +320,21 @@ for EV in eval_methods:
         f"Averaged DAS Improvement (%) (Runs={n_sims})",
         fontweight="bold",
         pad=18,
-        fontsize=16,
+        fontsize=22,
         y=1.08,
     )
 
-    ax.annotate(
-        "Positive values (>0%) indicate DAS outperforms comparators",
-        xy=(0.5, 1.03),
-        xycoords="axes fraction",
-        fontsize=12,
-        fontweight="bold",
-        color="#333333",
-        ha="center",
-        va="bottom",
-        bbox=dict(boxstyle="round,pad=0.3", fc="#f0f0f0", ec="gray", lw=0.5, alpha=0.8),
-    )
+    # ax.annotate(
+    #     "Positive values (>0%) indicate DAS outperforms comparators",
+    #     xy=(0.5, 1.03),
+    #     xycoords="axes fraction",
+    #     fontsize=12,
+    #     fontweight="bold",
+    #     color="#333333",
+    #     ha="center",
+    #     va="bottom",
+    #     bbox=dict(boxstyle="round,pad=0.3", fc="#f0f0f0", ec="gray", lw=0.5, alpha=0.8),
+    # )
 
     legend_handles = [
         Line2D([0], [0], color="black", marker="o", linestyle="-", linewidth=2, markersize=8, label="Mean ± 95% CI"),
