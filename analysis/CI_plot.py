@@ -201,7 +201,7 @@ for EV in eval_methods:
             if abs(vb) < 1e-12:
                 continue
 
-            lift = (vt - vb) / vb * 100.0 + 1.
+            lift = (vt - vb) / vb * 100.0
             records.append({"Run": i, "Baseline": b, "Lift": float(lift)})
             pair_counts[b] += 1
 

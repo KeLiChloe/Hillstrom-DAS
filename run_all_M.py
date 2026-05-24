@@ -173,7 +173,16 @@ eval_classes = {
 M_candidates = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
 
 
-def run_single_simulation(sample_frac, pilot_frac, train_frac, dataset, target_col, mu_model_type):
+def run_single_simulation(
+    sample_frac,
+    pilot_frac,
+    train_frac,
+    dataset,
+    target_col,
+    mu_model_type,
+    value_type_dast="hybrid",
+    value_type_dams="hybrid",
+):
     # --------------------------------------------------
     # Load dataset based on parameter
     # --------------------------------------------------
@@ -474,8 +483,8 @@ def run_single_simulation(sample_frac, pilot_frac, train_frac, dataset, target_c
             Gamma_pilot,
             M_candidates,
             min_leaf_size=5,
-            value_type_dast="dr",
-            value_type_dams="dr",
+            value_type_dast=value_type_dast,
+            value_type_dams=value_type_dams,
         )
 
 
@@ -500,6 +509,8 @@ def run_multiple_simulations(
     dataset,
     target_col,
     mu_model_type,
+    value_type_dast="hybrid",
+    value_type_dams="hybrid",
 ):
     experiment_data = {
         "params": {
@@ -509,6 +520,10 @@ def run_multiple_simulations(
             "N_sim": N_sim,
             "dataset": dataset,
             "target_col": target_col,
+            "mu_model_type": mu_model_type,
+            "value_type_dast": value_type_dast,
+            "value_type_dams": value_type_dams,
+            "out_path": out_path,
         },
         "results": [],
     }
@@ -527,6 +542,8 @@ def run_multiple_simulations(
                 dataset=dataset,
                 target_col=target_col,
                 mu_model_type=mu_model_type,
+                value_type_dast=value_type_dast,
+                value_type_dams=value_type_dams,
             )
 
             experiment_data["results"].append(res)
@@ -546,13 +563,20 @@ def run_multiple_simulations(
 
     print("\nALL SIMULATIONS DONE.")
     print(f"Results saved in '{out_path}'")
+    return experiment_data
 
 
 if __name__ == "__main__":
     import argparse
+    import sys
+    from pathlib import Path
+
+    _REPO_ROOT = Path(__file__).resolve().parent
+    if str(_REPO_ROOT) not in sys.path:
+        sys.path.insert(0, str(_REPO_ROOT))
 
     parser = argparse.ArgumentParser(
-        description="Run multiple multi-action segmentation experiments"
+        description="Run all-M DAST experiment and plot DAST value vs. M."
     )
 
     parser.add_argument(
@@ -584,6 +608,7 @@ if __name__ == "__main__":
         "--mu_model_type", 
         type=str,
         help="Model type for gamma estimation",
+        default="lightgbm_reg",
     )
     
     
@@ -591,21 +616,60 @@ if __name__ == "__main__":
         "--value_type_dast",
         type=str,
         help="Value type for DAST splitting ('dr' or 'hybrid')",
+        default="hybrid",
     )
     
     parser.add_argument(
         "--value_type_dams",
         type=str,
         help="Value type for DAMS criterion ('dr' or 'hybrid')",
+        default="hybrid",
+    )
+
+    parser.add_argument(
+        "--N-sim",
+        "--N_sim",
+        type=int,
+        default=1,
+        dest="N_sim",
+        help="Number of simulation runs (default: 1).",
+    )
+    parser.add_argument(
+        "--fig-dir",
+        "--fig_dir",
+        default=None,
+        help="Figure output directory (default: <pkl_parent>/figures).",
+    )
+    parser.add_argument(
+        "--eval-method",
+        "--eval_method",
+        default="all",
+        choices=["all", "dr", "dual_dr", "ipw"],
+        help="OPE method(s) to plot after run (default: all).",
+    )
+    parser.add_argument(
+        "--run-index",
+        "--run_index",
+        type=int,
+        default=0,
+        help="Which results[] entry to plot (default: 0).",
+    )
+    parser.add_argument(
+        "--no-plot",
+        action="store_true",
+        help="Skip plotting after the experiment finishes.",
     )
 
     args = parser.parse_args()
 
-    pilot_frac = 0.2  # 20% data for pilot
-    train_frac = 0.6  # 70% pilot for training
+    if not args.outpath:
+        parser.error("--outpath is required.")
 
-    run_multiple_simulations(
-        N_sim=1,
+    pilot_frac = 0.2  # 20% data for pilot
+    train_frac = 0.7  # 70% pilot for training
+
+    experiment_data = run_multiple_simulations(
+        N_sim=args.N_sim,
         sample_frac=args.sample_frac,
         pilot_frac=pilot_frac,
         train_frac=train_frac,
@@ -613,4 +677,24 @@ if __name__ == "__main__":
         dataset=args.dataset,
         target_col=args.target,
         mu_model_type=args.mu_model_type,
+        value_type_dast=args.value_type_dast,
+        value_type_dams=args.value_type_dams,
     )
+
+    if args.no_plot:
+        print("Skipping plots (--no-plot).")
+    elif not experiment_data.get("results"):
+        print("No successful runs; skipping plots.")
+    else:
+        from analysis.plot_all_M import plot_experiment
+
+        out_pkl = Path(args.outpath).expanduser().resolve()
+        fig_dir = args.fig_dir
+        if fig_dir is None:
+            fig_dir = out_pkl.parent / "figures"
+        plot_experiment(
+            experiment_data,
+            fig_dir=fig_dir,
+            run_index=args.run_index,
+            eval_method=args.eval_method,
+        )
