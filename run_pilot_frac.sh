@@ -18,11 +18,6 @@ for pilot_int in $(seq 5 5 50); do
     pilot_tag=$(printf "%03d" "${pilot_int}")
     outpath="${OUTDIR}/pilot_frac/pilot_frac_${pilot_tag}.pkl"
 
-    if [[ -f "${outpath}" ]]; then
-        echo "[SKIP] pilot_frac=${pilot_frac} exists: ${outpath}"
-        continue
-    fi
-
     echo "[RUN ] pilot_frac=${pilot_frac} -> ${outpath}"
     python run_sims.py \
         --mu_model_type "${MU_MODEL_TYPE}" \
