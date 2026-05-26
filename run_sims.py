@@ -773,6 +773,61 @@ def run_single_experiment(sample_frac, pilot_frac, train_frac, dataset, target_c
     return results
 
 
+def _param_equal(a, b) -> bool:
+    if isinstance(a, (float, np.floating)) or isinstance(b, (float, np.floating)):
+        try:
+            return abs(float(a) - float(b)) < 1e-9
+        except (TypeError, ValueError):
+            pass
+    return a == b
+
+
+def _load_experiment_checkpoint(out_path: str, expected_params: dict) -> tuple[dict, bool]:
+    """
+    Load an existing checkpoint or return a fresh experiment_data dict.
+    Returns (experiment_data, already_complete).
+    """
+    if not os.path.isfile(out_path):
+        return {
+            "params": dict(expected_params),
+            "results": [],
+        }, False
+
+    with open(out_path, "rb") as f:
+        experiment_data = pickle.load(f)
+
+    if not isinstance(experiment_data, dict):
+        raise ValueError(f"Invalid checkpoint format in {out_path!r}.")
+    if "params" not in experiment_data or "results" not in experiment_data:
+        raise ValueError(f"Checkpoint missing params/results in {out_path!r}.")
+
+    saved = experiment_data["params"]
+    mismatches = []
+    for key, expected in expected_params.items():
+        if not _param_equal(saved.get(key), expected):
+            mismatches.append(
+                f"{key}: checkpoint={saved.get(key)!r}, expected={expected!r}"
+            )
+    if mismatches:
+        raise ValueError(
+            f"Checkpoint params do not match current run ({out_path!r}):\n  "
+            + "\n  ".join(mismatches)
+        )
+
+    n_done = len(experiment_data["results"])
+    n_sim = int(saved.get("N_sim", expected_params["N_sim"]))
+    if n_done >= n_sim:
+        print(f"Checkpoint already complete ({n_done}/{n_sim}): {out_path}")
+        return experiment_data, True
+
+    attempts = int(saved.get("attempts_used", 0))
+    print(
+        f"Resuming checkpoint ({n_done}/{n_sim} results, "
+        f"{attempts} attempts used): {out_path}"
+    )
+    return experiment_data, False
+
+
 def run_multiple_experiments(
     N_sim,
     sample_frac,
@@ -793,31 +848,39 @@ def run_multiple_experiments(
     n_jobs = int(n_jobs)
     max_attempts = int(N_sim) * 5
 
-    # 成功完成的 simulation 所用 seed 顺序写入 params["seeds"]（失败会重试新 seed，直到满 N_sim 条结果）
-    experiment_data = {
-        "params": {
-            "seed_sequence": seed_sequence,
-            "sample_frac": sample_frac,
-            "pilot_frac": pilot_frac,
-            "train_frac": train_frac,
-            "N_sim": N_sim,
-            "max_attempts": max_attempts,
-            "dataset": dataset,
-            "target_col": target_col,
-            "value_type_dast": value_type_dast,
-            "value_type_dams": value_type_dams,
-            "mu_model_type": mu_model_type,
-            "out_path": out_path,
-            "n_jobs": n_jobs,
-            "inner_threads": inner_threads,
-            "ALGO_LIST": list(ALGO_LIST),
-            "eval_methods": list(eval_methods),
-            "M_candidates": list(M_candidates),
-            "seeds": [],
-            "attempts_used": 0,
-        },
-        "results": [],
+    expected_params = {
+        "seed_sequence": seed_sequence,
+        "sample_frac": sample_frac,
+        "pilot_frac": pilot_frac,
+        "train_frac": train_frac,
+        "N_sim": int(N_sim),
+        "max_attempts": max_attempts,
+        "dataset": dataset,
+        "target_col": target_col,
+        "value_type_dast": value_type_dast,
+        "value_type_dams": value_type_dams,
+        "mu_model_type": mu_model_type,
+        "out_path": out_path,
+        "n_jobs": n_jobs,
+        "inner_threads": inner_threads,
+        "ALGO_LIST": list(ALGO_LIST),
+        "eval_methods": list(eval_methods),
+        "M_candidates": list(M_candidates),
+        "seeds": [],
+        "attempts_used": 0,
     }
+
+    # 成功完成的 simulation 所用 seed 顺序写入 params["seeds"]（失败会重试新 seed，直到满 N_sim 条结果）
+    experiment_data, already_complete = _load_experiment_checkpoint(
+        out_path, expected_params
+    )
+    if already_complete:
+        return
+
+    if not experiment_data["results"]:
+        experiment_data["params"].setdefault("seeds", [])
+        experiment_data["params"].setdefault("attempts_used", 0)
+    # 续跑时保留已有 seeds / attempts_used / results；新跑时 expected_params 已写入 params
 
     print("Experiment parameters:")
     for k, v in experiment_data["params"].items():
@@ -844,7 +907,7 @@ def run_multiple_experiments(
     # 串行：直到凑满 N_sim 条成功结果（单次失败则换新 seed 重试）；最多 max_attempts 次单次运行
     if int(n_jobs) <= 1:
         _set_thread_env(inner_threads)
-        attempts_used = 0
+        attempts_used = int(experiment_data["params"].get("attempts_used", 0))
         while len(experiment_data["results"]) < N_sim:
             if attempts_used >= max_attempts:
                 experiment_data["params"]["attempts_used"] = attempts_used
@@ -925,7 +988,7 @@ def run_multiple_experiments(
         t_start = time.perf_counter()
         pending = {}
         # 与串行一致：上限统计「发起的单次实验次数」（submit），避免因并行在途任务导致远超 max_attempts 次实际运行
-        attempts_used = 0
+        attempts_used = int(experiment_data["params"].get("attempts_used", 0))
 
         def submit_one(pool_ex):
             nonlocal attempts_used

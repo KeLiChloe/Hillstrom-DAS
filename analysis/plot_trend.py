@@ -179,15 +179,25 @@ def das_improvement_ratio(vt: float, vb: float) -> float:
 
 def detect_sweep_kind(exp_dir: Path) -> SweepKind:
     """Infer x-axis sweep from directory name or pickle filenames."""
-    path_lower = exp_dir.as_posix().lower()
     has_sample = bool(list(exp_dir.glob("sample_frac_*.pkl")))
     has_pilot = bool(list(exp_dir.glob("pilot_frac_*.pkl")))
 
-    if "sample_frac" in path_lower or (has_sample and not has_pilot):
-        return "sample_frac"
-    if "pilot_frac" in path_lower or has_pilot:
+    if has_pilot and not has_sample:
         return "pilot_frac"
-    if has_sample:
+    if has_sample and not has_pilot:
+        return "sample_frac"
+
+    # e.g. pilot_frac_with_fixed_0.1_sample_frac vs sample_frac_with_fixed_020_pilot
+    dir_name = exp_dir.name.lower()
+    if dir_name.startswith("pilot_frac"):
+        return "pilot_frac"
+    if dir_name.startswith("sample_frac"):
+        return "sample_frac"
+
+    path_lower = exp_dir.as_posix().lower()
+    if "pilot_frac" in path_lower:
+        return "pilot_frac"
+    if "sample_frac" in path_lower:
         return "sample_frac"
     return "pilot_frac"
 
@@ -203,14 +213,15 @@ def discover_sweep_value(kind: SweepKind, path: Path, params: dict) -> float:
 
 def load_experiment_pkls(
     exp_dir: Path, min_sims: int, sweep_kind: SweepKind
-) -> list[dict]:
+) -> tuple[list[dict], list[dict]]:
     pkls = sorted(exp_dir.glob(f"{sweep_kind}_*.pkl"))
     if not pkls:
         pkls = sorted(exp_dir.glob("*.pkl"))
     if not pkls:
         raise FileNotFoundError(f"No pickle files found in {exp_dir}")
 
-    loaded = []
+    loaded: list[dict] = []
+    incomplete: list[dict] = []
     for path in pkls:
         with open(path, "rb") as f:
             data = pickle.load(f)
@@ -219,6 +230,15 @@ def load_experiment_pkls(
             continue
         params = data.get("params", {})
         n_runs = len(data["results"])
+        n_sim_expected = int(params.get("N_sim", 100))
+        if n_runs < n_sim_expected:
+            incomplete.append(
+                {
+                    "path": path,
+                    "n_runs": n_runs,
+                    "n_sim": n_sim_expected,
+                }
+            )
         if n_runs < min_sims:
             warnings.warn(
                 f"Skipping {path.name}: only {n_runs} runs "
@@ -239,7 +259,28 @@ def load_experiment_pkls(
             f"No valid experiments in {exp_dir} (min_sims={min_sims})."
         )
     loaded.sort(key=lambda x: x["x_value"])
-    return loaded
+    return loaded, incomplete
+
+
+def print_incomplete_pkl_warning(
+    incomplete: list[dict], loaded: list[dict], min_sims: int
+) -> None:
+    """Remind user about partial pkls (e.g. from interrupted run_sims)."""
+    if not incomplete:
+        return
+    loaded_paths = {exp["path"] for exp in loaded}
+    print("\n" + "=" * 60)
+    print("[WARN] Incomplete pickle(s) detected (possible interrupted runs):")
+    for item in incomplete:
+        path = item["path"]
+        n_runs = item["n_runs"]
+        n_sim = item["n_sim"]
+        if path in loaded_paths:
+            status = "used in plot"
+        else:
+            status = f"skipped (min_sims={min_sims})"
+        print(f"  - {path.name}: {n_runs}/{n_sim}  ({status})")
+    print("=" * 60)
 
 
 def discover_baselines(results_list: list[dict], das_algo: str = DAST_ALGO) -> list[str]:
@@ -345,10 +386,15 @@ def assert_consistent_experiment_meta(
     target_col = ref.get("target_col")
     fixed_pilot: float | None = None
 
+    fixed_sample: float | None = None
     if sweep_kind == "sample_frac":
         if "pilot_frac" not in ref:
             raise ValueError("sample_frac sweep requires pilot_frac in params.")
         fixed_pilot = float(ref["pilot_frac"])
+    elif sweep_kind == "pilot_frac":
+        if "sample_frac" not in ref:
+            raise ValueError("pilot_frac sweep requires sample_frac in params.")
+        fixed_sample = float(ref["sample_frac"])
 
     for exp in experiments[1:]:
         p = exp["params"]
@@ -363,6 +409,12 @@ def assert_consistent_experiment_meta(
                 raise ValueError(
                     f"Inconsistent pilot_frac in {exp['path'].name}: "
                     f"expected {fixed_pilot!r}, got {p.get('pilot_frac')!r}."
+                )
+        elif sweep_kind == "pilot_frac" and fixed_sample is not None:
+            if float(p.get("sample_frac", -1)) != fixed_sample:
+                raise ValueError(
+                    f"Inconsistent sample_frac in {exp['path'].name}: "
+                    f"expected {fixed_sample!r}, got {p.get('sample_frac')!r}."
                 )
 
     sweep = SweepConfig(kind=sweep_kind, fixed_pilot_frac=fixed_pilot)
@@ -526,7 +578,9 @@ def main() -> None:
     exp_dir = Path(args.exp_dir).expanduser().resolve()
     fig_dir = Path(args.fig_dir).expanduser().resolve()
     sweep_kind = detect_sweep_kind(exp_dir)
-    experiments = load_experiment_pkls(exp_dir, min_sims=args.min_sims, sweep_kind=sweep_kind)
+    experiments, incomplete_pkls = load_experiment_pkls(
+        exp_dir, min_sims=args.min_sims, sweep_kind=sweep_kind
+    )
     params0, sweep = assert_consistent_experiment_meta(experiments, sweep_kind)
 
     baselines = discover_baselines(experiments[0]["results"])
@@ -569,6 +623,8 @@ def main() -> None:
             out_stem=out_stem,
             fig_dir=fig_dir,
         )
+
+    print_incomplete_pkl_warning(incomplete_pkls, experiments, args.min_sims)
 
 
 if __name__ == "__main__":
