@@ -1,4 +1,5 @@
 import argparse
+import gzip
 import os
 import pickle
 import warnings
@@ -8,6 +9,8 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from scipy import stats
 from matplotlib.lines import Line2D
+
+from plot_style import baseline_color, vs_label
 
 # ==========================================
 # 0. I/O
@@ -26,8 +29,15 @@ PKL_PATH = args.pkl_path
 FIG_DIR = "figures"
 os.makedirs(FIG_DIR, exist_ok=True)
 
-with open(PKL_PATH, "rb") as f:
-    data_exp = pickle.load(f)
+def _pkl_load(path):
+    try:
+        with gzip.open(path, "rb") as f:
+            return pickle.load(f)
+    except (OSError, gzip.BadGzipFile):
+        with open(path, "rb") as f:
+            return pickle.load(f)
+
+data_exp = _pkl_load(PKL_PATH)
 
 warnings.simplefilter(action="ignore", category=FutureWarning)
 
@@ -89,72 +99,29 @@ def safe_get_value(run: dict, algo: str, ev: str):
     return v
 
 def pretty_name(k: str) -> str:
-    return "vs. " + k.replace("_", " ").title()
+    return vs_label(k)
 
-label_map = {
-    "all_0": "vs. All Action=0",
-    "all_1": "vs. All Action=1",
-    "all_2": "vs. All Action=2",
-    "random": "vs. Random",
-    "kmeans": "vs. K-Means",
-    "gmm": "vs. GMM",
-    "clr": "vs. CLR",
-    "mst": "vs. MST",
-    "causal_forest": "vs. Causal Forest",
-    "t_learner": "vs. T-learner",
-    "s_learner": "vs. S-learner",
-    "x_learner": "vs. X-learner",
-    "dr_learner": "vs. DR-learner",
-}
-
-preferred_order = [
-    "vs. All Action=1",
-    "vs. All Action=2",
-    "vs. All Action=0",
-    "vs. Random",
-    "vs. K-Means",
-    "vs. GMM",
-    "vs. CLR",
-    "vs. MST",
-    "vs. Causal Forest",
-    "vs. DR-learner",
-    "vs. S-learner",
-    "vs. T-learner",
-    "vs. X-learner",
-    
+_all_baseline_keys = [
+    "all_0",
+    "all_1",
+    "all_2",
+    "random",
+    "kmeans",
+    "gmm",
+    "clr",
+    "mst",
+    "causal_forest",
+    "t_learner",
+    "s_learner",
+    "x_learner",
+    "dr_learner",
 ]
 
-# palette = {
-#     "vs. All Action=0": "#2CA02C99",
-#     "vs. All Action=1": "#4C72B099",
-#     "vs. All Action=2": "#8172B299",
-#     "vs. Random": "#8C613C99",
-#     "vs. K-Means": "#CCB97499",
-#     "vs. GMM": "#64B5CD99",
-#     "vs. CLR": "#9467BD99",
-#     "vs. MST": "#93786099",
-#     "vs. Causal Forest": "#1F77B499",
-#     "vs. T-learner": "#FF7F0E99",
-#     "vs. S-learner": "#55A86899",
-#     "vs. X-learner": "#4EBEC499",
-#     "vs. DR-learner": "#D6272899",
-# }
+label_map = {k: vs_label(k) for k in _all_baseline_keys}
 
-palette = {
-    "vs. All Action=0": "#00000099", # black with slight transparency
-    "vs. All Action=1": "#00000099",
-    "vs. All Action=2": "#00000099",
-    "vs. Random": "#00000099",
-    "vs. K-Means": "#00000099",
-    "vs. GMM": "#00000099",
-    "vs. CLR": "#00000099",
-    "vs. MST": "#00000099",
-    "vs. Causal Forest": "#00000099",
-    "vs. T-learner": "#00000099",
-    "vs. S-learner": "#00000099",
-    "vs. X-learner": "#00000099",
-    "vs. DR-learner": "#00000099",
-}
+preferred_order = [label_map[k] for k in _all_baseline_keys if k in label_map]
+
+palette = {vs_label(k): baseline_color(k) for k in _all_baseline_keys}
 
 def get_sig_star(p):
     if p < 0.001: return "***"

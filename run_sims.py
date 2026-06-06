@@ -1,6 +1,17 @@
 """
 多次重复（ Hillstrom）实验，并保存每次各算法（包括 CLR）的 value_mean 到 pkl。
 
+Pickle layout (optional implementation block per sim):
+
+  data["params"]
+  data["results"][i]          # i-th successful simulation (one run)
+      ["seed"]
+      ["dast"], ["t_learner"], ...   # scalar OPE + time (+ best_M)
+      ["implementation"]            
+          ["customer_id"], ["D"], ["y"], ["actions"][algo]
+
+  There is NO top-level implementation blob; use data["results"][i]["implementation"].
+
 ⚠ 现在是 K-action 版本：
   - D 可以是 {0,1,...,K-1}，例如 Hillstrom 三个 action。
   - prepare_pilot_impl 返回 mu_pilot_models: dict[action] -> outcome model
@@ -10,12 +21,32 @@
 
 import numpy as np
 import pickle
+import gzip
 import os
 import time
 import random
 import concurrent.futures as cf
 import contextlib
 import io
+
+
+# ---------------------------------------------------------------------------
+# gzip-transparent pickle helpers
+# ---------------------------------------------------------------------------
+def _pkl_dump(path: str, data) -> None:
+    """Write data as gzip-compressed pickle (protocol 4)."""
+    with gzip.open(path, "wb", compresslevel=6) as f:
+        pickle.dump(data, f, protocol=4)
+
+
+def _pkl_load(path: str):
+    """Load a pickle file regardless of whether it is gzip-compressed or not."""
+    try:
+        with gzip.open(path, "rb") as f:
+            return pickle.load(f)
+    except (OSError, gzip.BadGzipFile):
+        with open(path, "rb") as f:
+            return pickle.load(f)
 
 
 def _set_thread_env(n: int):
@@ -48,11 +79,17 @@ def _run_single_experiment_worker(payload: dict):
             value_type_dast=payload["value_type_dast"],
             value_type_dams=payload["value_type_dams"],
             seed=int(payload["seed"]),
+            save_offline_data=bool(payload.get("save_offline_data", True)),
+            action_method=payload.get("action_method", "diff_in_means"),
         )
 
 from data_utils import (
-    load_criteo, load_hillstrom, load_lenta,
-    split_seg_train_test, prepare_pilot_impl
+    load_criteo,
+    load_hillstrom,
+    load_lenta,
+    split_seg_train_test,
+    prepare_pilot_impl,
+    verify_impl_customer_alignment,
 )
 
 from estimation import estimate_segment_policy
@@ -77,30 +114,138 @@ from segmentation import (
     run_clr_segmentation,
     run_clr_dams_segmentation,
     run_mst_dams,
-    run_policytree_segmentation,
 )
+from policytree import run_policytree_individual
 
-# 你目前只用 dual_dr
-ALGO_LIST = ["causal_forest", "dast", "mst", "clr", "kmeans", "gmm", "t_learner", "s_learner", "x_learner", "dr_learner"] #
+POLICYTREE_DEPTH = 2
+
+ALGO_LIST = ["dast", "causal_forest", "mst", "clr", "kmeans", "gmm", "t_learner", "s_learner", "x_learner", "dr_learner"] #
 # ALGO_LIST = ["kmeans", "kmeans_dams", "gmm", "gmm_dams", "clr", "clr_dams", "dast"]
 
 eval_methods = ["dr", "dual_dr", "ipw"]
 
 eval_classes = {
-    "dr": evaluate_policy_dr,
-    "dual_dr": evaluate_policy_dual_dr,  # 多 action 版
-    "ipw": evaluate_policy_ipw
+    "dr":      evaluate_policy_dr,
+    "dual_dr": evaluate_policy_dual_dr,
+    "ipw":     evaluate_policy_ipw,
 }
 
 M_candidates = [2, 3, 4, 5, 6, 7, 8, 9, 10]
 
 
-def run_single_experiment(sample_frac, pilot_frac, train_frac, dataset, target_col, mu_model_type, value_type_dast, value_type_dams, seed):
+def _impl_actions_from_segments(seg_labels_impl, action_per_segment):
+    """Map per-user segment ids to recommended actions (same as evaluation.py)."""
+    seg = np.asarray(seg_labels_impl, dtype=int)
+    action = np.asarray(action_per_segment, dtype=int)
+    return action[seg].astype(int)
+
+
+def _record_impl_action(impl_actions, algo, seg_labels_impl, action_per_segment=None):
+    """Store per-implementation-customer assigned action for offline analysis."""
+    if action_per_segment is None:
+        impl_actions[algo] = np.asarray(seg_labels_impl, dtype=int).copy()
+    else:
+        impl_actions[algo] = _impl_actions_from_segments(
+            seg_labels_impl, action_per_segment
+        )
+
+
+def resolve_impl_pkl_path(out_path: str, save_offline_data: bool) -> str:
+    """Use *_imp.pkl suffix when storing implementation offline payloads."""
+    if not save_offline_data:
+        return out_path
+    root, ext = os.path.splitext(out_path)
+    if not ext:
+        ext = ".pkl"
+        out_path = out_path + ext
+        root, ext = os.path.splitext(out_path)
+    if not root.endswith("_imp"):
+        return root + "_imp" + ext
+    return out_path
+
+
+def _attach_sim_implementation(
+    sim_result,
+    impl_actions,
+    *,
+    impl_customer_id,
+    D_impl,
+    y_impl,
+    D_cohort,
+    y_cohort,
+    cohort_size,
+):
+    """
+  Attach implementation-phase data to one simulation dict (one entry in
+  experiment_data["results"]).
+
+    Arrays are sorted by customer_id ascending. Row k refers to customer_id[k]
+    (cohort row index before pilot/implementation split).
+    """
+    verify_impl_customer_alignment(
+        impl_customer_id,
+        D_impl,
+        y_impl,
+        D_cohort,
+        y_cohort,
+        context="attach_sim_implementation",
+    )
+    customer_id = np.asarray(impl_customer_id, dtype=np.int32)
+    D = np.asarray(D_impl, dtype=np.int8)
+    y = np.asarray(y_impl, dtype=np.float32)
+    n = len(customer_id)
+
+    order = np.argsort(customer_id, kind="stable")
+    customer_id = customer_id[order]
+    D = D[order]
+    y = y[order]
+
+    actions = {}
+    for algo, arr in impl_actions.items():
+        a = np.asarray(arr, dtype=int)
+        if len(a) != n:
+            raise ValueError(
+                f"implementation alignment error for {algo}: "
+                f"len(actions)={len(a)} != n_impl={n}"
+            )
+        actions[algo] = a[order].astype(np.int8)
+
+    verify_impl_customer_alignment(
+        customer_id,
+        D,
+        y,
+        D_cohort,
+        y_cohort,
+        context="attach_sim_implementation(sorted)",
+    )
+
+    sim_result["implementation"] = {
+        "customer_id": customer_id,
+        "D": D,
+        "y": y,
+        "actions": actions,
+        "cohort_size": int(cohort_size),
+        "n_impl": int(n),
+    }
+
+
+def run_single_experiment(
+    sample_frac,
+    pilot_frac,
+    train_frac,
+    dataset,
+    target_col,
+    mu_model_type,
+    value_type_dast,
+    value_type_dams,
+    seed,
+    action_method,
+    save_offline_data=True,
+):
     # --------------------------------------------------
     # Load dataset based on parameter
     # --------------------------------------------------
 
-    
     # 根据 dataset 参数选择加载函数
     dataset_loaders = {
         "hillstrom": load_hillstrom,
@@ -117,17 +262,39 @@ def run_single_experiment(sample_frac, pilot_frac, train_frac, dataset, target_c
     # --------------------------------------------------
     # 1–3. pilot + outcome models + Gamma_pilot (K-action DR)
     # --------------------------------------------------
-    
-    (
-        X_pilot,
-        X_impl,
-        D_pilot,
-        D_impl,
-        y_pilot,
-        y_impl,
-        mu_pilot_models,   # dict[a] = model_a
-        Gamma_pilot,       # (N_pilot, K)
-    ) = prepare_pilot_impl(X, y, D, pilot_frac=pilot_frac, mu_model_type=mu_model_type)
+
+    prep_out = prepare_pilot_impl(
+        X,
+        y,
+        D,
+        pilot_frac=pilot_frac,
+        mu_model_type=mu_model_type,
+        return_impl_customer_id=save_offline_data,
+    )
+    if save_offline_data:
+        (
+            X_pilot,
+            X_impl,
+            D_pilot,
+            D_impl,
+            y_pilot,
+            y_impl,
+            mu_pilot_models,
+            Gamma_pilot,
+            impl_customer_id,
+        ) = prep_out
+        cohort_size = len(X)
+    else:
+        (
+            X_pilot,
+            X_impl,
+            D_pilot,
+            D_impl,
+            y_pilot,
+            y_impl,
+            mu_pilot_models,
+            Gamma_pilot,
+        ) = prep_out
 
     # K 个动作（0..K-1）
     action_K = Gamma_pilot.shape[1]
@@ -148,14 +315,14 @@ def run_single_experiment(sample_frac, pilot_frac, train_frac, dataset, target_c
         X_pilot, D_pilot, y_pilot, Gamma_pilot, test_frac=1 - train_frac
     )
 
-    # storage for output
-    results = {
+    # One simulation record → appended as experiment_data["results"][i]
+    sim_result = {
         "seed": int(seed),
     }
-    
+    impl_actions = {}
 
     for algo in ALGO_LIST:
-        results[algo] = {}
+        sim_result[algo] = {}
 
     
     
@@ -194,13 +361,13 @@ def run_single_experiment(sample_frac, pilot_frac, train_frac, dataset, target_c
                 propensities=None,
                  
             )
-            results["t_learner"][f"{eval}"] = float(value_t["value_mean"])
+            sim_result["t_learner"][f"{eval}"] = float(value_t["value_mean"])
 
         t1 = time.perf_counter()
-        results["t_learner"]["time"] = float(t1 - t0)
-    
-        
-    
+        sim_result["t_learner"]["time"] = float(t1 - t0)
+        if save_offline_data:
+            _record_impl_action(impl_actions, "t_learner", seg_labels_impl_t)
+
     # --------------------------------------------------
     # ---- S-learner benchmark (single model mu(x,a) + argmax_a) ----
     # --------------------------------------------------
@@ -234,13 +401,14 @@ def run_single_experiment(sample_frac, pilot_frac, train_frac, dataset, target_c
                 propensities=None,
                  
             )
-            results["s_learner"][f"{eval}"] = float(value_s["value_mean"])
+            sim_result["s_learner"][f"{eval}"] = float(value_s["value_mean"])
 
         
         t1 = time.perf_counter()
-        results["s_learner"]["time"] = float(t1 - t0)   
-        
-    
+        sim_result["s_learner"]["time"] = float(t1 - t0)
+        if save_offline_data:
+            _record_impl_action(impl_actions, "s_learner", seg_labels_impl_s)
+
     # --------------------------------------------------
     # ---- X-learner benchmark (one-vs-control) ----
     # --------------------------------------------------
@@ -278,12 +446,13 @@ def run_single_experiment(sample_frac, pilot_frac, train_frac, dataset, target_c
                 propensities=None,
                  
             )
-            results["x_learner"][f"{eval}"] = float(value_x["value_mean"])  
+            sim_result["x_learner"][f"{eval}"] = float(value_x["value_mean"])  
         
         t1 = time.perf_counter()
-        results["x_learner"]["time"] = float(t1 - t0)    
-    
-    
+        sim_result["x_learner"]["time"] = float(t1 - t0)
+        if save_offline_data:
+            _record_impl_action(impl_actions, "x_learner", seg_labels_impl_x)
+
     # --------------------------------------------------
     # ---- DR-learner benchmark (learn policy from Gamma labels) ----
     # --------------------------------------------------
@@ -336,11 +505,13 @@ def run_single_experiment(sample_frac, pilot_frac, train_frac, dataset, target_c
                 propensities=None,
                  
             )
-            results["dr_learner"][f"{eval}"] = float(value_dr["value_mean"])
+            sim_result["dr_learner"][f"{eval}"] = float(value_dr["value_mean"])
 
         t1 = time.perf_counter()
-        results["dr_learner"]["time"] = float(t1 - t0)
-    
+        sim_result["dr_learner"]["time"] = float(t1 - t0)
+        if save_offline_data:
+            _record_impl_action(impl_actions, "dr_learner", seg_labels_impl_dr)
+
     if "causal_forest" in ALGO_LIST:
         print("causal forest started")
         t0 = time.perf_counter()
@@ -364,15 +535,14 @@ def run_single_experiment(sample_frac, pilot_frac, train_frac, dataset, target_c
                 propensities=None,
                  
             )
-            results["causal_forest"][f"{eval}"] = float(value_cf["value_mean"])
+            sim_result["causal_forest"][f"{eval}"] = float(value_cf["value_mean"])
            
             
         t1 = time.perf_counter()
-        results["causal_forest"]["time"] = float(t1 - t0)
+        sim_result["causal_forest"]["time"] = float(t1 - t0)
+        if save_offline_data:
+            _record_impl_action(impl_actions, "causal_forest", seg_labels_impl_cf)
         print("causal forest finished")
-
-    
-
 
     # --------------------------------------------------
     # 4a. KMeans
@@ -382,9 +552,10 @@ def run_single_experiment(sample_frac, pilot_frac, train_frac, dataset, target_c
         kmeans_seg, seg_labels_pilot_kmeans, best_M_kmeans = run_kmeans_segmentation(
             X_pilot, M_candidates=M_candidates, random_state=seed
         )
-        results["kmeans"]["best_M"] = best_M_kmeans
+        sim_result["kmeans"]["best_M"] = best_M_kmeans
         action_kmeans = estimate_segment_policy(
-            X_pilot, y_pilot, D_pilot, seg_labels_pilot_kmeans
+            X_pilot, y_pilot, D_pilot, seg_labels_pilot_kmeans,
+            method=action_method, Gamma=Gamma_pilot,
         )  # shape (M_k,), each in {0,...,K-1}
         seg_labels_impl_kmeans = kmeans_seg.assign(X_impl)
         for eval in eval_methods:
@@ -398,11 +569,14 @@ def run_single_experiment(sample_frac, pilot_frac, train_frac, dataset, target_c
                 propensities=None,
                  
             )
-            results["kmeans"][f"{eval}"] = float(value_kmeans["value_mean"])
+            sim_result["kmeans"][f"{eval}"] = float(value_kmeans["value_mean"])
             
         t1 = time.perf_counter()
-        results["kmeans"]["time"] = float(t1 - t0)
-        
+        sim_result["kmeans"]["time"] = float(t1 - t0)
+        if save_offline_data:
+            _record_impl_action(
+                impl_actions, "kmeans", seg_labels_impl_kmeans, action_kmeans
+            )
         print(
             f"KMeans - Segments: {len(np.unique(seg_labels_pilot_kmeans))}, "
             f"Actions: {action_kmeans}",
@@ -423,12 +597,15 @@ def run_single_experiment(sample_frac, pilot_frac, train_frac, dataset, target_c
                 M_candidates=M_candidates,
                 random_state=seed,
                 value_type_dams=value_type_dams,
+                action_method=action_method,
+                Gamma_train=Gamma_train,
             )
         )
-        results["kmeans_dams"]["best_M"] = best_M_kmeans_dams
+        sim_result["kmeans_dams"]["best_M"] = best_M_kmeans_dams
         
         action_kmeans_dams = estimate_segment_policy(
-            X_pilot, y_pilot, D_pilot, seg_labels_pilot_kmeans_dams
+            X_pilot, y_pilot, D_pilot, seg_labels_pilot_kmeans_dams,
+            method=action_method, Gamma=Gamma_pilot,
         )
         seg_labels_impl_kmeans_dams = kmeans_dams_seg.assign(X_impl)
         for eval in eval_methods:
@@ -442,10 +619,17 @@ def run_single_experiment(sample_frac, pilot_frac, train_frac, dataset, target_c
                 propensities=None,
                  
             )
-            results["kmeans_dams"][f"{eval}"] = float(value_kmeans_dams["value_mean"])
+            sim_result["kmeans_dams"][f"{eval}"] = float(value_kmeans_dams["value_mean"])
         
         t1 = time.perf_counter()
-        results["kmeans_dams"]["time"] = float(t1 - t0)
+        sim_result["kmeans_dams"]["time"] = float(t1 - t0)
+        if save_offline_data:
+            _record_impl_action(
+                impl_actions,
+                "kmeans_dams",
+                seg_labels_impl_kmeans_dams,
+                action_kmeans_dams,
+            )
         print(
             f"KMeans_DAMS - Segments: {len(np.unique(seg_labels_pilot_kmeans_dams))}, "
             f"Actions: {action_kmeans_dams}",
@@ -461,10 +645,11 @@ def run_single_experiment(sample_frac, pilot_frac, train_frac, dataset, target_c
             M_candidates=M_candidates,
             random_state=seed,
         )
-        results["gmm"]["best_M"] = best_M_gmm
+        sim_result["gmm"]["best_M"] = best_M_gmm
         
         action_gmm = estimate_segment_policy(
-            X_pilot, y_pilot, D_pilot, seg_labels_pilot_gmm
+            X_pilot, y_pilot, D_pilot, seg_labels_pilot_gmm,
+            method=action_method, Gamma=Gamma_pilot,
         )
         seg_labels_impl_gmm = gmm_seg.assign(X_impl)
         for eval in eval_methods:
@@ -478,10 +663,14 @@ def run_single_experiment(sample_frac, pilot_frac, train_frac, dataset, target_c
                 propensities=None,
                  
             )
-            results["gmm"][f"{eval}"] = float(value_gmm["value_mean"])
+            sim_result["gmm"][f"{eval}"] = float(value_gmm["value_mean"])
             
         t1 = time.perf_counter()
-        results["gmm"]["time"] = float(t1 - t0)
+        sim_result["gmm"]["time"] = float(t1 - t0)
+        if save_offline_data:
+            _record_impl_action(
+                impl_actions, "gmm", seg_labels_impl_gmm, action_gmm
+            )
         print(
             f"GMM - Segments: {len(np.unique(seg_labels_pilot_gmm))}, "
             f"Actions: {action_gmm}",
@@ -502,13 +691,16 @@ def run_single_experiment(sample_frac, pilot_frac, train_frac, dataset, target_c
                 M_candidates,
                 random_state=seed,
                 value_type_dams=value_type_dams,
+                action_method=action_method,
+                Gamma_train=Gamma_train,
             )
         )
         
-        results["gmm_dams"]["best_M"] = best_M_gmm_dams
+        sim_result["gmm_dams"]["best_M"] = best_M_gmm_dams
         
         action_gmm_dams = estimate_segment_policy(
-            X_pilot, y_pilot, D_pilot, seg_labels_pilot_gmm_dams
+            X_pilot, y_pilot, D_pilot, seg_labels_pilot_gmm_dams,
+            method=action_method, Gamma=Gamma_pilot,
         )
         seg_labels_impl_gmm_dams = gmm_dams_seg.assign(X_impl)
         for eval in eval_methods:
@@ -522,10 +714,17 @@ def run_single_experiment(sample_frac, pilot_frac, train_frac, dataset, target_c
                 propensities=None,
                  
             )
-            results["gmm_dams"][f"{eval}"] = float(value_gmm_dams["value_mean"])
+            sim_result["gmm_dams"][f"{eval}"] = float(value_gmm_dams["value_mean"])
             
         t1 = time.perf_counter()
-        results["gmm_dams"]["time"] = float(t1 - t0)
+        sim_result["gmm_dams"]["time"] = float(t1 - t0)
+        if save_offline_data:
+            _record_impl_action(
+                impl_actions,
+                "gmm_dams",
+                seg_labels_impl_gmm_dams,
+                action_gmm_dams,
+            )
         print(
             f"GMM_DAMS - Segments: {len(np.unique(seg_labels_pilot_gmm_dams))}, "
             f"Actions: {action_gmm_dams}",
@@ -543,10 +742,11 @@ def run_single_experiment(sample_frac, pilot_frac, train_frac, dataset, target_c
             M_candidates,
             random_state=seed,
         )
-        results["clr"]["best_M"] = best_M_clr
+        sim_result["clr"]["best_M"] = best_M_clr
         
         action_clr = estimate_segment_policy(
-            X_pilot, y_pilot, D_pilot, seg_labels_pilot_clr
+            X_pilot, y_pilot, D_pilot, seg_labels_pilot_clr,
+            method=action_method, Gamma=Gamma_pilot,
         )
         seg_labels_impl_clr = clr_seg.assign(X_impl)
         for eval in eval_methods:
@@ -560,10 +760,14 @@ def run_single_experiment(sample_frac, pilot_frac, train_frac, dataset, target_c
                 propensities=None,
                  
             )
-            results["clr"][f"{eval}"] = float(value_clr["value_mean"])
+            sim_result["clr"][f"{eval}"] = float(value_clr["value_mean"])
             
         t1 = time.perf_counter()
-        results["clr"]["time"] = float(t1 - t0)
+        sim_result["clr"]["time"] = float(t1 - t0)
+        if save_offline_data:
+            _record_impl_action(
+                impl_actions, "clr", seg_labels_impl_clr, action_clr
+            )
         print(
             f"CLR - Segments: {len(np.unique(seg_labels_pilot_clr))}, "
             f"Actions: {action_clr}",
@@ -586,11 +790,14 @@ def run_single_experiment(sample_frac, pilot_frac, train_frac, dataset, target_c
                 M_candidates,
                 random_state=seed,
                 value_type_dams=value_type_dams,
+                action_method=action_method,
+                Gamma_train=Gamma_train,
             )
         )
-        results["clr_dams"]["best_M"] = best_M_clr_dams
+        sim_result["clr_dams"]["best_M"] = best_M_clr_dams
         action_clr_dams = estimate_segment_policy(
-            X_pilot, y_pilot, D_pilot, seg_labels_pilot_clr_dams
+            X_pilot, y_pilot, D_pilot, seg_labels_pilot_clr_dams,
+            method=action_method, Gamma=Gamma_pilot,
         )
         seg_labels_impl_clr_dams = clr_dams_seg.assign(X_impl)
         for eval in eval_methods:
@@ -604,9 +811,16 @@ def run_single_experiment(sample_frac, pilot_frac, train_frac, dataset, target_c
                 propensities=None,
                  
             )
-            results["clr_dams"][f"{eval}"] = float(value_clr_dams["value_mean"])
+            sim_result["clr_dams"][f"{eval}"] = float(value_clr_dams["value_mean"])
         t1 = time.perf_counter()
-        results["clr_dams"]["time"] = float(t1 - t0)
+        sim_result["clr_dams"]["time"] = float(t1 - t0)
+        if save_offline_data:
+            _record_impl_action(
+                impl_actions,
+                "clr_dams",
+                seg_labels_impl_clr_dams,
+                action_clr_dams,
+            )
         print(
             f"CLR_DAMS - Segments: {len(np.unique(seg_labels_pilot_clr_dams))}, "
             f"Actions: {action_clr_dams}",
@@ -639,9 +853,10 @@ def run_single_experiment(sample_frac, pilot_frac, train_frac, dataset, target_c
             min_leaf_size=5,
             value_type_dast=value_type_dast,
             value_type_dams=value_type_dams,
+            action_method=action_method,
         )
         
-        results["dast"]["best_M"] = best_M_dast
+        sim_result["dast"]["best_M"] = best_M_dast
 
         seg_labels_impl_dast = tree_final.assign(X_impl)
         for eval in eval_methods:
@@ -655,11 +870,17 @@ def run_single_experiment(sample_frac, pilot_frac, train_frac, dataset, target_c
                 propensities=None,
                  
             )
-            results["dast"][f"{eval}"] = float(value_dast["value_mean"])
+            sim_result["dast"][f"{eval}"] = float(value_dast["value_mean"])
             
         t1 = time.perf_counter()
-        results["dast"]["time"] = float(t1 - t0)
-        
+        sim_result["dast"]["time"] = float(t1 - t0)
+        if save_offline_data:
+            _record_impl_action(
+                impl_actions,
+                "dast",
+                seg_labels_impl_dast,
+                best_action_dast_pilot,
+            )
         print(
             f"DAST - Segments: {len(np.unique(seg_labels_pilot_dast))}, "
             f"Actions: {best_action_dast_pilot}",
@@ -668,7 +889,7 @@ def run_single_experiment(sample_frac, pilot_frac, train_frac, dataset, target_c
     # MST
     if "mst" in ALGO_LIST:
         t0 = time.perf_counter()
-        tree_mst, seg_labels_pilot_mst, best_M_mst, action_mst = run_mst_dams(
+        tree_mst, seg_labels_pilot_mst, best_M_mst = run_mst_dams(
             X_pilot,
             D_pilot,
             y_pilot,
@@ -682,8 +903,14 @@ def run_single_experiment(sample_frac, pilot_frac, train_frac, dataset, target_c
             M_candidates,
             min_leaf_size=5,
             value_type_dams=value_type_dams,
+            action_method=action_method,
+            Gamma_train=Gamma_train,
         )
-        results["mst"]["best_M"] = best_M_mst
+        action_mst = estimate_segment_policy(
+            X_pilot, y_pilot, D_pilot, seg_labels_pilot_mst,
+            method=action_method, Gamma=Gamma_pilot,
+        )
+        sim_result["mst"]["best_M"] = best_M_mst
 
         print(
             f"MST - Segments: {len(np.unique(seg_labels_pilot_mst))}, "
@@ -702,75 +929,86 @@ def run_single_experiment(sample_frac, pilot_frac, train_frac, dataset, target_c
                 propensities=None,
                  
             )
-            results["mst"][f"{eval}"] = float(value_mst["value_mean"])
+            sim_result["mst"][f"{eval}"] = float(value_mst["value_mean"])
         
         t1 = time.perf_counter()
-        results["mst"]["time"] = float(t1 - t0)
-
+        sim_result["mst"]["time"] = float(t1 - t0)
+        if save_offline_data:
+            _record_impl_action(
+                impl_actions, "mst", seg_labels_impl_mst, action_mst
+            )
 
         # ---- Causal Forest benchmark (grf multi_arm_causal_forest) ----
     
 
-    # Policytree (R based) — 如果你已经升级成多 action 版 policytree_segmentation
+    # Policytree (R based) — individual policy: fit on pilot, predict per customer
     if "policytree" in ALGO_LIST:
         t0 = time.perf_counter()
-        (
-            policy_seg,
-            seg_labels_pilot_policy,
-            best_M_policytree,
-            best_action_policytree,
-        ) = run_policytree_segmentation(
-            X_pilot,
-            D_pilot,
-            y_pilot,
-            X_train,
-            D_train,
-            y_train,
-            X_val,
-            D_val,
-            y_val,
-            Gamma_val,
-            M_candidates,
-            value_type_dams=value_type_dams,
+        action_impl_policytree = run_policytree_individual(
+            X_pilot, y_pilot, D_pilot,
+            X_impl,
+            depth=POLICYTREE_DEPTH,
         )
-        
-        results["policytree"]["best_M"] = best_M_policytree 
-        
-        action_policy = estimate_segment_policy(
-            X_pilot, y_pilot, D_pilot, seg_labels_pilot_policy
-        )
-        seg_labels_impl_policy = policy_seg.assign(X_impl)
+
+        sim_result["policytree"]["depth"] = POLICYTREE_DEPTH
+
+        # Treat each impl customer as their own "segment" for OPE reuse
+        seg_labels_individual = np.arange(len(X_impl))
         for eval in eval_methods:
             value_policy = eval_classes[eval](
                 X_impl,
                 D_impl,
                 y_impl,
-                seg_labels_impl_policy,
+                seg_labels_individual,
                 mu_pilot_models,
-                action_policy,
+                action_impl_policytree,
                 propensities=None,
-                 
             )
-            results["policytree"][f"{eval}"] = float(value_policy["value_mean"])
-        
-        
-        t1 = time.perf_counter()
-        results["policytree"]["time"] = float(t1 - t0)
+            sim_result["policytree"][f"{eval}"] = float(value_policy["value_mean"])
 
+        t1 = time.perf_counter()
+        sim_result["policytree"]["time"] = float(t1 - t0)
+
+        if save_offline_data:
+            _record_impl_action(impl_actions, "policytree", action_impl_policytree)
+
+        n_treated = int((action_impl_policytree > 0).sum())
         print(
-            f"PolicyTree - Segments: {len(np.unique(seg_labels_pilot_policy))}, "
-            f"Actions: {action_policy}, Time: {t1 - t0:.2f} seconds",
+            f"PolicyTree (depth={POLICYTREE_DEPTH}) - "
+            f"Treated: {n_treated}/{len(action_impl_policytree)}, "
+            f"Time: {t1 - t0:.2f} seconds"
         )
 
     # --------------------------------------------------
     # 输出 summary
     # --------------------------------------------------
+    if save_offline_data:
+        _attach_sim_implementation(
+            sim_result,
+            impl_actions,
+            impl_customer_id=impl_customer_id,
+            D_impl=D_impl,
+            y_impl=y_impl,
+            D_cohort=np.asarray(D, dtype=int),
+            y_cohort=np.asarray(y, dtype=float),
+            cohort_size=cohort_size,
+        )
+
     print("\nResult for this run:")
-    for k, v in results.items():
-        if "time" not in k:
+    for k, v in sim_result.items():
+        if k == "implementation":
+            impl = v
+            print(
+                f"{k:20s}: n_impl={impl['n_impl']}, cohort_size={impl['cohort_size']}, "
+                f"algos={list(impl['actions'].keys())}"
+            )
+            continue
+        if isinstance(v, dict):
+            print(f"{k:20s}: {v}")
+        else:
             print(f"{k:20s}: {v}")
 
-    return results
+    return sim_result
 
 
 def _param_equal(a, b) -> bool:
@@ -793,8 +1031,7 @@ def _load_experiment_checkpoint(out_path: str, expected_params: dict) -> tuple[d
             "results": [],
         }, False
 
-    with open(out_path, "rb") as f:
-        experiment_data = pickle.load(f)
+    experiment_data = _pkl_load(out_path)
 
     if not isinstance(experiment_data, dict):
         raise ValueError(f"Invalid checkpoint format in {out_path!r}.")
@@ -841,12 +1078,15 @@ def run_multiple_experiments(
     value_type_dams,
     seed_sequence,
     n_jobs,
+    action_method,
+    save_offline_data=True,
 ):
     # 并行配置：
     # - inner_threads 写死为 1，避免每个进程内部再开多线程导致过度并行
     inner_threads = 1
     n_jobs = int(n_jobs)
     max_attempts = int(N_sim) * 5
+    out_path = resolve_impl_pkl_path(out_path, save_offline_data)
 
     expected_params = {
         "seed_sequence": seed_sequence,
@@ -860,6 +1100,7 @@ def run_multiple_experiments(
         "value_type_dast": value_type_dast,
         "value_type_dams": value_type_dams,
         "mu_model_type": mu_model_type,
+        "action_method": action_method,
         "out_path": out_path,
         "n_jobs": n_jobs,
         "inner_threads": inner_threads,
@@ -902,6 +1143,8 @@ def run_multiple_experiments(
             "value_type_dams": value_type_dams,
             "seed": int(seed),
             "inner_threads": int(inner_threads),
+            "save_offline_data": bool(save_offline_data),
+            "action_method": action_method,
         }
 
     # 串行：直到凑满 N_sim 条成功结果（单次失败则换新 seed 重试）；最多 max_attempts 次单次运行
@@ -911,8 +1154,7 @@ def run_multiple_experiments(
         while len(experiment_data["results"]) < N_sim:
             if attempts_used >= max_attempts:
                 experiment_data["params"]["attempts_used"] = attempts_used
-                with open(out_path, "wb") as f:
-                    pickle.dump(experiment_data, f)
+                _pkl_dump(out_path, experiment_data)
                 raise RuntimeError(
                     f"Exceeded max_attempts={max_attempts} (completed runs); "
                     f"only {len(experiment_data['results'])}/{N_sim} successes. "
@@ -932,19 +1174,19 @@ def run_multiple_experiments(
                     value_type_dast=value_type_dast,
                     value_type_dams=value_type_dams,
                     seed=int(seed),
+                    save_offline_data=save_offline_data,
+                    action_method=action_method,
                 )
                 experiment_data["results"].append(res)
                 experiment_data["params"]["seeds"].append(int(seed))
-                with open(out_path, "wb") as f:
-                    pickle.dump(experiment_data, f)
+                _pkl_dump(out_path, experiment_data)
                 print(f'[SIM {len(experiment_data["results"])}/{N_sim}] saved → {out_path}')
                 print("-" * 60)
             except Exception:
                 import traceback
 
                 traceback.print_exc()
-                with open(out_path, "wb") as f:
-                    pickle.dump(experiment_data, f)
+                _pkl_dump(out_path, experiment_data)
                 continue
     else:
         # 并行：主进程负责按完成顺序收集结果并覆盖保存（同样抗中断）
@@ -1029,8 +1271,7 @@ def run_multiple_experiments(
                         res = fut.result()
                         experiment_data["results"].append(res)
                         experiment_data["params"]["seeds"].append(int(seed_used))
-                        with open(out_path, "wb") as f:
-                            pickle.dump(experiment_data, f)
+                        _pkl_dump(out_path, experiment_data)
                         completed = len(experiment_data["results"])
                         elapsed = time.perf_counter() - t_start
                         pct = 100.0 * completed / float(N_sim)
@@ -1062,8 +1303,7 @@ def run_multiple_experiments(
                         import traceback
 
                         traceback.print_exc()
-                        with open(out_path, "wb") as f:
-                            pickle.dump(experiment_data, f)
+                        _pkl_dump(out_path, experiment_data)
 
                     if len(experiment_data["results"]) < N_sim and attempts_used < max_attempts:
                         submit_one(ex)
@@ -1080,8 +1320,7 @@ def run_multiple_experiments(
 
             if len(experiment_data["results"]) < N_sim:
                 experiment_data["params"]["attempts_used"] = attempts_used
-                with open(out_path, "wb") as f:
-                    pickle.dump(experiment_data, f)
+                _pkl_dump(out_path, experiment_data)
                 raise RuntimeError(
                     f"Exceeded max_attempts={max_attempts} (submitted runs); "
                     f"only {len(experiment_data['results'])}/{N_sim} successes. "
@@ -1164,6 +1403,14 @@ if __name__ == "__main__":
         help="Number of parallel simulations to run (outer parallelism).",
     )
 
+    parser.add_argument(
+        "--action_method",
+        type=str,
+        choices=["diff_in_means", "gamma", "logistic"],
+        required=True,
+        help="Method to estimate segment-level action.",
+    )
+
     args = parser.parse_args()
 
     pilot_frac = args.pilot_frac  # fraction of data for pilot
@@ -1186,4 +1433,5 @@ if __name__ == "__main__":
         value_type_dams=args.value_type_dams,
         seed_sequence=args.seed_sequence if args.seed_sequence is not None else None,
         n_jobs=args.n_jobs,
+        action_method=args.action_method,
     )

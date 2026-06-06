@@ -1,13 +1,23 @@
 """
-Trend plot: DAS improvement vs. pilot fraction or sample fraction across experiment pickles.
+Trend plot across experiment pickles.
 
-Per-run improvement (%) = (DAST - comparator) / comparator * 100; then mean ± 95% CI.
+Two metrics (--metric):
+  improvement  DAS_improvement_ratio = (DAST - comparator) / comparator * 100
+               Plots one figure per OPE eval method (dual_dr, dr, ipw).
+
+  advantage    DAS_advantage_ratio = STZ_evaluator (Simester, Timoshenko, and Zoumpoulis)
+               Uses per-customer logged data in run["implementation"].
+               Requires *_imp.pkl files produced with save_offline_data=True.
+
+  both         (default) Saves figures for both metrics.
+
 Sweep axis is inferred from --exp-dir (pilot_frac_* vs sample_frac_* pickles).
 """
 
 from __future__ import annotations
 
 import argparse
+import gzip
 import pickle
 import re
 import warnings
@@ -15,13 +25,30 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Literal
 
-import matplotlib.colors as mcolors
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import seaborn as sns
 from matplotlib import ticker
+from plot_style import (
+    PREFERRED_ORDER,
+    baseline_color,
+    baseline_label,
+    comparator_colors_by_label,
+    to_rgba,
+)
 from scipy import stats
+
+
+def _pkl_load(path):
+    """Load a pickle file regardless of whether it is gzip-compressed or not."""
+    try:
+        with gzip.open(path, "rb") as f:
+            return pickle.load(f)
+    except (OSError, gzip.BadGzipFile):
+        with open(path, "rb") as f:
+            return pickle.load(f)
+
 
 # ---------------------------------------------------------------------------
 # Defaults
@@ -43,47 +70,7 @@ REQUESTED_BASELINES = [
     "dr_learner",
 ]
 
-LABEL_MAP = {
-    "random": "Random",
-    "kmeans": "K-Means",
-    "gmm": "GMM",
-    "clr": "CLR",
-    "mst": "MST",
-    "causal_forest": "Causal Forest",
-    "t_learner": "T-learner",
-    "s_learner": "S-learner",
-    "x_learner": "X-learner",
-    "dr_learner": "DR-learner",
-}
-
-PREFERRED_ORDER = [
-    "Random",
-    "K-Means",
-    "GMM",
-    "CLR",
-    "MST",
-    "Causal Forest",
-    "T-learner",
-    "S-learner",
-    "X-learner",
-    "DR-learner",
-]
-
-# Tol bright–inspired (original palette)
-COMPARATOR_COLORS = {
-    "Random": "#000000",
-    "K-Means": "#E69F00",
-    "GMM": "#56B4E9",
-    "CLR": "#009E73",
-    "MST": "#F0E442",
-    "Causal Forest": "#0072B2",
-    "T-learner": "#D55E00",
-    "S-learner": "#CC79A7",
-    "X-learner": "#882255",
-    "DR-learner": "#999999",
-}
-
-LINE_ALPHA = 0.82  # line/marker transparency (CI_plot used ~0.6 via #RRGGBB99)
+COMPARATOR_COLORS = comparator_colors_by_label()
 
 SweepKind = Literal["pilot_frac", "sample_frac"]
 
@@ -107,6 +94,18 @@ class SweepConfig:
     def out_stem_prefix(self) -> str:
         return f"trend_{self.kind}"
 
+    def to_display_pct(self, x_value: float) -> float:
+        """
+        Convert stored parameter value to display percentage.
+
+        pilot_frac  : stored value IS the true fraction  → × 100
+        sample_frac : stored value is 10× the true fraction (e.g. 0.05 → 0.5%)
+                      → ÷ 10 × 100  =  × 10
+        """
+        if self.kind == "pilot_frac":
+            return x_value * 100.0
+        return x_value * 10.0
+
     def format_fixed_pilot_frac(self) -> str:
         if self.fixed_pilot_frac is None:
             return ""
@@ -121,9 +120,6 @@ class SweepConfig:
             return f"{base}; fixed pilot fraction = {self.format_fixed_pilot_frac()}"
         return base
 
-
-def _with_alpha(hex_color: str, alpha: float = LINE_ALPHA) -> tuple:
-    return mcolors.to_rgba(hex_color, alpha=alpha)
 
 def configure_plot_style() -> None:
     sns.set_context("paper", font_scale=1.35)
@@ -177,10 +173,105 @@ def das_improvement_ratio(vt: float, vb: float) -> float:
     return (vt - vb) / vb * 100.0
 
 
+# ---------------------------------------------------------------------------
+# STZ evaluator  (Simester, Timoshenko, and Zoumpoulis)
+# ---------------------------------------------------------------------------
+
+def STZ_evaluator(
+    run: dict,
+    algo_dast: str,
+    algo_comp: str,
+) -> float:
+    """
+    DAS advantage ratio for one simulation run using logged implementation data.
+    (Simester, Timoshenko, and Zoumpoulis)
+
+    For a given (DAST, comparator) pair:
+
+    1.  Disagreement set S = {k : a_dast[k] != a_comp[k]}
+        weight = |S| / n_impl
+
+    2.  DAS factual value on S:
+        v_dast = mean(y[k] for k in S if D[k] == a_dast[k])
+
+    3.  Comparator factual value on S:
+        v_comp = mean(y[k] for k in S if D[k] == a_comp[k])
+
+    4.  DAS advantage ratio = weight * (v_dast - v_comp) / |v_comp| * 100
+
+    Normalised by the absolute value of the comparator's own factual outcome on
+    the disagreement set, so the result is expressed as a percentage relative
+    to what the comparator achieves where the two policies disagree.
+    This removes the dependence on the absolute scale of y (e.g. Criteo
+    conversion ~0.3% vs. Hillstrom spend).  A value of 5 means DAS achieves
+    5% more than the comparator on the disagreement sub-population.
+
+    The "factual" subsets use the experiment's randomised treatment D as a
+    natural experiment: customers whose assigned treatment happened to match
+    the algorithm's recommendation provide an unbiased estimate of that
+    algorithm's value on the disagreement region.
+
+    Returns np.nan if:
+    - The run has no "implementation" block  (skip old pkls without impl data)
+    - Either algorithm is absent from impl["actions"]
+    - Disagreement set is empty  (return 0.0)
+    - Either factual subset is empty  (not estimable)
+    - v_comp is zero or non-finite
+    """
+    impl = run.get("implementation")
+    if impl is None:
+        return np.nan
+
+    actions = impl.get("actions", {})
+    if algo_dast not in actions or algo_comp not in actions:
+        return np.nan
+
+    D = np.asarray(impl["D"], dtype=int)
+    y = np.asarray(impl["y"], dtype=float)
+    a_dast = np.asarray(actions[algo_dast], dtype=int)
+    a_comp = np.asarray(actions[algo_comp], dtype=int)
+
+    n = len(D)
+    if n == 0:
+        return np.nan
+
+    # Step 1: disagreement
+    disagree_mask = a_dast != a_comp
+    n_disagree = int(disagree_mask.sum())
+    if n_disagree == 0:
+        return 0.0          # full agreement → no advantage to measure
+    weight = n_disagree / n
+
+    # Step 2: DAS factual on disagreement set
+    dast_factual = disagree_mask & (D == a_dast)
+    if dast_factual.sum() == 0:
+        return np.nan
+    v_dast = float(y[dast_factual].mean())
+
+    # Step 3: comparator factual on disagreement set
+    comp_factual = disagree_mask & (D == a_comp)
+    if comp_factual.sum() == 0:
+        return np.nan
+    v_comp = float(y[comp_factual].mean())
+
+    # Step 4: normalise by |v_comp|, express as %
+    # "how much better is DAS relative to the comparator's own outcome
+    #  on the disagreement sub-population"
+    if not np.isfinite(v_comp) or abs(v_comp) < 1e-12:
+        return np.nan
+    return float(weight * (v_dast - v_comp) / abs(v_comp) * 100.0)
+
+
 def detect_sweep_kind(exp_dir: Path) -> SweepKind:
     """Infer x-axis sweep from directory name or pickle filenames."""
-    has_sample = bool(list(exp_dir.glob("sample_frac_*.pkl")))
-    has_pilot = bool(list(exp_dir.glob("pilot_frac_*.pkl")))
+    has_sample = bool(
+        list(exp_dir.glob("sample_frac_*_imp.pkl"))
+        or list(exp_dir.glob("sample_frac_*.pkl"))
+    )
+    has_pilot = bool(
+        list(exp_dir.glob("pilot_frac_*_imp.pkl"))
+        or list(exp_dir.glob("pilot_frac_*.pkl"))
+    )
 
     if has_pilot and not has_sample:
         return "pilot_frac"
@@ -214,7 +305,9 @@ def discover_sweep_value(kind: SweepKind, path: Path, params: dict) -> float:
 def load_experiment_pkls(
     exp_dir: Path, min_sims: int, sweep_kind: SweepKind
 ) -> tuple[list[dict], list[dict]]:
-    pkls = sorted(exp_dir.glob(f"{sweep_kind}_*.pkl"))
+    pkls = sorted(exp_dir.glob(f"{sweep_kind}_*_imp.pkl"))
+    if not pkls:
+        pkls = sorted(exp_dir.glob(f"{sweep_kind}_*.pkl"))
     if not pkls:
         pkls = sorted(exp_dir.glob("*.pkl"))
     if not pkls:
@@ -223,8 +316,7 @@ def load_experiment_pkls(
     loaded: list[dict] = []
     incomplete: list[dict] = []
     for path in pkls:
-        with open(path, "rb") as f:
-            data = pickle.load(f)
+        data = _pkl_load(path)
         if not isinstance(data, dict) or "results" not in data:
             warnings.warn(f"Skipping {path.name}: unexpected format.")
             continue
@@ -296,6 +388,62 @@ def discover_baselines(results_list: list[dict], das_algo: str = DAST_ALGO) -> l
     return [b for b in REQUESTED_BASELINES if b in all_keys and b != das_algo]
 
 
+def compute_stz_records(
+    results_list: list[dict],
+    baselines: list[str],
+    das_algo: str = DAST_ALGO,
+) -> pd.DataFrame:
+    """Per-run STZ advantage for every (DAST, comparator) pair."""
+    records = []
+    for i, run in enumerate(results_list):
+        for b in baselines:
+            adv = STZ_evaluator(run, das_algo, b)
+            if not np.isfinite(adv):
+                continue
+            records.append(
+                {
+                    "Run": i,
+                    "Baseline": b,
+                    "Baseline_Label": baseline_label(b),
+                    "Advantage": float(adv),
+                }
+            )
+    return pd.DataFrame(records)
+
+
+def summarize_stz_by_sweep(
+    experiments: list[dict],
+    baselines: list[str],
+    das_algo: str = DAST_ALGO,
+) -> pd.DataFrame:
+    """Mean ± 95% CI of STZ advantage across runs, one row per (x_value, comparator)."""
+    rows = []
+    for exp in experiments:
+        df = compute_stz_records(exp["results"], baselines, das_algo=das_algo)
+        if df.empty:
+            continue
+        for b in baselines:
+            label = baseline_label(b)
+            sub = df[df["Baseline"] == b]["Advantage"]
+            if sub.empty:
+                continue
+            n = len(sub)
+            mean = float(sub.mean())
+            ci = float(sub.sem() * stats.t.ppf(0.975, n - 1)) if n > 1 else 0.0
+            rows.append(
+                {
+                    "x_value": exp["x_value"],
+                    "Baseline": b,
+                    "Baseline_Label": label,
+                    "Mean": mean,
+                    "CI": ci,
+                    "N": n,
+                    "n_sims_file": exp["n_sims"],
+                }
+            )
+    return pd.DataFrame(rows)
+
+
 def compute_lift_records(
     results_list: list[dict],
     baselines: list[str],
@@ -318,7 +466,7 @@ def compute_lift_records(
                 {
                     "Run": i,
                     "Baseline": b,
-                    "Baseline_Label": LABEL_MAP.get(b, b.replace("_", " ").title()),
+                    "Baseline_Label": baseline_label(b),
                     "Lift": float(lift),
                 }
             )
@@ -339,7 +487,7 @@ def summarize_by_sweep(
         if df.empty:
             continue
         for b in baselines:
-            label = LABEL_MAP.get(b, b.replace("_", " ").title())
+            label = baseline_label(b)
             sub = df[df["Baseline"] == b]["Lift"]
             if sub.empty:
                 continue
@@ -427,13 +575,12 @@ def plot_trend(
     dataset_target: str,
     sweep: SweepConfig,
     n_sims: int,
-    eval_method: str,
     out_stem: str,
     fig_dir: Path,
 ) -> None:
     labels = ordered_labels(stats_df["Baseline_Label"].unique().tolist())
     x_vals = sorted(stats_df["x_value"].unique())
-    x_pct = [100.0 * x for x in x_vals]
+    x_pct = [sweep.to_display_pct(x) for x in x_vals]
 
     fig, ax = plt.subplots(figsize=(6.6, 4.0))
 
@@ -441,9 +588,9 @@ def plot_trend(
         sub = stats_df[stats_df["Baseline_Label"] == label].sort_values("x_value")
         if sub.empty:
             continue
-        base = COMPARATOR_COLORS.get(label, "#333333")
-        color = _with_alpha(base)
-        x = sub["x_value"].values * 100.0
+        base = COMPARATOR_COLORS.get(label, "#333333AF")
+        color = to_rgba(base)
+        x = np.array([sweep.to_display_pct(v) for v in sub["x_value"].values])
         y = sub["Mean"].values
         yerr = sub["CI"].values
 
@@ -495,8 +642,117 @@ def plot_trend(
     )
 
     ax.set_xticks(x_pct)
-    ax.xaxis.set_major_formatter(ticker.FormatStrFormatter("%.0f"))
+    ax.xaxis.set_major_formatter(ticker.FormatStrFormatter("%.1f"))
     ax.yaxis.set_major_formatter(ticker.FormatStrFormatter("%.1f"))
+
+    ax.set_axisbelow(True)
+    ax.grid(True, axis="both", linestyle=":", linewidth=0.5, alpha=0.55)
+    sns.despine(ax=ax, top=True, right=True)
+
+    ax.legend(
+        loc="upper right",
+        bbox_to_anchor=(0.98, 0.98),
+        ncol=3,
+        frameon=True,
+        framealpha=0.92,
+        edgecolor="#D0D0D0",
+        fancybox=False,
+        fontsize=7,
+        title="Comparator",
+        title_fontsize=8,
+        borderpad=0.25,
+        labelspacing=0.25,
+        columnspacing=0.55,
+        handletextpad=0.25,
+        handlelength=0.9,
+        markerscale=0.8,
+    )
+
+    fig_dir.mkdir(parents=True, exist_ok=True)
+    fig.tight_layout()
+    for ext in ("pdf", "png"):
+        out_path = fig_dir / f"{out_stem}.{ext}"
+        fig.savefig(out_path, dpi=300, bbox_inches="tight", facecolor="white")
+        print(f"[OK] Saved: {out_path}")
+    plt.close(fig)
+
+
+def plot_stz_trend(
+    stats_df: pd.DataFrame,
+    *,
+    dataset_target: str,
+    sweep: SweepConfig,
+    n_sims: int,
+    out_stem: str,
+    fig_dir: Path,
+) -> None:
+    """Plot DAS_advantage_ratio (STZ evaluator) trend figure."""
+    labels = ordered_labels(stats_df["Baseline_Label"].unique().tolist())
+    x_vals = sorted(stats_df["x_value"].unique())
+    x_pct = [sweep.to_display_pct(x) for x in x_vals]
+
+    fig, ax = plt.subplots(figsize=(6.6, 4.0))
+
+    for label in labels:
+        sub = stats_df[stats_df["Baseline_Label"] == label].sort_values("x_value")
+        if sub.empty:
+            continue
+        base = COMPARATOR_COLORS.get(label, "#333333AF")
+        color = to_rgba(base)
+        x = np.array([sweep.to_display_pct(v) for v in sub["x_value"].values])
+        y = sub["Mean"].values
+        yerr = sub["CI"].values
+
+        ax.errorbar(
+            x,
+            y,
+            yerr=yerr,
+            fmt="-o",
+            color=color,
+            ecolor=color,
+            elinewidth=1.0,
+            capsize=2.5,
+            capthick=0.9,
+            markersize=3.5,
+            markerfacecolor=color,
+            markeredgecolor=color,
+            markeredgewidth=0.6,
+            linewidth=1.4,
+            label=label,
+            zorder=3,
+        )
+
+    ax.axhline(
+        0.0,
+        color="#C1121F",
+        linestyle="--",
+        linewidth=1.2,
+        alpha=0.85,
+        zorder=1,
+    )
+
+    ax.set_xlabel(sweep.x_label, fontweight="bold", labelpad=8)
+    ax.set_ylabel("DAS advantage ratio (% of comparator)", fontweight="bold", labelpad=8)
+    ax.set_title(
+        f"DAS advantage ratio on {dataset_target}",
+        fontweight="bold",
+        fontsize=13,
+        pad=20,
+    )
+    ax.text(
+        0.5,
+        1.01,
+        sweep.subtitle(n_sims),
+        transform=ax.transAxes,
+        ha="center",
+        va="bottom",
+        fontsize=10,
+        color="#444444",
+    )
+
+    ax.set_xticks(x_pct)
+    ax.xaxis.set_major_formatter(ticker.FormatStrFormatter("%.1f"))
+    ax.yaxis.set_major_formatter(ticker.FormatStrFormatter("%.2f"))
 
     ax.set_axisbelow(True)
     ax.grid(True, axis="both", linestyle=":", linewidth=0.5, alpha=0.55)
@@ -552,20 +808,21 @@ def parse_args() -> argparse.Namespace:
         help="Output directory for figures.",
     )
     parser.add_argument(
-        "--eval-method",
-        "--eval_method",
-        default="dual_dr",
-        choices=["all"] + DEFAULT_EVAL_METHODS,
-        help=(
-            "OPE eval method: dual_dr (default), dr, ipw, or all to save three figures."
-        ),
-    )
-    parser.add_argument(
         "--min-sims",
         "--min_sims",
         type=int,
         default=1,
         help="Minimum completed simulations required per pickle.",
+    )
+    parser.add_argument(
+        "--metric",
+        default="both",
+        choices=["improvement", "advantage", "both"],
+        help=(
+            "improvement: DAS_improvement_ratio from OPE scalars (default). "
+            "advantage:   DAS_advantage_ratio via STZ evaluator (needs *_imp.pkl). "
+            "both:        save both figures."
+        ),
     )
     return parser.parse_args()
 
@@ -589,11 +846,6 @@ def main() -> None:
 
     plot_title = format_plot_title(params0)
     n_sims = int(params0.get("N_sim", 100))
-    eval_methods = (
-        DEFAULT_EVAL_METHODS
-        if args.eval_method == "all"
-        else [args.eval_method]
-    )
 
     print(f"Loaded {len(experiments)} experiments from {exp_dir}")
     print(f"Sweep axis: {sweep.kind}")
@@ -604,25 +856,58 @@ def main() -> None:
     print(f"Dataset: {params0.get('dataset')}")
     print(f"Target metric (target_col): {params0.get('target_col')}")
     print(f"Plot title: {plot_title}")
-    print(f"Eval method(s): {eval_methods}")
+    print(f"Metric: {args.metric}")
 
-    for ev in eval_methods:
-        stats_df = summarize_by_sweep(experiments, baselines, ev)
-        if stats_df.empty:
-            print(f"[WARN] No data for eval_method={ev}; skip.")
-            continue
+    slug = plot_title.lower().replace(" – ", "_").replace(" ", "_")
+    do_improvement = args.metric in ("improvement", "both")
+    do_advantage   = args.metric in ("advantage",   "both")
 
-        slug = plot_title.lower().replace(" – ", "_").replace(" ", "_")
-        out_stem = f"{sweep.out_stem_prefix}_{slug}_{ev}"
-        plot_trend(
-            stats_df,
-            dataset_target=plot_title,
-            sweep=sweep,
-            n_sims=n_sims,
-            eval_method=ev,
-            out_stem=out_stem,
-            fig_dir=fig_dir,
+    # ---- DAS improvement ratio (OPE-based, one figure per eval method) ----
+    if do_improvement:
+        for ev in DEFAULT_EVAL_METHODS:
+            stats_df = summarize_by_sweep(experiments, baselines, ev)
+            if stats_df.empty:
+                print(f"[WARN] No data for eval_method={ev}; skip improvement plot.")
+                continue
+            out_stem = f"{sweep.out_stem_prefix}_{slug}_{ev}"
+            plot_trend(
+                stats_df,
+                dataset_target=plot_title,
+                sweep=sweep,
+                n_sims=n_sims,
+                out_stem=out_stem,
+                fig_dir=fig_dir,
+            )
+
+    # ---- DAS advantage ratio (STZ evaluator, needs implementation data) ----
+    if do_advantage:
+        n_runs_with_impl = sum(
+            1
+            for exp in experiments
+            for run in exp["results"]
+            if run.get("implementation") is not None
         )
+        if n_runs_with_impl == 0:
+            print(
+                "[WARN] No run has 'implementation' data. "
+                "Re-run experiments with save_offline_data=True (*_imp.pkl) "
+                "to use the STZ evaluator."
+            )
+        else:
+            print(f"Runs with implementation data: {n_runs_with_impl}")
+            stz_df = summarize_stz_by_sweep(experiments, baselines)
+            if stz_df.empty:
+                print("[WARN] STZ evaluator returned no finite values; skip advantage plot.")
+            else:
+                out_stem = f"{sweep.out_stem_prefix}_{slug}_stz"
+                plot_stz_trend(
+                    stz_df,
+                    dataset_target=plot_title,
+                    sweep=sweep,
+                    n_sims=n_sims,
+                    out_stem=out_stem,
+                    fig_dir=fig_dir,
+                )
 
     print_incomplete_pkl_warning(incomplete_pkls, experiments, args.min_sims)
 

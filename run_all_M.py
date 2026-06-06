@@ -10,8 +10,23 @@
 
 import numpy as np
 import pickle
+import gzip
 import os
 import time
+
+
+def _pkl_dump(path: str, data) -> None:
+    with gzip.open(path, "wb", compresslevel=6) as f:
+        pickle.dump(data, f, protocol=4)
+
+
+def _pkl_load(path: str):
+    try:
+        with gzip.open(path, "rb") as f:
+            return pickle.load(f)
+    except (OSError, gzip.BadGzipFile):
+        with open(path, "rb") as f:
+            return pickle.load(f)
 
 from data_utils import (
     load_criteo, load_hillstrom, load_lenta,
@@ -46,7 +61,8 @@ def run_dast_dams_all_M(
     M_candidates,
     min_leaf_size,
     value_type_dast,
-    value_type_dams
+    value_type_dams,
+    action_method,
 ):
     print("\n" + "=" * 60)
     print("STEP 5: DAST - selecting optimal M via DAMS")
@@ -87,15 +103,17 @@ def run_dast_dams_all_M(
             candidate_thresholds=H_full,
             min_leaf_size=min_leaf_size,
             value_type_dast=value_type_dast,
+            action_method=action_method,
         )
         tree.build(M)
         actual_leaves = len(tree._get_leaf_nodes())
         print(f"  Built tree for M={M}: actual leaves = {actual_leaves}")
 
-        # segment labels on train + segment-level policy (diff-in-means on y)
+        # segment labels on train + segment-level policy
         labels_train = tree.assign(X_train)
         action_M = estimate_segment_policy(
-            X_train, y_train, D_train, labels_train
+            X_train, y_train, D_train, labels_train,
+            method=action_method, Gamma=Gamma_train,
         )
 
         # DAMS scoring on validation
@@ -127,15 +145,17 @@ def run_dast_dams_all_M(
             candidate_thresholds=H_full,
             min_leaf_size=min_leaf_size,
             value_type_dast=value_type_dast,
+            action_method=action_method,
         )
         tree_pilot.build(M)
         actual_leaves_pilot = len(tree_pilot._get_leaf_nodes())
         print(f"  Built pilot tree for M={M}: actual leaves = {actual_leaves_pilot}")
 
-        # segment labels on pilot + segment-level policy (diff-in-means on y)
+        # segment labels on pilot + segment-level policy
         labels_M = tree_pilot.assign(X_pilot)
         action_M = estimate_segment_policy(
-            X_pilot, y_pilot, D_pilot, labels_M
+            X_pilot, y_pilot, D_pilot, labels_M,
+            method=action_method, Gamma=Gamma_pilot,
         )
 
         seg_labels_impl_dast = tree_pilot.assign(X_impl)
@@ -180,6 +200,7 @@ def run_single_simulation(
     dataset,
     target_col,
     mu_model_type,
+    action_method,
     value_type_dast="hybrid",
     value_type_dams="hybrid",
 ):
@@ -485,6 +506,7 @@ def run_single_simulation(
             min_leaf_size=5,
             value_type_dast=value_type_dast,
             value_type_dams=value_type_dams,
+            action_method=action_method,
         )
 
 
@@ -509,6 +531,7 @@ def run_multiple_simulations(
     dataset,
     target_col,
     mu_model_type,
+    action_method,
     value_type_dast="hybrid",
     value_type_dams="hybrid",
 ):
@@ -542,6 +565,7 @@ def run_multiple_simulations(
                 dataset=dataset,
                 target_col=target_col,
                 mu_model_type=mu_model_type,
+                action_method=action_method,
                 value_type_dast=value_type_dast,
                 value_type_dams=value_type_dams,
             )
@@ -549,8 +573,7 @@ def run_multiple_simulations(
             experiment_data["results"].append(res)
 
             # 每轮覆盖保存
-            with open(out_path, "wb") as f:
-                pickle.dump(experiment_data, f)
+            _pkl_dump(out_path, experiment_data)
 
             print(f'[SIM {len(experiment_data["results"])}/{N_sim}] saved → {out_path}')
             print("-" * 60)
@@ -659,6 +682,13 @@ if __name__ == "__main__":
         action="store_true",
         help="Skip plotting after the experiment finishes.",
     )
+    parser.add_argument(
+        "--action_method",
+        type=str,
+        choices=["diff_in_means", "gamma", "logistic"],
+        required=True,
+        help="Method to estimate segment-level action.",
+    )
 
     args = parser.parse_args()
 
@@ -677,6 +707,7 @@ if __name__ == "__main__":
         dataset=args.dataset,
         target_col=args.target,
         mu_model_type=args.mu_model_type,
+        action_method=args.action_method,
         value_type_dast=args.value_type_dast,
         value_type_dams=args.value_type_dams,
     )

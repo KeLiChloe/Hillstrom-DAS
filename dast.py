@@ -15,6 +15,7 @@ exactly M leaves are reached or no positive-gain split exists.
 import copy
 import warnings
 import numpy as np
+from estimation import _action_for_subset
 
 
 class DASTNode:
@@ -54,6 +55,7 @@ class DASTree:
         candidate_thresholds,
         min_leaf_size: int,
         value_type_dast: str,
+        action_method: str,
     ):
         """
         Parameters
@@ -67,7 +69,10 @@ class DASTree:
         min_leaf_size : int
             minimum samples per treatment in each leaf (StatisticallyAdmissible)
         value_type_dast : str
-            'hybrid' or 'dr' — how to compute node value
+            'hybrid' or 'dr' — how to evaluate node value given the chosen action
+        action_method : str
+            'diff_in_means', 'gamma', or 'logistic' — how to choose the best
+            action for each node (decoupled from value evaluation)
         """
         self.x = x
         self.y = y
@@ -76,9 +81,15 @@ class DASTree:
         self.H = candidate_thresholds
         self.min_leaf_size = min_leaf_size
         self.value_type_dast = value_type_dast
+        self.action_method = action_method
 
         self.actions = np.unique(self.D)
         self.K = int(self.gamma.shape[1])
+
+        assert len(self.actions) == self.K, (
+            f"D contains actions {self.actions.tolist()} but gamma has {self.K} columns; "
+            "all K actions must appear in training data."
+        )
 
         self.root: DASTNode | None = None
         self.leaf_nodes: list[DASTNode] = []
@@ -258,38 +269,54 @@ class DASTree:
     # Node value computation
     # ======================================================================
 
+    # ======================================================================
+    # Node action selection  (step 1 — decoupled from value evaluation)
+    # ======================================================================
+
+    def _get_node_action(self, indices: np.ndarray) -> int:
+        """
+        Choose the best action for a node — delegates to _action_for_subset
+        so grow-phase and post-grow segment policy share a single implementation.
+        """
+        return _action_for_subset(
+            self.x, self.y, self.D, self.gamma,
+            indices, self.action_method, self.actions,
+        )
+
+    # ======================================================================
+    # Node value computation  (step 2 — given the chosen action)
+    # ======================================================================
+
     def _compute_node_value(self, indices: np.ndarray) -> float:
         """
-        ComputeNodeValue(L) — K-action version.
+        ComputeNodeValue(L):
 
-        For each action a:
-            v̂_i(a) = y_i       if D_i == a   (observed outcome)
-                      Γ_{i,a}   otherwise      (DR imputation)
-        Select best action: a_L = argmax_a mean_{i∈L} v̂_i(a)
-        Node value: V̂(L) = sum_{i∈L} v̂_i(a_L)
+        Step 1 — choose best action via action_method:
+            best_a = _get_node_action(L)
+
+        Step 2 — evaluate V̂(L) using value_type_dast:
+            hybrid : v̂_i = y_i        if D_i == best_a
+                           Gamma_{i,best_a}  otherwise
+            dr     : v̂_i = Gamma_{i,best_a}  (all customers)
+
+        V̂(L) = sum_{i∈L} v̂_i
         """
         if len(indices) == 0:
             return 0.0
 
+        best_a = self._get_node_action(indices)
+
         y_L = self.y[indices]
         D_L = self.D[indices]
-        Gamma_L = self.gamma[indices, :]    # (|L|, K)
-        K = self.K
+        Gamma_L = self.gamma[indices, :]
 
-        mean_vals = np.zeros(K, dtype=float)
-        sum_vals = np.zeros(K, dtype=float)
+        mask_a = (D_L == best_a)
+        if self.value_type_dast == 'hybrid':
+            v = np.where(mask_a, y_L, Gamma_L[:, best_a])
+        else:  # 'dr'
+            v = Gamma_L[:, best_a]
 
-        for a in range(K):
-            mask_a = (D_L == a)
-            if self.value_type_dast == 'hybrid':
-                v_a = np.where(mask_a, y_L, Gamma_L[:, a])
-            elif self.value_type_dast == 'dr':
-                v_a = Gamma_L[:, a]
-            mean_vals[a] = v_a.mean()
-            sum_vals[a] = v_a.sum()
-
-        best_a = int(np.argmax(mean_vals))
-        return float(sum_vals[best_a])
+        return float(v.sum())
 
     # ======================================================================
     # Variance utilities (tie-breaking)
@@ -324,7 +351,7 @@ class DASTree:
         if len(indices) == 0:
             return False
         D_sub = self.D[indices]
-        for a in self.actions:
+        for a in range(self.K):
             if np.sum(D_sub == a) < self.min_leaf_size:
                 return False
         return True

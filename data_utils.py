@@ -5,17 +5,36 @@ import numpy as np
 import pandas as pd
 from sklearn.preprocessing import StandardScaler
 
-def split_pilot_impl(X, D, y, pilot_frac, random_state=0):
+def split_pilot_impl(X, D, y, pilot_frac, random_state=0, return_indices=False):
     """
-    Full data → pilot + implementation
+    Full data → pilot + implementation.
+
+    If return_indices=True, also return cohort row indices (customer_id) for
+    pilot and implementation splits. Indices refer to rows in the input cohort
+    (0 .. len(X)-1) before the split.
     """
-    X_pilot, X_impl, D_pilot, D_impl, y_pilot, y_impl = train_test_split(
-        X,
-        D,
-        y,
-        train_size=pilot_frac,
-        random_state=random_state,
-    )
+    if return_indices:
+        indices = np.arange(len(X))
+        idx_pilot, idx_impl, X_pilot, X_impl, D_pilot, D_impl, y_pilot, y_impl = (
+            train_test_split(
+                indices,
+                X,
+                D,
+                y,
+                train_size=pilot_frac,
+                random_state=random_state,
+            )
+        )
+        idx_pilot = np.asarray(idx_pilot, dtype=int)
+        idx_impl = np.asarray(idx_impl, dtype=int)
+    else:
+        X_pilot, X_impl, D_pilot, D_impl, y_pilot, y_impl = train_test_split(
+            X,
+            D,
+            y,
+            train_size=pilot_frac,
+            random_state=random_state,
+        )
 
     # Convert to numpy arrays if they are pandas objects
     # This ensures consistent integer-based indexing (not label-based)
@@ -40,7 +59,67 @@ def split_pilot_impl(X, D, y, pilot_frac, random_state=0):
         y_pilot = y_pilot.values
         y_impl = y_impl.values
 
+    if return_indices:
+        return (
+            X_pilot,
+            X_impl,
+            D_pilot,
+            D_impl,
+            y_pilot,
+            y_impl,
+            idx_pilot,
+            idx_impl,
+        )
     return X_pilot, X_impl, D_pilot, D_impl, y_pilot, y_impl
+
+
+def verify_impl_customer_alignment(
+    impl_customer_id,
+    D_impl,
+    y_impl,
+    D_cohort,
+    y_cohort,
+    *,
+    context="",
+):
+    """
+    Ensure implementation rows match cohort rows indexed by customer_id.
+
+    Row k must satisfy D_impl[k] == D_cohort[customer_id[k]] (same for y).
+    customer_id values must be unique and lie in [0, len(D_cohort)).
+    """
+    prefix = f"{context}: " if context else ""
+    cid = np.asarray(impl_customer_id, dtype=int)
+    D_i = np.asarray(D_impl, dtype=int)
+    y_i = np.asarray(y_impl, dtype=float)
+    D_all = np.asarray(D_cohort, dtype=int)
+    y_all = np.asarray(y_cohort, dtype=float)
+
+    n = len(cid)
+    if not (len(D_i) == len(y_i) == n):
+        raise ValueError(
+            f"{prefix}length mismatch: customer_id={n}, D_impl={len(D_i)}, "
+            f"y_impl={len(y_i)}"
+        )
+    if n == 0:
+        return
+    if len(np.unique(cid)) != n:
+        raise ValueError(f"{prefix}duplicate customer_id in implementation split")
+    if cid.min() < 0 or cid.max() >= len(D_all):
+        raise ValueError(
+            f"{prefix}customer_id out of range [0, {len(D_all)}): "
+            f"min={cid.min()}, max={cid.max()}"
+        )
+    if not np.array_equal(D_i, D_all[cid]):
+        bad = np.where(D_i != D_all[cid])[0][:5]
+        raise ValueError(
+            f"{prefix}D_impl does not match D_cohort[customer_id] at rows {bad.tolist()}"
+        )
+    if not np.allclose(y_i, y_all[cid], rtol=0.0, atol=0.0, equal_nan=True):
+        bad = np.where(~np.isclose(y_i, y_all[cid], equal_nan=True))[0][:5]
+        raise ValueError(
+            f"{prefix}y_impl does not match y_cohort[customer_id] at rows {bad.tolist()}"
+        )
 
 
 def split_seg_train_test(X_pilot, D_pilot, y_pilot, Gamma_pilot, test_frac):
@@ -323,7 +402,9 @@ def load_lenta(sample_frac, seed, target_col=None):
 # =========================================================
 # 1. pilot / implementation 划分 + outcome model + Gamma (K-action)
 # =========================================================
-def prepare_pilot_impl(X, y, D, pilot_frac, mu_model_type):
+def prepare_pilot_impl(
+    X, y, D, pilot_frac, mu_model_type, return_impl_customer_id=False
+):
     """
     K-action 版本
     """
@@ -331,14 +412,38 @@ def prepare_pilot_impl(X, y, D, pilot_frac, mu_model_type):
     print("Split & fit outcome models")
     print("=" * 60)
 
-    X_pilot, X_impl, D_pilot, D_impl, y_pilot, y_impl = split_pilot_impl(
-        X, D, y, pilot_frac=pilot_frac
+    # Always split with cohort indices so pilot/impl membership does not depend
+    # on whether offline storage is enabled later in run_sims.py.
+    (
+        X_pilot,
+        X_impl,
+        D_pilot,
+        D_impl,
+        y_pilot,
+        y_impl,
+        _idx_pilot,
+        impl_customer_id,
+    ) = split_pilot_impl(
+        X, D, y, pilot_frac=pilot_frac, return_indices=True
     )
+    impl_customer_id = np.asarray(impl_customer_id, dtype=int)
     print(f"Pilot size: {len(X_pilot)}, Implementation size: {len(X_impl)}")
 
     X_pilot = np.asarray(X_pilot)
+    X_impl = np.asarray(X_impl)
     D_pilot = np.asarray(D_pilot).astype(int)
+    D_impl = np.asarray(D_impl).astype(int)
     y_pilot = np.asarray(y_pilot, dtype=float)
+    y_impl = np.asarray(y_impl, dtype=float)
+
+    verify_impl_customer_alignment(
+        impl_customer_id,
+        D_impl,
+        y_impl,
+        D,
+        y,
+        context="prepare_pilot_impl",
+    )
 
     y_fit = y_pilot
 
@@ -386,7 +491,7 @@ def prepare_pilot_impl(X, y, D, pilot_frac, mu_model_type):
         Gamma_pilot[:, a] = mu_a_hat + (mask_a.astype(float) / e_a) * (y_pilot - mu_a_hat)
 
         
-    return (
+    out = (
         X_pilot,
         X_impl,
         D_pilot,
@@ -396,3 +501,6 @@ def prepare_pilot_impl(X, y, D, pilot_frac, mu_model_type):
         mu_pilot_models,
         Gamma_pilot,
     )
+    if return_impl_customer_id:
+        return out + (impl_customer_id,)
+    return out  # impl_customer_id verified but not returned

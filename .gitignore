@@ -1,3 +1,7 @@
 __pycache__
 figures/
 archived
+
+# Large offline implementation artifacts (often >100 MB)
+*_imp.pkl
+exp_june/

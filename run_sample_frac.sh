@@ -4,6 +4,7 @@ set -euo pipefail
 MU_MODEL_TYPE="${MU_MODEL_TYPE:-lightgbm_reg}"
 VALUE_TYPE_DAST="${VALUE_TYPE_DAST:-hybrid}"
 VALUE_TYPE_DAMS="${VALUE_TYPE_DAMS:-hybrid}"
+ACTION_METHOD="${ACTION_METHOD:-diff_in_means}"
 SEED_SEQUENCE="${SEED_SEQUENCE:-202}"
 PILOT_FRAC="${PILOT_FRAC:-0.20}"
 N_JOBS="${N_JOBS:-1}"
@@ -13,13 +14,13 @@ TARGET="${TARGET:-conversion}"
 
 PILOT_TAG=$(printf "%03d" "$(awk -v p="${PILOT_FRAC}" 'BEGIN { printf "%d", p * 100 }')")
 
-OUTDIR="exp_may/${DATASET}/${TARGET}/sample_frac_with_fixed_${PILOT_TAG}_pilot"
+OUTDIR="exp_june/${DATASET}/${TARGET}/sample_frac_with_fixed_${PILOT_TAG}_pilot"
 mkdir -p "${OUTDIR}"
 
 for sample_int in $(seq 5 5 50); do
     sample_frac=$(printf "0.%02d" "${sample_int}")
     sample_tag=$(printf "%03d" "${sample_int}")
-    outpath="${OUTDIR}/sample_frac_${sample_tag}.pkl"
+    outpath="${OUTDIR}/sample_frac_${sample_tag}_imp.pkl"
 
     if [[ -f "${outpath}" ]]; then
         echo "[SKIP] ${outpath} already exists"
@@ -37,5 +38,6 @@ for sample_int in $(seq 5 5 50); do
         --sample_frac "${sample_frac}" \
         --pilot_frac "${PILOT_FRAC}" \
         --n_jobs "${N_JOBS}" \
+        --action_method "${ACTION_METHOD}" \
         --outpath "${outpath}"
 done

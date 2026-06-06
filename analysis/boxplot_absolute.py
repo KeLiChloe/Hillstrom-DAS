@@ -1,3 +1,4 @@
+import gzip
 import os
 import pickle
 import pandas as pd
@@ -8,13 +9,22 @@ from matplotlib.lines import Line2D
 from matplotlib.patches import Patch
 import warnings
 
+from plot_style import baseline_color, baseline_label, comparator_colors_by_label
+
 warnings.simplefilter(action='ignore', category=FutureWarning)
 
 # ==========================================
 # 0. 读取数据
 # ==========================================
-with open("exp_results/main/exp2.pkl", "rb") as f:
-    data_exp = pickle.load(f)
+def _pkl_load(path):
+    try:
+        with gzip.open(path, "rb") as f:
+            return pickle.load(f)
+    except (OSError, gzip.BadGzipFile):
+        with open(path, "rb") as f:
+            return pickle.load(f)
+
+data_exp = _pkl_load("exp_results/main/exp2.pkl")
 
 if isinstance(data_exp, dict) and "results" in data_exp:
     params = data_exp.get("params", {})
@@ -58,39 +68,14 @@ methods = [
     "dast"
 ]
 
-label_map = {
-    "all_0": "All Action=0",
-    "all_1": "All Action=1",
-    "all_2": "All Action=2",
-    "random": "Random",
-    "kmeans": "K-Means",
-    "gmm": "GMM",
-    "clr": "CLR",
-    "mst": "MST",
-    "causal_forest": "Causal Forest",
-    "t_learner": "T-learner",
-    "s_learner": "S-learner",
-    "x_learner": "X-learner",
-    "dr_learner": "DR-learner",
-    "dast": "DAST",
-}
+label_map = {m: baseline_label(m) for m in methods if m != "dast"}
+label_map["dast"] = "DAST"
 
-palette = {
-    "All Action=0": "#55A86899",
-    "All Action=1": "#4C72B099",
-    "All Action=2": "#8172B299",
-    "Random": "#C44E5299",
-    "K-Means": "#CCB97499",
-    "GMM": "#64B5CD99",
-    "CLR": "#8C613C99",
-    "MST": "#93786099",
-    "Causal Forest": "#1F77B499",
-    "T-learner": "#FF923499",
-    "S-learner": "#2CA02C99",
-    "X-learner": "#F5474799",
-    "DR-learner": "#9467BD99",
-    "DAST": "#EF660A99",
-}
+palette = comparator_colors_by_label()
+palette["All Action=0"] = baseline_color("policy_tree")
+palette["All Action=1"] = baseline_color("policy_tree")
+palette["All Action=2"] = baseline_color("policy_tree")
+palette["DAST"] = "#EF660A99"
 
 # 可选：排序顺序
 constant_order = [
@@ -103,10 +88,10 @@ constant_order = [
     "CLR",
     "MST",
     "Causal Forest",
-    "T-learner",
-    "S-learner",
-    "X-learner",
-    "DR-learner",
+    "T-Learner",
+    "S-Learner",
+    "X-Learner",
+    "DR-Learner",
     "DAST",
 ]
 

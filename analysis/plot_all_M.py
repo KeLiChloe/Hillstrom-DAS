@@ -11,6 +11,7 @@ Not compatible with run_sims.py pilot_frac pkls (DAST stores a single scalar per
 from __future__ import annotations
 
 import argparse
+import gzip
 import pickle
 import re
 import warnings
@@ -279,8 +280,12 @@ def plot_experiment_from_pkl(
 ) -> list[Path]:
     """Load pickle from disk and call plot_experiment."""
     pkl_path = Path(pkl_path).expanduser().resolve()
-    with open(pkl_path, "rb") as f:
-        experiment_data = pickle.load(f)
+    try:
+        with gzip.open(pkl_path, "rb") as f:
+            experiment_data = pickle.load(f)
+    except (OSError, gzip.BadGzipFile):
+        with open(pkl_path, "rb") as f:
+            experiment_data = pickle.load(f)
     return plot_experiment(
         experiment_data,
         fig_dir=fig_dir,
