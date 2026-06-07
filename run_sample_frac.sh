@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-MU_MODEL_TYPE="${MU_MODEL_TYPE:-lightgbm_reg}"
+VALID_MU_TYPES=(linear mlp_reg lightgbm_reg logistic mlp_clf lightgbm_clf)
+
 VALUE_TYPE_DAST="${VALUE_TYPE_DAST:-hybrid}"
 VALUE_TYPE_DAMS="${VALUE_TYPE_DAMS:-hybrid}"
 ACTION_METHOD="${ACTION_METHOD:-diff_in_means}"
@@ -12,6 +13,21 @@ N_JOBS="${N_JOBS:-1}"
 DATASET="${DATASET:-criteo}"
 TARGET="${TARGET:-conversion}"
 
+case "${TARGET}" in
+    visit|conversion)
+        MU_MODEL_TYPE="${MU_MODEL_TYPE:-lightgbm_clf}"
+        ;;
+    *)
+        MU_MODEL_TYPE="${MU_MODEL_TYPE:-lightgbm_reg}"
+        ;;
+esac
+
+if ! printf '%s\n' "${VALID_MU_TYPES[@]}" | grep -qx "${MU_MODEL_TYPE}"; then
+    echo "Invalid MU_MODEL_TYPE=${MU_MODEL_TYPE}" >&2
+    echo "Choose one of: ${VALID_MU_TYPES[*]}" >&2
+    exit 1
+fi
+
 PILOT_TAG=$(printf "%03d" "$(awk -v p="${PILOT_FRAC}" 'BEGIN { printf "%d", p * 100 }')")
 
 OUTDIR="exp_june/${DATASET}/${TARGET}/sample_frac_with_fixed_${PILOT_TAG}_pilot"
@@ -20,7 +36,7 @@ mkdir -p "${OUTDIR}"
 for sample_int in $(seq 5 5 50); do
     sample_frac=$(printf "0.%02d" "${sample_int}")
     sample_tag=$(printf "%03d" "${sample_int}")
-    outpath="${OUTDIR}/sample_frac_${sample_tag}_imp.pkl"
+    outpath="${OUTDIR}/sample_frac_${sample_tag}.pkl"
 
     if [[ -f "${outpath}" ]]; then
         echo "[SKIP] ${outpath} already exists"

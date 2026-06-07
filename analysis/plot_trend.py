@@ -7,7 +7,7 @@ Two metrics (--metric):
 
   advantage    DAS_advantage_ratio = STZ_evaluator (Simester, Timoshenko, and Zoumpoulis)
                Uses per-customer logged data in run["implementation"].
-               Requires *_imp.pkl files produced with save_offline_data=True.
+               Loads implementation from *_stz.pkl sidecars.
 
   both         (default) Saves figures for both metrics.
 
@@ -262,15 +262,42 @@ def STZ_evaluator(
     return float(weight * (v_dast - v_comp) / abs(v_comp) * 100.0)
 
 
+def _is_main_pkl(path: Path) -> bool:
+    return not path.stem.endswith("_stz")
+
+
+def _resolve_stz_path(main_path: Path) -> Path:
+    return main_path.with_name(main_path.stem + "_stz" + main_path.suffix)
+
+
+def merge_stz_sidecars(experiments: list[dict]) -> int:
+    """Attach implementation blocks from *_stz.pkl sidecars (by seed)."""
+    merged = 0
+    for exp in experiments:
+        stz_path = _resolve_stz_path(Path(exp["path"]))
+        if not stz_path.is_file():
+            continue
+        stz_data = _pkl_load(stz_path)
+        impl_by_seed = {
+            run["seed"]: run["implementation"]
+            for run in stz_data.get("results", [])
+            if isinstance(run, dict) and "implementation" in run
+        }
+        for run in exp["results"]:
+            seed = run.get("seed")
+            if seed in impl_by_seed:
+                run["implementation"] = impl_by_seed[seed]
+                merged += 1
+    return merged
+
+
 def detect_sweep_kind(exp_dir: Path) -> SweepKind:
     """Infer x-axis sweep from directory name or pickle filenames."""
     has_sample = bool(
-        list(exp_dir.glob("sample_frac_*_imp.pkl"))
-        or list(exp_dir.glob("sample_frac_*.pkl"))
+        list(p for p in exp_dir.glob("sample_frac_*.pkl") if _is_main_pkl(p))
     )
     has_pilot = bool(
-        list(exp_dir.glob("pilot_frac_*_imp.pkl"))
-        or list(exp_dir.glob("pilot_frac_*.pkl"))
+        list(p for p in exp_dir.glob("pilot_frac_*.pkl") if _is_main_pkl(p))
     )
 
     if has_pilot and not has_sample:
@@ -305,11 +332,11 @@ def discover_sweep_value(kind: SweepKind, path: Path, params: dict) -> float:
 def load_experiment_pkls(
     exp_dir: Path, min_sims: int, sweep_kind: SweepKind
 ) -> tuple[list[dict], list[dict]]:
-    pkls = sorted(exp_dir.glob(f"{sweep_kind}_*_imp.pkl"))
+    pkls = sorted(
+        p for p in exp_dir.glob(f"{sweep_kind}_*.pkl") if _is_main_pkl(p)
+    )
     if not pkls:
-        pkls = sorted(exp_dir.glob(f"{sweep_kind}_*.pkl"))
-    if not pkls:
-        pkls = sorted(exp_dir.glob("*.pkl"))
+        pkls = sorted(p for p in exp_dir.glob("*.pkl") if _is_main_pkl(p))
     if not pkls:
         raise FileNotFoundError(f"No pickle files found in {exp_dir}")
 
@@ -820,7 +847,7 @@ def parse_args() -> argparse.Namespace:
         choices=["improvement", "advantage", "both"],
         help=(
             "improvement: DAS_improvement_ratio from OPE scalars (default). "
-            "advantage:   DAS_advantage_ratio via STZ evaluator (needs *_imp.pkl). "
+            "advantage:   DAS_advantage_ratio via STZ evaluator (needs *_stz.pkl). "
             "both:        save both figures."
         ),
     )
@@ -881,6 +908,9 @@ def main() -> None:
 
     # ---- DAS advantage ratio (STZ evaluator, needs implementation data) ----
     if do_advantage:
+        n_merged = merge_stz_sidecars(experiments)
+        if n_merged:
+            print(f"Merged implementation data from STZ sidecars: {n_merged} runs")
         n_runs_with_impl = sum(
             1
             for exp in experiments
@@ -890,8 +920,8 @@ def main() -> None:
         if n_runs_with_impl == 0:
             print(
                 "[WARN] No run has 'implementation' data. "
-                "Re-run experiments with save_offline_data=True (*_imp.pkl) "
-                "to use the STZ evaluator."
+                "Re-run with save_offline_data=True; STZ data lives in *_stz.pkl "
+                "(local sidecar, merged automatically when present)."
             )
         else:
             print(f"Runs with implementation data: {n_runs_with_impl}")

@@ -28,6 +28,7 @@ def _pkl_load(path: str):
         with open(path, "rb") as f:
             return pickle.load(f)
 
+from outcome_model import tau_model_type_from_mu
 from data_utils import (
     load_criteo, load_hillstrom, load_lenta,
     split_seg_train_test, prepare_pilot_impl
@@ -285,8 +286,7 @@ def run_single_simulation(
             D_pilot,
             y_pilot,
             K=action_K,
-            model_type="mlp_reg",    # "ridge" / "mlp_reg" / "lightgbm_reg"
-             
+            model_type=mu_model_type,
             random_state=seed,
         )
 
@@ -326,8 +326,7 @@ def run_single_simulation(
             D_pilot,
             y_pilot,
             K=action_K,
-            model_type="mlp_reg",    # "ridge" / "mlp_reg" / "lightgbm_reg"
-             
+            model_type=mu_model_type,
             random_state=seed,
         )
 
@@ -368,6 +367,7 @@ def run_single_simulation(
             mu_pilot_models=mu_pilot_models,
              
             control_action=0,        # Hillstrom: 通常 0 是 control
+            mu_model_type=mu_model_type,
             random_state=seed,
         )
 
@@ -415,8 +415,8 @@ def run_single_simulation(
                 pi=pi_vec,  # length K
                 baseline=0,          # Hillstrom: 0 is control
                 n_folds=5,
-                mu_model_type="mlp_reg",   # "ridge" / "mlp_reg" / "lightgbm_reg"
-                tau_model_type="mlp_reg",
+                mu_model_type=mu_model_type,
+                tau_model_type=tau_model_type_from_mu(mu_model_type),
             )
 
             # 2) predict individual best action on IMPLEMENTATION
@@ -431,8 +431,8 @@ def run_single_simulation(
 
                 e=e,  # P(D=1)
                 n_folds=3,
-                mu_model_type="mlp_reg",   # "ridge" / "mlp_reg" / "lightgbm_reg"
-                tau_model_type="mlp_reg",
+                mu_model_type=mu_model_type,
+                tau_model_type=tau_model_type_from_mu(mu_model_type),
             )
 
             # 2) predict individual best action on IMPLEMENTATION

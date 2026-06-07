@@ -2,6 +2,5 @@ __pycache__
 figures/
 archived
 
-# Large offline implementation artifacts (often >100 MB)
-*_imp.pkl
-exp_june/
+# STZ offline payloads (large; keep local only)
+*_stz.pkl

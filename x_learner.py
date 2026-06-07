@@ -2,7 +2,7 @@
 import numpy as np
 from sklearn.base import clone
 from sklearn.linear_model import LogisticRegression
-from sklearn.neural_network import MLPRegressor
+from outcome_model import make_mu_model, predict_mu_values, tau_model_type_from_mu
 
 
 # =========================================================
@@ -13,8 +13,7 @@ def _predict_mu_action(mu_models: dict, X: np.ndarray, a: int) -> np.ndarray:
     """Predict mu_a(x) on ORIGINAL scale (invert log if needed)."""
     if a not in mu_models:
         raise ValueError(f"mu_models does not contain action {a}. keys={sorted(mu_models.keys())}")
-    yhat = mu_models[a].predict(X)
-    return yhat
+    return predict_mu_values(mu_models[a], X)
 
 
 def _get_gate_vector(gate_obj, n: int, X: np.ndarray) -> np.ndarray:
@@ -42,6 +41,7 @@ def fit_x_learner(
     mu_pilot_models: dict,
     *,
     control_action: int = 0,
+    mu_model_type: str,
     # effect models
     effect_model=None,
     # gating options
@@ -79,13 +79,10 @@ def fit_x_learner(
 
     K = int(actions.max()) + 1
 
-    # default effect model (can be swapped to LGBMRegressor outside)
+    # tau heads are continuous pseudo-outcomes → regression analogue of mu_model_type
     if effect_model is None:
-        effect_model = MLPRegressor(
-            hidden_layer_sizes=(64, 32),
-            activation="relu",
-            max_iter=300,
-            early_stopping=True,
+        effect_model = make_mu_model(
+            tau_model_type_from_mu(mu_model_type),
             random_state=random_state,
         )
 

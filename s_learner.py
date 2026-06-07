@@ -1,15 +1,13 @@
 # s_learner.py
 import numpy as np
-from sklearn.linear_model import LinearRegression, Ridge
-from sklearn.neural_network import MLPRegressor
-from lightgbm import LGBMRegressor
+from outcome_model import make_mu_model, predict_mu_values
 
 
 def _one_hot_actions(D: np.ndarray, K: int) -> np.ndarray:
     D = np.asarray(D).astype(int).ravel()
     if D.min() < 0 or D.max() >= K:
         raise ValueError(f"Action D must be in [0, {K-1}], got min={D.min()}, max={D.max()}")
-    return np.eye(K, dtype=float)[D]  # (n, K)
+    return np.eye(K, dtype=float)[D]
 
 
 def _build_slearner_features(X: np.ndarray, D: np.ndarray, K: int) -> np.ndarray:
@@ -32,9 +30,7 @@ def fit_s_learner(
     """
     训练 multi-action S-learner：一个模型拟合 mu(x,a)=E[Y|X,D=a]
 
-    参数
-    ----
-    K: action 数量（Hillstrom=3）
+    model_type follows --mu_model_type (see outcome_model.make_mu_model).
     """
     X = np.asarray(X)
     D = np.asarray(D).astype(int).ravel()
@@ -42,29 +38,11 @@ def fit_s_learner(
 
     X_s = _build_slearner_features(X, D, K)
 
-    def make_model():
-        if model_type == "linear":
-            return LinearRegression()
-        if model_type == "ridge":
-            return Ridge(alpha=1e-2, random_state=random_state)
-        if model_type == "mlp_reg":
-            return MLPRegressor(
-                hidden_layer_sizes=(64, 32),
-                activation="relu",
-                max_iter=300,
-                early_stopping=True,
-                random_state=random_state,
-            )
-        if model_type == "lightgbm_reg":
-            return LGBMRegressor(
-                n_estimators=200,
-                learning_rate=0.05,
-                max_depth=-1,
-                random_state=random_state,
-            )
-        raise ValueError(f"Unknown model_type: {model_type}")
-
-    model = make_model()
+    model = make_mu_model(
+        model_type,
+        random_state=random_state,
+        y=y if model_type == "lightgbm_clf" else None,
+    )
     model.fit(X_s, y)
     return model
 
@@ -84,7 +62,6 @@ def predict_mu_s_learner_matrix(
     for a in range(K):
         D_a = np.full(n, a, dtype=int)
         X_s = _build_slearner_features(X, D_a, K)
-        pred = s_model.predict(X_s).astype(float)
-        mu_mat[:, a] = pred
+        mu_mat[:, a] = predict_mu_values(s_model, X_s)
 
     return mu_mat

@@ -1,47 +1,28 @@
 import numpy as np
 from sklearn.model_selection import KFold
-from sklearn.neural_network import MLPRegressor
-from sklearn.linear_model import Ridge
-from lightgbm import LGBMRegressor
-
-
-def _make_regressor(model_type: str):
-    model_type = model_type.lower()
-    if model_type == "ridge":
-        return Ridge(alpha=1.0)
-    if model_type == "mlp_reg":
-        return MLPRegressor(
-            hidden_layer_sizes=(128, 64),
-            activation="relu",
-            max_iter=500,
-            early_stopping=True,
-            random_state=0,
-        )
-    if model_type == "lightgbm_reg":
-        return LGBMRegressor(
-            n_estimators=400,
-            learning_rate=0.03,
-            num_leaves=63,
-            subsample=0.9,
-            colsample_bytree=0.9,
-            random_state=0,
-        )
-    raise ValueError(model_type)
+from outcome_model import make_mu_model, predict_mu_values
 
 
 def _clip_prob(p, eps=1e-6):
     return np.clip(p, eps, 1.0 - eps)
 
 
-def _fit_mu_models_by_action(X_train, D_train, y_train, K, model_type):
+def _fit_mu_models_by_action(
+    X_train, D_train, y_train, K, model_type, *, random_state: int = 0
+):
     """Fit mu_a(x)=E[Y|X,D=a] on a training split."""
     mu_models = {}
     for a in range(K):
         mask = (D_train == a)
         if mask.sum() == 0:
             raise ValueError(f"No training samples for action {a} in this fold.")
-        m = _make_regressor(model_type)
-        m.fit(X_train[mask], y_train[mask])
+        ya = y_train[mask]
+        m = make_mu_model(
+            model_type,
+            random_state=random_state,
+            y=ya if model_type == "lightgbm_clf" else None,
+        )
+        m.fit(X_train[mask], ya)
         mu_models[a] = m
     return mu_models
 
@@ -82,13 +63,13 @@ def fit_dr_learner_binary(
         mu_models = _fit_mu_models_by_action(X_tr, D_tr, y_tr, K=2, model_type=mu_model_type)
 
         # pseudo on HELD-OUT fold
-        m0 = mu_models[0].predict(X_te)
-        m1 = mu_models[1].predict(X_te)
+        m0 = predict_mu_values(mu_models[0], X_te)
+        m1 = predict_mu_values(mu_models[1], X_te)
         mD = D_te * m1 + (1 - D_te) * m0
         pseudo = ((D_te - e) / (e * (1 - e))) * (y_te - mD) + (m1 - m0)
 
         # second-stage model trained on THIS fold's pseudo
-        tau_f = _make_regressor(tau_model_type)
+        tau_f = make_mu_model(tau_model_type, random_state=fold)
         tau_f.fit(X_te, pseudo)
         tau_models.append(tau_f)
 
@@ -112,7 +93,7 @@ def dr_learner_predict_binary(dr_model, X):
 
 def dr_learner_policy_binary(dr_model, X):
     X = np.asarray(X)
-    mu0 = dr_model["mu_models"][0].predict(X)
+    mu0 = predict_mu_values(dr_model["mu_models"][0], X)
     tau = dr_learner_predict_binary(dr_model, X)
     mu1 = mu0 + tau
     mu_hat = np.vstack([mu0, mu1]).T
@@ -164,7 +145,7 @@ def fit_dr_learner_k_armed(
         mu_models = _fit_mu_models_by_action(X_tr, D_tr, y_tr, K=K, model_type=mu_model_type)
 
         # pseudo on HELD-OUT fold
-        mu_hat = {a: mu_models[a].predict(X_te) for a in range(K)}
+        mu_hat = {a: predict_mu_values(mu_models[a], X_te) for a in range(K)}
         mub = mu_hat[baseline]
         Ib = (D_te == baseline).astype(float)
 
@@ -177,7 +158,7 @@ def fit_dr_learner_k_armed(
 
             pseudo = (mua - mub) + (Ia / pia) * (y_te - mua) - (Ib / pib) * (y_te - mub)
 
-            tau_f = _make_regressor(tau_model_type)
+            tau_f = make_mu_model(tau_model_type, random_state=fold)
             tau_f.fit(X_te, pseudo)
             tau_models_by_a[a].append(tau_f)
 
@@ -214,7 +195,7 @@ def dr_learner_policy_k_armed(dr_model, X):
     K = dr_model["K"]
     baseline = dr_model["baseline"]
 
-    mub = dr_model["mu_models"][baseline].predict(X)
+    mub = predict_mu_values(dr_model["mu_models"][baseline], X)
     tau_hat = dr_learner_predict_k_armed(dr_model, X)
 
     mu_hat = mub[:, None] + tau_hat

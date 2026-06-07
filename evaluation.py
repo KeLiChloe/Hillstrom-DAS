@@ -70,13 +70,14 @@ def _get_propensity_per_action(D_impl, actions, propensities):
 
 
 def _build_mu_matrix(mu_models, X_impl, K):
+    from outcome_model import predict_mu_values
+
     n = X_impl.shape[0]
     mu_mat = np.zeros((n, K), dtype=float)
 
     for a, model in mu_models.items():
         a_int = int(a)
-        pred = model.predict(X_impl)
-        mu_mat[:, a_int] = pred
+        mu_mat[:, a_int] = predict_mu_values(model, X_impl)
 
     return mu_mat
 

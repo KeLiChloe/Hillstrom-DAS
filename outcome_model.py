@@ -2,10 +2,93 @@
 
 import numpy as np
 from sklearn.linear_model import LinearRegression, LogisticRegression
-from sklearn.neural_network import MLPRegressor
+from sklearn.neural_network import MLPClassifier, MLPRegressor
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import f1_score
 from lightgbm import LGBMRegressor, LGBMClassifier
+
+CLASSIFIER_MU_TYPES = frozenset({"logistic", "mlp_clf", "lightgbm_clf"})
+
+
+def is_classifier_mu_type(mu_model_type: str) -> bool:
+    return mu_model_type in CLASSIFIER_MU_TYPES
+
+
+def tau_model_type_from_mu(mu_model_type: str) -> str:
+    """
+    Map classifier mu types to regression analogues for continuous tau/CATE heads
+    (DR-learner second stage, X-learner effect models).
+    """
+    return {
+        "logistic": "linear",
+        "mlp_clf": "mlp_reg",
+        "lightgbm_clf": "lightgbm_reg",
+    }.get(mu_model_type, mu_model_type)
+
+
+def make_mu_model(mu_model_type: str, *, random_state: int = 42, y=None):
+    """
+    Shared sklearn estimator factory for all mu heads (OPE + meta-learners).
+
+    Pass y when building lightgbm_clf (for scale_pos_weight).
+    """
+    if mu_model_type == "linear":
+        return LinearRegression()
+
+    if mu_model_type == "mlp_reg":
+        return MLPRegressor(
+            hidden_layer_sizes=(64, 32),
+            activation="relu",
+            max_iter=5000,
+            early_stopping=True,
+            random_state=random_state,
+        )
+
+    if mu_model_type == "lightgbm_reg":
+        return LGBMRegressor(
+            n_estimators=200,
+            learning_rate=0.05,
+            random_state=random_state,
+        )
+
+    if mu_model_type == "logistic":
+        return LogisticRegression(max_iter=500, random_state=random_state)
+
+    if mu_model_type == "mlp_clf":
+        return MLPClassifier(
+            hidden_layer_sizes=(64, 32),
+            activation="relu",
+            max_iter=5000,
+            early_stopping=True,
+            random_state=random_state,
+        )
+
+    if mu_model_type == "lightgbm_clf":
+        if y is None:
+            raise ValueError("lightgbm_clf requires y to set scale_pos_weight.")
+        y = np.asarray(y)
+        n_pos = int((y == 1).sum())
+        n_neg = int((y == 0).sum())
+        if n_pos == 0 or n_neg == 0:
+            raise ValueError(f"y is degenerate (n_pos={n_pos}, n_neg={n_neg})")
+        pos_weight = n_neg / n_pos
+        return LGBMClassifier(
+            objective="binary",
+            n_estimators=200,
+            learning_rate=0.05,
+            scale_pos_weight=pos_weight,
+            random_state=random_state,
+        )
+
+    raise ValueError(f"Unknown mu_model_type: {mu_model_type}")
+
+
+def predict_mu_values(model, X) -> np.ndarray:
+    """Return mu(x)=E[Y|X]: regressor predict or classifier P(y=1|X)."""
+    X = np.asarray(X)
+    if hasattr(model, "predict_proba"):
+        return model.predict_proba(X)[:, 1].astype(float)
+    return model.predict(X).astype(float)
 
 
 def _is_binary01(y):
@@ -52,7 +135,7 @@ def fit_mu_models(X, D, y, mu_model_type, val_size=0.2, random_state=42):
     """
     对每个 action a 拟合 μ_a(x) = E[Y|X,D=a]
     - 回归模型：返回 (model, None)
-    - 分类模型（lightgbm_clf / logistic）：自动选 threshold，返回 (model, threshold)
+    - 分类模型（mlp_clf / lightgbm_clf / logistic）：自动选 threshold，返回 (model, threshold)
     """
     X = np.asarray(X)
     D = np.asarray(D)
@@ -67,46 +150,18 @@ def fit_mu_models(X, D, y, mu_model_type, val_size=0.2, random_state=42):
         if Xa.shape[0] == 0:
             raise ValueError(f"No samples for action {a}")
 
-        # -------- build model --------
-        if mu_model_type == "linear":
-            model = LinearRegression()
-        elif mu_model_type == "mlp_reg":
-            model = MLPRegressor(
-                hidden_layer_sizes=(64, 32),
-                activation="relu",
-                max_iter=10000,
-                early_stopping=True,
-            )
-        elif mu_model_type == "lightgbm_reg":
-            model = LGBMRegressor(n_estimators=200, learning_rate=0.05)
+        model = make_mu_model(
+            mu_model_type,
+            random_state=random_state,
+            y=ya if mu_model_type == "lightgbm_clf" else None,
+        )
 
-        elif mu_model_type == "logistic":
-            model = LogisticRegression(max_iter=500)
-
-        elif mu_model_type == "lightgbm_clf":
-            n_pos = int((ya == 1).sum())
-            n_neg = int((ya == 0).sum())
-            if n_pos == 0 or n_neg == 0:
-                raise ValueError(f"action={a}: y is degenerate (n_pos={n_pos}, n_neg={n_neg})")
-            pos_weight = n_neg / n_pos
-            model = LGBMClassifier(
-                objective="binary",
-                n_estimators=200,
-                learning_rate=0.05,
-                scale_pos_weight=pos_weight,
-            )
-        else:
-            raise ValueError(f"Unknown mu_model_type: {mu_model_type}")
-
-        # -------- fit + threshold if classifier --------
         is_clf = hasattr(model, "predict_proba") and set(np.unique(ya).tolist()).issubset({0, 1})
 
         if is_clf:
-            # 要能做 stratify split：两类都得有、且至少各 2 个更稳
             if not _is_binary01(ya):
                 raise ValueError(f"action={a}: classifier needs y in {{0,1}} with both classes present")
 
-            # 分层切 val
             Xtr, Xva, ytr, yva = train_test_split(
                 Xa, ya, test_size=val_size, random_state=random_state, stratify=ya
             )
@@ -115,7 +170,6 @@ def fit_mu_models(X, D, y, mu_model_type, val_size=0.2, random_state=42):
             val_prob = model.predict_proba(Xva)[:, 1]
             thr = _pick_threshold_max_f1(yva, val_prob)
 
-            # 用全量再 fit 一次，threshold 用刚才选的（更常见的做法）
             model_full = model.__class__(**model.get_params())
             model_full = _safe_fit(model_full, Xa, ya, min_pos=2)
 
@@ -147,8 +201,7 @@ def predict_mu(model_tuple, X, return_label=False):
             return (prob >= thr).astype(int)
         return prob
 
-    # regressor
     if return_label:
         raise ValueError("return_label=True is only valid for classifier models.")
-    
+
     return model.predict(X)

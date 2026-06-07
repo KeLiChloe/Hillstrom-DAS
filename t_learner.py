@@ -1,8 +1,6 @@
 # t_learner.py
 import numpy as np
-from sklearn.linear_model import LinearRegression, Ridge
-from sklearn.neural_network import MLPRegressor
-from lightgbm import LGBMRegressor
+from outcome_model import make_mu_model, predict_mu_values
 
 
 def fit_t_learner(
@@ -17,35 +15,11 @@ def fit_t_learner(
     训练 multi-action T-learner：
     对每个 action a，单独拟合 mu_a(x) = E[Y | X, D=a]
 
-    返回
-    ----
-    models: list，长度为 K，第 a 个模型对应 action a
+    model_type follows --mu_model_type (see outcome_model.make_mu_model).
     """
     X = np.asarray(X)
     D = np.asarray(D).astype(int).ravel()
     y = np.asarray(y).astype(float).ravel()
-
-    def make_model():
-        if model_type == "linear":
-            return LinearRegression()
-        if model_type == "ridge":
-            return Ridge(alpha=1e-2, random_state=random_state)
-        if model_type == "mlp_reg":
-            return MLPRegressor(
-                hidden_layer_sizes=(64, 32),
-                activation="relu",
-                max_iter=300,
-                early_stopping=True,
-                random_state=random_state,
-            )
-        if model_type == "lightgbm_reg":
-            return LGBMRegressor(
-                n_estimators=200,
-                learning_rate=0.05,
-                max_depth=-1,
-                random_state=random_state,
-            )
-        raise ValueError(f"Unknown model_type: {model_type}")
 
     models = []
 
@@ -56,10 +30,13 @@ def fit_t_learner(
 
         Xa = X[idx]
         ya = y[idx]
-        ya_train = ya
 
-        model = make_model()
-        model.fit(Xa, ya_train)
+        model = make_mu_model(
+            model_type,
+            random_state=random_state,
+            y=ya if model_type == "lightgbm_clf" else None,
+        )
+        model.fit(Xa, ya)
         models.append(model)
 
     return models
@@ -80,7 +57,6 @@ def predict_mu_t_learner_matrix(
     mu_mat = np.zeros((n, K), dtype=float)
 
     for a, model in enumerate(t_models):
-        pred = model.predict(X).astype(float)
-        mu_mat[:, a] = pred
+        mu_mat[:, a] = predict_mu_values(model, X)
 
     return mu_mat

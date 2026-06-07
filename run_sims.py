@@ -1,16 +1,15 @@
 """
 多次重复（ Hillstrom）实验，并保存每次各算法（包括 CLR）的 value_mean 到 pkl。
 
-Pickle layout (optional implementation block per sim):
+Pickle layout (two files when save_offline_data=True):
 
-  data["params"]
-  data["results"][i]          # i-th successful simulation (one run)
-      ["seed"]
-      ["dast"], ["t_learner"], ...   # scalar OPE + time (+ best_M)
-      ["implementation"]            
+  MAIN  out_path e.g. pilot_frac_005.pkl  (git-friendly, OPE only)
+      data["params"]
+      data["results"][i]["seed"], ["dast"], ["t_learner"], ...
+
+  STZ   *_stz.pkl sidecar  (local only, for STZ evaluator)
+      data["results"][i]["seed"], ["implementation"]
           ["customer_id"], ["D"], ["y"], ["actions"][algo]
-
-  There is NO top-level implementation blob; use data["results"][i]["implementation"].
 
 ⚠ 现在是 K-action 版本：
   - D 可以是 {0,1,...,K-1}，例如 Hillstrom 三个 action。
@@ -83,6 +82,7 @@ def _run_single_experiment_worker(payload: dict):
             action_method=payload.get("action_method", "diff_in_means"),
         )
 
+from outcome_model import tau_model_type_from_mu
 from data_utils import (
     load_criteo,
     load_hillstrom,
@@ -150,18 +150,85 @@ def _record_impl_action(impl_actions, algo, seg_labels_impl, action_per_segment=
         )
 
 
-def resolve_impl_pkl_path(out_path: str, save_offline_data: bool) -> str:
-    """Use *_imp.pkl suffix when storing implementation offline payloads."""
-    if not save_offline_data:
-        return out_path
+def normalize_main_pkl_path(out_path: str) -> str:
+    """Ensure main checkpoint uses the base name (no *_stz suffix)."""
     root, ext = os.path.splitext(out_path)
     if not ext:
         ext = ".pkl"
         out_path = out_path + ext
         root, ext = os.path.splitext(out_path)
-    if not root.endswith("_imp"):
-        return root + "_imp" + ext
-    return out_path
+    if root.endswith("_stz"):
+        root = root[: -len("_stz")]
+    return root + ext
+
+
+def resolve_stz_pkl_path(out_path: str) -> str:
+    """Sidecar path for STZ / implementation payloads."""
+    main_path = normalize_main_pkl_path(out_path)
+    root, ext = os.path.splitext(main_path)
+    return root + "_stz" + ext
+
+
+def _main_payload_for_save(experiment_data: dict) -> dict:
+    """OPE-only payload for the main checkpoint (no implementation blocks)."""
+    return {
+        "params": experiment_data["params"],
+        "results": [
+            {k: v for k, v in run.items() if k != "implementation"}
+            for run in experiment_data["results"]
+        ],
+    }
+
+
+def _stz_payload_for_save(experiment_data: dict, stz_path: str) -> dict:
+    """Minimal sidecar payload for STZ evaluator offline analysis."""
+    params = experiment_data["params"]
+    return {
+        "params": {
+            "seed_sequence": params.get("seed_sequence"),
+            "seeds": list(params.get("seeds", [])),
+            "N_sim": params.get("N_sim"),
+            "dataset": params.get("dataset"),
+            "target_col": params.get("target_col"),
+            "out_path": params.get("out_path"),
+            "stz_path": stz_path,
+        },
+        "results": [
+            {"seed": run["seed"], "implementation": run["implementation"]}
+            for run in experiment_data["results"]
+            if "implementation" in run
+        ],
+    }
+
+
+def _merge_stz_into_results(experiment_data: dict, stz_data: dict) -> None:
+    """Re-attach implementation blocks from a STZ sidecar when resuming."""
+    if not isinstance(stz_data, dict):
+        return
+    impl_by_seed = {
+        run["seed"]: run["implementation"]
+        for run in stz_data.get("results", [])
+        if isinstance(run, dict) and "implementation" in run
+    }
+    for run in experiment_data.get("results", []):
+        seed = run.get("seed")
+        if seed in impl_by_seed and "implementation" not in run:
+            run["implementation"] = impl_by_seed[seed]
+
+
+def _save_experiment_checkpoints(
+    out_path: str,
+    stz_path: str | None,
+    experiment_data: dict,
+    *,
+    save_offline_data: bool,
+) -> None:
+    """Persist main OPE checkpoint and optional STZ sidecar."""
+    if save_offline_data and stz_path:
+        _pkl_dump(stz_path, _stz_payload_for_save(experiment_data, stz_path))
+        _pkl_dump(out_path, _main_payload_for_save(experiment_data))
+    else:
+        _pkl_dump(out_path, experiment_data)
 
 
 def _attach_sim_implementation(
@@ -339,7 +406,7 @@ def run_single_experiment(
             D_pilot,
             y_pilot,
             K=action_K,
-            model_type="mlp_reg",    # "ridge" / "mlp_reg" / "lightgbm_reg"
+            model_type=mu_model_type,
             random_state=seed,
         )
 
@@ -378,8 +445,7 @@ def run_single_experiment(
             D_pilot,
             y_pilot,
             K=action_K,
-            model_type="mlp_reg",    # "ridge" / "mlp_reg" / "lightgbm_reg"
-             
+            model_type=mu_model_type,
             random_state=seed,
         )
 
@@ -421,6 +487,7 @@ def run_single_experiment(
             mu_pilot_models=mu_pilot_models,
              
             control_action=0,        # Hillstrom: 通常 0 是 control
+            mu_model_type=mu_model_type,
             random_state=seed,
         )
 
@@ -469,8 +536,8 @@ def run_single_experiment(
                 pi=pi_vec,  # length K
                 baseline=0,          # Hillstrom: 0 is control
                 n_folds=5,
-                mu_model_type="mlp_reg",   # "ridge" / "mlp_reg" / "lightgbm_reg"
-                tau_model_type="mlp_reg",
+                mu_model_type=mu_model_type,
+                tau_model_type=tau_model_type_from_mu(mu_model_type),
             )
 
             # 2) predict individual best action on IMPLEMENTATION
@@ -485,8 +552,8 @@ def run_single_experiment(
 
                 e=e,  # P(D=1)
                 n_folds=3,
-                mu_model_type="mlp_reg",   # "ridge" / "mlp_reg" / "lightgbm_reg"
-                tau_model_type="mlp_reg",
+                mu_model_type=mu_model_type,
+                tau_model_type=tau_model_type_from_mu(mu_model_type),
             )
 
             # 2) predict individual best action on IMPLEMENTATION
@@ -1041,9 +1108,18 @@ def _load_experiment_checkpoint(out_path: str, expected_params: dict) -> tuple[d
     saved = experiment_data["params"]
     mismatches = []
     for key, expected in expected_params.items():
-        if not _param_equal(saved.get(key), expected):
+        saved_val = saved.get(key)
+        if key == "out_path":
+            if normalize_main_pkl_path(str(saved_val or "")) != normalize_main_pkl_path(
+                str(expected)
+            ):
+                mismatches.append(
+                    f"{key}: checkpoint={saved_val!r}, expected={expected!r}"
+                )
+            continue
+        if not _param_equal(saved_val, expected):
             mismatches.append(
-                f"{key}: checkpoint={saved.get(key)!r}, expected={expected!r}"
+                f"{key}: checkpoint={saved_val!r}, expected={expected!r}"
             )
     if mismatches:
         raise ValueError(
@@ -1086,7 +1162,8 @@ def run_multiple_experiments(
     inner_threads = 1
     n_jobs = int(n_jobs)
     max_attempts = int(N_sim) * 5
-    out_path = resolve_impl_pkl_path(out_path, save_offline_data)
+    out_path = normalize_main_pkl_path(out_path)
+    stz_path = resolve_stz_pkl_path(out_path) if save_offline_data else None
 
     expected_params = {
         "seed_sequence": seed_sequence,
@@ -1110,11 +1187,15 @@ def run_multiple_experiments(
         "seeds": [],
         "attempts_used": 0,
     }
-
     # 成功完成的 simulation 所用 seed 顺序写入 params["seeds"]（失败会重试新 seed，直到满 N_sim 条结果）
     experiment_data, already_complete = _load_experiment_checkpoint(
         out_path, expected_params
     )
+    experiment_data["params"]["out_path"] = out_path
+    if stz_path:
+        experiment_data["params"]["stz_path"] = stz_path
+    if save_offline_data and stz_path and os.path.isfile(stz_path):
+        _merge_stz_into_results(experiment_data, _pkl_load(stz_path))
     if already_complete:
         return
 
@@ -1154,7 +1235,9 @@ def run_multiple_experiments(
         while len(experiment_data["results"]) < N_sim:
             if attempts_used >= max_attempts:
                 experiment_data["params"]["attempts_used"] = attempts_used
-                _pkl_dump(out_path, experiment_data)
+                _save_experiment_checkpoints(
+                    out_path, stz_path, experiment_data, save_offline_data=save_offline_data
+                )
                 raise RuntimeError(
                     f"Exceeded max_attempts={max_attempts} (completed runs); "
                     f"only {len(experiment_data['results'])}/{N_sim} successes. "
@@ -1179,14 +1262,18 @@ def run_multiple_experiments(
                 )
                 experiment_data["results"].append(res)
                 experiment_data["params"]["seeds"].append(int(seed))
-                _pkl_dump(out_path, experiment_data)
+                _save_experiment_checkpoints(
+                    out_path, stz_path, experiment_data, save_offline_data=save_offline_data
+                )
                 print(f'[SIM {len(experiment_data["results"])}/{N_sim}] saved → {out_path}')
                 print("-" * 60)
             except Exception:
                 import traceback
 
                 traceback.print_exc()
-                _pkl_dump(out_path, experiment_data)
+                _save_experiment_checkpoints(
+                    out_path, stz_path, experiment_data, save_offline_data=save_offline_data
+                )
                 continue
     else:
         # 并行：主进程负责按完成顺序收集结果并覆盖保存（同样抗中断）
@@ -1271,7 +1358,9 @@ def run_multiple_experiments(
                         res = fut.result()
                         experiment_data["results"].append(res)
                         experiment_data["params"]["seeds"].append(int(seed_used))
-                        _pkl_dump(out_path, experiment_data)
+                        _save_experiment_checkpoints(
+                            out_path, stz_path, experiment_data, save_offline_data=save_offline_data
+                        )
                         completed = len(experiment_data["results"])
                         elapsed = time.perf_counter() - t_start
                         pct = 100.0 * completed / float(N_sim)
@@ -1303,7 +1392,9 @@ def run_multiple_experiments(
                         import traceback
 
                         traceback.print_exc()
-                        _pkl_dump(out_path, experiment_data)
+                        _save_experiment_checkpoints(
+                            out_path, stz_path, experiment_data, save_offline_data=save_offline_data
+                        )
 
                     if len(experiment_data["results"]) < N_sim and attempts_used < max_attempts:
                         submit_one(ex)
@@ -1320,7 +1411,9 @@ def run_multiple_experiments(
 
             if len(experiment_data["results"]) < N_sim:
                 experiment_data["params"]["attempts_used"] = attempts_used
-                _pkl_dump(out_path, experiment_data)
+                _save_experiment_checkpoints(
+                    out_path, stz_path, experiment_data, save_offline_data=save_offline_data
+                )
                 raise RuntimeError(
                     f"Exceeded max_attempts={max_attempts} (submitted runs); "
                     f"only {len(experiment_data['results'])}/{N_sim} successes. "
@@ -1331,6 +1424,8 @@ def run_multiple_experiments(
 
     print("\nALL SIMULATIONS DONE.")
     print(f"Results saved in '{out_path}'")
+    if stz_path:
+        print(f"STZ sidecar saved in '{stz_path}'")
 
 
 if __name__ == "__main__":
@@ -1373,9 +1468,18 @@ if __name__ == "__main__":
     )
     
     parser.add_argument(
-        "--mu_model_type", 
+        "--mu_model_type",
         type=str,
-        help="Model type for gamma estimation",
+        required=True,
+        choices=[
+            "linear",
+            "mlp_reg",
+            "lightgbm_reg",
+            "logistic",
+            "mlp_clf",
+            "lightgbm_clf",
+        ],
+        help="Outcome model μ_a(x): reg for continuous y, *_clf/logistic for binary y",
     )
     
     parser.add_argument(
