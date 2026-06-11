@@ -697,10 +697,9 @@ def plot_trend(
 
     fig_dir.mkdir(parents=True, exist_ok=True)
     fig.tight_layout()
-    for ext in ("pdf", "png"):
-        out_path = fig_dir / f"{out_stem}.{ext}"
-        fig.savefig(out_path, dpi=300, bbox_inches="tight", facecolor="white")
-        print(f"[OK] Saved: {out_path}")
+    out_path = fig_dir / f"{out_stem}.png"
+    fig.savefig(out_path, dpi=300, bbox_inches="tight", facecolor="white")
+    print(f"[OK] Saved: {out_path}")
     plt.close(fig)
 
 
@@ -806,10 +805,9 @@ def plot_stz_trend(
 
     fig_dir.mkdir(parents=True, exist_ok=True)
     fig.tight_layout()
-    for ext in ("pdf", "png"):
-        out_path = fig_dir / f"{out_stem}.{ext}"
-        fig.savefig(out_path, dpi=300, bbox_inches="tight", facecolor="white")
-        print(f"[OK] Saved: {out_path}")
+    out_path = fig_dir / f"{out_stem}.png"
+    fig.savefig(out_path, dpi=300, bbox_inches="tight", facecolor="white")
+    print(f"[OK] Saved: {out_path}")
     plt.close(fig)
 
 
