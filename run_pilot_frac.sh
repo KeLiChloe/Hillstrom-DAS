@@ -1,15 +1,15 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-EXP_ROOT="${EXP_ROOT:-exp_june}"
-DATASET="${DATASET:-criteo}"
+EXP_ROOT="${EXP_ROOT:-exp_july}"
+DATASET="${DATASET:-hillstrom}"
 TARGET="${TARGET:-conversion}"
-SAMPLE_FRAC="${SAMPLE_FRAC:-0.1}"
-MU_MODEL_TYPE="${MU_MODEL_TYPE:-lightgbm_clf}"
+SAMPLE_FRAC="${SAMPLE_FRAC:-1}"
+MU_MODEL_TYPE="${MU_MODEL_TYPE:-mlp_clf}"
 VALUE_TYPE_DAST="${VALUE_TYPE_DAST:-hybrid}"
 VALUE_TYPE_DAMS="${VALUE_TYPE_DAMS:-hybrid}"
 ACTION_METHOD="${ACTION_METHOD:-diff_in_means}"
-SEED_SEQUENCE="${SEED_SEQUENCE:-202}"
+SEED_SEQUENCE="${SEED_SEQUENCE:-1024}"
 
 OUTDIR="${EXP_ROOT}/${DATASET}/${TARGET}/${MU_MODEL_TYPE}/pilot_frac_with_fixed_${SAMPLE_FRAC}_sample_frac"
 mkdir -p "${OUTDIR}"

@@ -108,7 +108,7 @@ def run_policytree_individual(
     y_pilot : (N_pilot,)
     D_pilot : (N_pilot,)  integer-coded treatments
     X_impl  : (N_impl, d)
-    depth   : int  (e.g. 2 → at most 4 leaves)
+    depth   : int  
 
     Returns
     -------

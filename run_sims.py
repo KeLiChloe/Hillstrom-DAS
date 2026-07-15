@@ -82,12 +82,11 @@ def _run_single_experiment_worker(payload: dict):
             action_method=payload.get("action_method", "diff_in_means"),
         )
 
-from outcome_model import tau_model_type_from_mu
+from outcome_model import META_LEARNER_MU_MODEL_TYPE, tau_model_type_from_mu
 from data_utils import (
     load_criteo,
     load_hillstrom,
     load_lenta,
-    split_seg_train_test,
     prepare_pilot_impl,
     verify_impl_customer_alignment,
 )
@@ -367,21 +366,6 @@ def run_single_experiment(
     action_K = Gamma_pilot.shape[1]
     actions_all = np.arange(action_K, dtype=int)
 
-    # segmentation 训练 / 验证划分（对 DAST / MST / *_DAMS 用）
-    (
-        X_train,
-        D_train,
-        y_train,
-        Gamma_train,
-    ), (
-        X_val,
-        D_val,
-        y_val,
-        Gamma_val,
-    ) = split_seg_train_test(
-        X_pilot, D_pilot, y_pilot, Gamma_pilot, test_frac=1 - train_frac
-    )
-
     # One simulation record → appended as experiment_data["results"][i]
     sim_result = {
         "seed": int(seed),
@@ -406,7 +390,7 @@ def run_single_experiment(
             D_pilot,
             y_pilot,
             K=action_K,
-            model_type=mu_model_type,
+            model_type=META_LEARNER_MU_MODEL_TYPE,
             random_state=seed,
         )
 
@@ -445,7 +429,7 @@ def run_single_experiment(
             D_pilot,
             y_pilot,
             K=action_K,
-            model_type=mu_model_type,
+            model_type=META_LEARNER_MU_MODEL_TYPE,
             random_state=seed,
         )
 
@@ -487,7 +471,7 @@ def run_single_experiment(
             mu_pilot_models=mu_pilot_models,
              
             control_action=0,        # Hillstrom: 通常 0 是 control
-            mu_model_type=mu_model_type,
+            mu_model_type=META_LEARNER_MU_MODEL_TYPE,
             random_state=seed,
         )
 
@@ -536,8 +520,8 @@ def run_single_experiment(
                 pi=pi_vec,  # length K
                 baseline=0,          # Hillstrom: 0 is control
                 n_folds=5,
-                mu_model_type=mu_model_type,
-                tau_model_type=tau_model_type_from_mu(mu_model_type),
+                mu_model_type=META_LEARNER_MU_MODEL_TYPE,
+                tau_model_type=tau_model_type_from_mu(META_LEARNER_MU_MODEL_TYPE),
             )
 
             # 2) predict individual best action on IMPLEMENTATION
@@ -552,8 +536,8 @@ def run_single_experiment(
 
                 e=e,  # P(D=1)
                 n_folds=3,
-                mu_model_type=mu_model_type,
-                tau_model_type=tau_model_type_from_mu(mu_model_type),
+                mu_model_type=META_LEARNER_MU_MODEL_TYPE,
+                tau_model_type=tau_model_type_from_mu(META_LEARNER_MU_MODEL_TYPE),
             )
 
             # 2) predict individual best action on IMPLEMENTATION
@@ -654,18 +638,13 @@ def run_single_experiment(
         kmeans_dams_seg, seg_labels_pilot_kmeans_dams, best_M_kmeans_dams = (
             run_kmeans_dams_segmentation(
                 X_pilot,
-                X_train,
-                D_train,
-                y_train,
-                X_val,
-                D_val,
-                y_val,
-                Gamma_val,
+                D_pilot,
+                y_pilot,
+                Gamma_pilot,
                 M_candidates=M_candidates,
                 random_state=seed,
                 value_type_dams=value_type_dams,
                 action_method=action_method,
-                Gamma_train=Gamma_train,
             )
         )
         sim_result["kmeans_dams"]["best_M"] = best_M_kmeans_dams
@@ -748,18 +727,13 @@ def run_single_experiment(
         gmm_dams_seg, seg_labels_pilot_gmm_dams, best_M_gmm_dams = (
             run_gmm_dams_segmentation(
                 X_pilot,
-                X_train,
-                D_train,
-                y_train,
-                X_val,
-                D_val,
-                y_val,
-                Gamma_val,
+                D_pilot,
+                y_pilot,
+                Gamma_pilot,
                 M_candidates,
                 random_state=seed,
                 value_type_dams=value_type_dams,
                 action_method=action_method,
-                Gamma_train=Gamma_train,
             )
         )
         
@@ -847,18 +821,11 @@ def run_single_experiment(
                 X_pilot,
                 D_pilot,
                 y_pilot,
-                X_train,
-                D_train,
-                y_train,
-                X_val,
-                D_val,
-                y_val,
-                Gamma_val,
+                Gamma_pilot,
                 M_candidates,
                 random_state=seed,
                 value_type_dams=value_type_dams,
                 action_method=action_method,
-                Gamma_train=Gamma_train,
             )
         )
         sim_result["clr_dams"]["best_M"] = best_M_clr_dams
@@ -907,17 +874,9 @@ def run_single_experiment(
             X_pilot,
             D_pilot,
             y_pilot,
-            X_train,
-            D_train,
-            y_train,
-            X_val,
-            D_val,
-            y_val,
             Gamma_pilot,
-            Gamma_train,
-            Gamma_val,
             M_candidates,
-            min_leaf_size=5,
+            min_leaf_size=10,
             value_type_dast=value_type_dast,
             value_type_dams=value_type_dams,
             action_method=action_method,
@@ -960,18 +919,11 @@ def run_single_experiment(
             X_pilot,
             D_pilot,
             y_pilot,
-            X_train,
-            D_train,
-            y_train,
-            X_val,
-            D_val,
-            y_val,
-            Gamma_val,
+            Gamma_pilot,
             M_candidates,
-            min_leaf_size=5,
+            min_leaf_size=10,
             value_type_dams=value_type_dams,
             action_method=action_method,
-            Gamma_train=Gamma_train,
         )
         action_mst = estimate_segment_policy(
             X_pilot, y_pilot, D_pilot, seg_labels_pilot_mst,
@@ -1177,6 +1129,7 @@ def run_multiple_experiments(
         "value_type_dast": value_type_dast,
         "value_type_dams": value_type_dams,
         "mu_model_type": mu_model_type,
+        "meta_learner_mu_model_type": META_LEARNER_MU_MODEL_TYPE,
         "action_method": action_method,
         "out_path": out_path,
         "n_jobs": n_jobs,
@@ -1479,7 +1432,7 @@ if __name__ == "__main__":
             "mlp_clf",
             "lightgbm_clf",
         ],
-        help="Outcome model μ_a(x): reg for continuous y, *_clf/logistic for binary y",
+        help="Outcome model for pilot nuisances / DAST (meta-learners fixed to mlp_reg)",
     )
     
     parser.add_argument(

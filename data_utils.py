@@ -1,6 +1,6 @@
 from sklearn.model_selection import train_test_split
 from sklift.datasets import fetch_hillstrom, fetch_criteo, fetch_lenta
-from outcome_model import fit_mu_models, predict_mu
+from outcome_model import fit_mu_models, predict_mu_values
 import numpy as np
 import pandas as pd
 from sklearn.preprocessing import StandardScaler
@@ -448,19 +448,18 @@ def prepare_pilot_impl(
     y_fit = y_pilot
 
     # ---- 2) fit μ_a models----
-    mu_pilot_model_tuples = fit_mu_models(
+    mu_pilot_models = fit_mu_models(
         X_pilot,
         D_pilot,
         y_fit,
-        mu_model_type=mu_model_type,   
+        mu_model_type=mu_model_type,
     )
-    mu_pilot_models = {a: model for a, (model, _) in mu_pilot_model_tuples.items()}
 
     K = int(np.max(D)) + 1   # 用全数据 D，不用 D_pilot
     actions = np.arange(K, dtype=int)
     
     # ---- 检查所有 action 是否都有模型 ----
-    missing_actions = set(actions.tolist()) - set(mu_pilot_model_tuples.keys())
+    missing_actions = set(actions.tolist()) - set(mu_pilot_models.keys())
     if missing_actions:
         raise ValueError(
             f"Pilot split resulted in missing actions: {sorted(missing_actions)}. "
@@ -480,7 +479,7 @@ def prepare_pilot_impl(
         model_a = mu_pilot_models[a]
         is_clf = hasattr(model_a, "predict_proba")
 
-        mu_a_hat = predict_mu(mu_pilot_model_tuples[a], X_pilot)  # reg->E[y], clf->P(y=1)
+        mu_a_hat = predict_mu_values(mu_pilot_models[a], X_pilot)
 
         # （可选）一致性检查：clf 时 y 必须二元
         if is_clf:

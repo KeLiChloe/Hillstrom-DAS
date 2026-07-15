@@ -1,18 +1,31 @@
-import os
 import numpy as np
 from sklearn.base import BaseEstimator, clone
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.linear_model import Ridge
+from sklearn.linear_model import LogisticRegression
 from sklearn.utils.validation import check_is_fitted
+
+from segmentation_fit import (
+    fit_plane_model,
+    plane_predict_loss,
+    segmentation_bic,
+)
 
 
 # ============================================================
 #  Core CLR logic: CLRpRegressor, clr, best_clr, bic_score
 # ============================================================
 
+
+
+def make_clr_plane_model(clr_lr=None):
+    """Default plane model: logistic regression."""
+    if clr_lr is not None:
+        return clone(clr_lr)
+    return LogisticRegression(max_iter=500, solver="lbfgs")
+
 class CLRpRegressor(BaseEstimator):
     """
-    Piecewise linear regression with clustering on (X, D).
+    Piecewise logistic regression with clustering on (X, D).
 
     用法：
         X_D = np.column_stack([X, D])
@@ -118,48 +131,38 @@ def best_clr(X_D, y, k, num_tries=5, **kwargs):
 
 def clr(X_D, y, k, kmeans_coef, lr=None, max_iter=10, cluster_labels=None):
     """
-    核心 CLR 算法：
-      - 初始 cluster_labels（随机）
-      - 交替更新：
-        1) 每个 cluster 拟合一个线性回归模型
-        2) 重新分配每个样本到损失 (误差^2 + kmeans_coef*距离^2) 最小的 cluster
-      - 直到收敛或达到 max_iter
+    Core CLR: alternate plane fitting and cluster reassignment.
+    Binary y: logistic planes + deviance.
     """
-    N, d_plus_1 = X_D.shape
+    N, _ = X_D.shape
+    y = np.asarray(y, dtype=float)
 
     if cluster_labels is None:
         cluster_labels = np.random.choice(k, size=N)
 
-    if lr is None:
-        # set fit_intercept=True if X_D 没有自己加截距
-        lr = Ridge(alpha=1e-5, fit_intercept=True)
-
-    models = [clone(lr) for _ in range(k)]
+    models = [make_clr_plane_model(clr_lr=lr) for _ in range(k)]
     scores = np.empty((N, k))
-    preds = np.empty((N, k))
 
     for _ in range(max_iter):
         # 1) rebuild models
         for cl_idx in range(k):
-            mask = (cluster_labels == cl_idx)
+            mask = cluster_labels == cl_idx
             if mask.sum() == 0:
                 continue
-            models[cl_idx].fit(X_D[mask], y[mask])
+            if not fit_plane_model(models[cl_idx], X_D[mask], y[mask]):
+                models[cl_idx] = make_clr_plane_model(clr_lr=lr)
 
         # 2) reassign points
         for cl_idx in range(k):
-            if models[cl_idx] is None:
+            mask = cluster_labels == cl_idx
+            if mask.sum() == 0 or not hasattr(models[cl_idx], "coef_"):
                 scores[:, cl_idx] = np.inf
-                preds[:, cl_idx] = 0.0
                 continue
 
-            preds[:, cl_idx] = models[cl_idx].predict(X_D)
-            # 回归误差
-            scores[:, cl_idx] = (y - preds[:, cl_idx]) ** 2
+            scores[:, cl_idx] = plane_predict_loss(models[cl_idx], X_D, y)
 
-            # k-means regularization
-            if kmeans_coef > 0 and (cluster_labels == cl_idx).sum() > 0:
-                center = np.mean(X_D[cluster_labels == cl_idx], axis=0)
+            if kmeans_coef > 0:
+                center = np.mean(X_D[mask], axis=0)
                 dist2 = np.sum((X_D - center) ** 2, axis=1)
                 scores[:, cl_idx] += kmeans_coef * dist2
 
@@ -169,7 +172,6 @@ def clr(X_D, y, k, kmeans_coef, lr=None, max_iter=10, cluster_labels=None):
         if np.allclose(cluster_labels, cluster_labels_prev):
             break
 
-    # final objective
     obj = np.mean(scores[np.arange(N), cluster_labels])
 
     # cluster weights
@@ -180,34 +182,8 @@ def clr(X_D, y, k, kmeans_coef, lr=None, max_iter=10, cluster_labels=None):
 
 
 def bic_score(X_D, y, cluster_labels, models):
-    """
-    BIC for piecewise linear regression with Gaussian errors.
-
-    - X_D: (N, d+1)
-    - y: (N,)
-    - cluster_labels: (N,)
-    - models: list of linear models, length k
-    """
-    n, d = X_D.shape
-    k = len(models)
-
-    y_hat = np.zeros_like(y, dtype=float)
-    for cl_idx in range(k):
-        mask = (cluster_labels == cl_idx)
-        if mask.sum() == 0:
-            continue
-        y_hat[mask] = models[cl_idx].predict(X_D[mask])
-
-    residuals = y - y_hat
-    sigma2 = np.mean(residuals ** 2)
-    # log-likelihood under Gaussian errors
-    logL = -0.5 * n * (np.log(2 * np.pi * sigma2) + 1.0)
-
-    # number of parameters: each linear model has (d+1) params (including intercept)
-    p = k * (d + 1)
-
-    BIC = -2.0 * logL + p * np.log(n)
-    return BIC
+    """BIC for piecewise planes (logistic if models are classifiers, else Gaussian)."""
+    return segmentation_bic(X_D, y, cluster_labels, models)
 
 
 # ============================================================

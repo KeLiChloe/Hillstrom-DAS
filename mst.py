@@ -1,8 +1,10 @@
 # mst.py
 
 import copy
+
 import numpy as np
-from sklearn.linear_model import LinearRegression
+
+from segmentation_fit import node_impurity
 
 
 def _build_design_matrix(X: np.ndarray,
@@ -66,20 +68,16 @@ def _build_design_matrix(X: np.ndarray,
     return np.hstack([intercept, X, D_block])
 
 
-def compute_residual_value(X: np.ndarray,
-                           y: np.ndarray,
-                           D: np.ndarray,
-                           indices: np.ndarray,
-                           actions=None) -> float:
+def compute_residual_value(
+    X: np.ndarray,
+    y: np.ndarray,
+    D: np.ndarray,
+    indices: np.ndarray,
+    actions=None,
+) -> float:
     """
-    在一个 node 里，用 OLS 拟合:
-        y ~ 1 + X + D_terms
-
-    - 二元版等价于：y ~ 1 + X + D
-    - 多 action 版等价于：y ~ 1 + X + ∑_{a≠base} I(D == a)
-
-    返回 SSE（总残差和），SSE 越小越好。
-    为了和 DAST 对齐，我们在 MSTree 里使用 value = -SSE。
+    Node impurity after fitting y ~ 1 + X + D_terms (logistic deviance).
+    MSTree stores node.value = -impurity (higher is better).
     """
     if len(indices) == 0:
         return 0.0
@@ -87,25 +85,15 @@ def compute_residual_value(X: np.ndarray,
     X_m = X[indices]
     y_m = y[indices]
     D_m = D[indices]
-
     X_design = _build_design_matrix(X_m, D_m, actions=actions)
-    model = LinearRegression(fit_intercept=False)
-    model.fit(X_design, y_m)
-
-    y_pred = model.predict(X_design)
-    residuals = y_m - y_pred
-    sse = float(np.sum(residuals ** 2))
-
-    # 加一点极小噪声，避免完全 tie
-    sse += np.random.rand() * 1e-9
-    return sse
+    return node_impurity(X_design, y_m)
 
 
 class MSTNode:
     def __init__(self, indices, depth=0):
         self.indices = indices       # np.ndarray of row indices
         self.depth = depth
-        self.value = None            # 我们存的是 value = -SSE
+        self.value = None            # value = -impurity (logistic deviance)
 
         # split info
         self.split_feature = None
@@ -131,7 +119,7 @@ class MSTree:
         - build()
         - prune_to_M(M)
         - assign(X)
-    唯一差别是：节点价值用的是 -SSE（线性回归残差）。
+    Binary y: logistic deviance. Node value = -impurity.
     """
 
     def __init__(
@@ -259,11 +247,14 @@ class MSTree:
     def _grow_node(self, indices: np.ndarray, depth: int) -> MSTNode:
         node = MSTNode(indices=indices, depth=depth)
 
-        # 节点 value 定义为 -SSE，这样“越大越好”，统一成和 DAST 一样的方向
-        sse = compute_residual_value(
-            self.x, self.y, self.D, indices, actions=self.actions
+        impurity = compute_residual_value(
+            self.x,
+            self.y,
+            self.D,
+            indices,
+            actions=self.actions,
         )
-        node.value = -sse
+        node.value = -impurity
 
         if depth == self.max_depth:
             self.leaf_nodes.append(node)
@@ -284,15 +275,23 @@ class MSTree:
                         self._check_leaf_constraints(right_idx)):
                     continue
 
-                left_sse = compute_residual_value(
-                    self.x, self.y, self.D, left_idx, actions=self.actions
+                left_imp = compute_residual_value(
+                    self.x,
+                    self.y,
+                    self.D,
+                    left_idx,
+                    actions=self.actions,
                 )
-                right_sse = compute_residual_value(
-                    self.x, self.y, self.D, right_idx, actions=self.actions
+                right_imp = compute_residual_value(
+                    self.x,
+                    self.y,
+                    self.D,
+                    right_idx,
+                    actions=self.actions,
                 )
 
-                left_val = -left_sse
-                right_val = -right_sse
+                left_val = -left_imp
+                right_val = -right_imp
 
                 gain = left_val + right_val - node.value  # “价值增量”
 

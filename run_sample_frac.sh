@@ -30,7 +30,7 @@ fi
 
 PILOT_TAG=$(printf "%03d" "$(awk -v p="${PILOT_FRAC}" 'BEGIN { printf "%d", p * 100 }')")
 
-OUTDIR="exp_june/${DATASET}/${TARGET}/sample_frac_with_fixed_${PILOT_TAG}_pilot"
+OUTDIR="exp_july/${DATASET}/${TARGET}/sample_frac_with_fixed_${PILOT_TAG}_pilot"
 mkdir -p "${OUTDIR}"
 
 for sample_int in $(seq 5 5 50); do

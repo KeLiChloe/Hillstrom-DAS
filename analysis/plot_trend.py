@@ -3,15 +3,19 @@ Trend plot across experiment pickles.
 
 Two metrics (--metric):
   improvement  DAS_improvement_ratio = (DAST - comparator) / comparator * 100
-               Plots one figure per OPE eval method (dual_dr, dr, ipw).
+               Plots dual_dr OPE improvement (dr/ipw omitted).
+               Optional outlier removal per (sweep point, comparator) via
+               --outlier-filter; method via --outlier-method (nstd or iqr).
 
   advantage    DAS_advantage_ratio = STZ_evaluator (Simester, Timoshenko, and Zoumpoulis)
                Uses per-customer logged data in run["implementation"].
                Loads implementation from *_stz.pkl sidecars.
+               Same optional outlier removal as improvement.
 
   both         (default) Saves figures for both metrics.
 
 Sweep axis is inferred from --exp-dir (pilot_frac_* vs sample_frac_* pickles).
+Optionally restrict the x-axis with --min-pilot-frac / --min-sweep-value.
 """
 
 from __future__ import annotations
@@ -20,24 +24,34 @@ import argparse
 import gzip
 import pickle
 import re
+import sys
 import warnings
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Literal
+
+_ANALYSIS_DIR = Path(__file__).resolve().parent
+_REPO_ROOT = _ANALYSIS_DIR.parent
+if str(_ANALYSIS_DIR) not in sys.path:
+    sys.path.insert(0, str(_ANALYSIS_DIR))
+if str(_REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(_REPO_ROOT))
 
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import seaborn as sns
 from matplotlib import ticker
-from plot_style import (
-    PREFERRED_ORDER,
-    baseline_color,
-    baseline_label,
-    comparator_colors_by_label,
-    to_rgba,
-)
 from scipy import stats
+
+from stz import STZ_evaluator
+from plot_style import (
+        PREFERRED_ORDER,
+        baseline_color,
+        baseline_label,
+        comparator_colors_by_label,
+        to_rgba,
+    )
 
 
 def _pkl_load(path):
@@ -54,11 +68,9 @@ def _pkl_load(path):
 # Defaults
 # ---------------------------------------------------------------------------
 DAST_ALGO = "dast"  # algorithm compared against baselines (CI_plot.py)
-DEFAULT_EVAL_METHODS = ["dual_dr", "dr", "ipw"]
-FIG_DIR = "figures"
+DEFAULT_EVAL_METHODS = ["dual_dr"]
 
 REQUESTED_BASELINES = [
-    "random",
     "kmeans",
     "gmm",
     "clr",
@@ -173,93 +185,120 @@ def das_improvement_ratio(vt: float, vb: float) -> float:
     return (vt - vb) / vb * 100.0
 
 
-# ---------------------------------------------------------------------------
-# STZ evaluator  (Simester, Timoshenko, and Zoumpoulis)
-# ---------------------------------------------------------------------------
+_DEFAULT_OUTLIER_N_STD = 3.0
+_DEFAULT_OUTLIER_IQR_K = 1.5
+_DEFAULT_OUTLIER_METHOD = "nstd"
+_MIN_LIFTS_FOR_OUTLIER_FILTER = 4
 
-def STZ_evaluator(
-    run: dict,
-    algo_dast: str,
-    algo_comp: str,
-) -> float:
+
+def _keeper_mask_n_std(
+    values: np.ndarray,
+    *,
+    n_std: float,
+) -> np.ndarray:
     """
-    DAS advantage ratio for one simulation run using logged implementation data.
-    (Simester, Timoshenko, and Zoumpoulis)
-
-    For a given (DAST, comparator) pair:
-
-    1.  Disagreement set S = {k : a_dast[k] != a_comp[k]}
-        weight = |S| / n_impl
-
-    2.  DAS factual value on S:
-        v_dast = mean(y[k] for k in S if D[k] == a_dast[k])
-
-    3.  Comparator factual value on S:
-        v_comp = mean(y[k] for k in S if D[k] == a_comp[k])
-
-    4.  DAS advantage ratio = weight * (v_dast - v_comp) / |v_comp| * 100
-
-    Normalised by the absolute value of the comparator's own factual outcome on
-    the disagreement set, so the result is expressed as a percentage relative
-    to what the comparator achieves where the two policies disagree.
-    This removes the dependence on the absolute scale of y (e.g. Criteo
-    conversion ~0.3% vs. Hillstrom spend).  A value of 5 means DAS achieves
-    5% more than the comparator on the disagreement sub-population.
-
-    The "factual" subsets use the experiment's randomised treatment D as a
-    natural experiment: customers whose assigned treatment happened to match
-    the algorithm's recommendation provide an unbiased estimate of that
-    algorithm's value on the disagreement region.
-
-    Returns np.nan if:
-    - The run has no "implementation" block  (skip old pkls without impl data)
-    - Either algorithm is absent from impl["actions"]
-    - Disagreement set is empty  (return 0.0)
-    - Either factual subset is empty  (not estimable)
-    - v_comp is zero or non-finite
+    True = keep. Drop points with |x - mean| > n_std * sample_std.
+    If sample_std = 0, use modified z-score with MAD and the same n_std.
     """
-    impl = run.get("implementation")
-    if impl is None:
-        return np.nan
+    values = np.asarray(values, dtype=float)
+    n = len(values)
+    if n < _MIN_LIFTS_FOR_OUTLIER_FILTER:
+        return np.ones(n, dtype=bool)
 
-    actions = impl.get("actions", {})
-    if algo_dast not in actions or algo_comp not in actions:
-        return np.nan
+    mean = float(np.mean(values))
+    std = float(np.std(values, ddof=1)) if n > 1 else 0.0
+    if std > 0:
+        z = np.abs((values - mean) / std)
+        return z <= n_std
 
-    D = np.asarray(impl["D"], dtype=int)
-    y = np.asarray(impl["y"], dtype=float)
-    a_dast = np.asarray(actions[algo_dast], dtype=int)
-    a_comp = np.asarray(actions[algo_comp], dtype=int)
+    med = float(np.median(values))
+    mad = float(np.median(np.abs(values - med)))
+    if mad <= 0:
+        return np.ones(n, dtype=bool)
+    modified_z = 0.6745 * (values - med) / mad
+    return np.abs(modified_z) <= n_std
 
-    n = len(D)
-    if n == 0:
-        return np.nan
 
-    # Step 1: disagreement
-    disagree_mask = a_dast != a_comp
-    n_disagree = int(disagree_mask.sum())
-    if n_disagree == 0:
-        return 0.0          # full agreement → no advantage to measure
-    weight = n_disagree / n
+def _keeper_mask_iqr(
+    values: np.ndarray,
+    *,
+    iqr_k: float,
+) -> np.ndarray:
+    """
+    True = keep. Tukey fences: Q1 - k*IQR <= x <= Q3 + k*IQR.
+    If IQR = 0, keep all (no spread to define outliers).
+    """
+    values = np.asarray(values, dtype=float)
+    n = len(values)
+    if n < _MIN_LIFTS_FOR_OUTLIER_FILTER:
+        return np.ones(n, dtype=bool)
 
-    # Step 2: DAS factual on disagreement set
-    dast_factual = disagree_mask & (D == a_dast)
-    if dast_factual.sum() == 0:
-        return np.nan
-    v_dast = float(y[dast_factual].mean())
+    q1 = float(np.percentile(values, 25))
+    q3 = float(np.percentile(values, 75))
+    iqr = q3 - q1
+    if iqr <= 0:
+        return np.ones(n, dtype=bool)
 
-    # Step 3: comparator factual on disagreement set
-    comp_factual = disagree_mask & (D == a_comp)
-    if comp_factual.sum() == 0:
-        return np.nan
-    v_comp = float(y[comp_factual].mean())
+    low = q1 - iqr_k * iqr
+    high = q3 + iqr_k * iqr
+    return (values >= low) & (values <= high)
 
-    # Step 4: normalise by |v_comp|, express as %
-    # "how much better is DAS relative to the comparator's own outcome
-    #  on the disagreement sub-population"
-    if not np.isfinite(v_comp) or abs(v_comp) < 1e-12:
-        return np.nan
-    return float(weight * (v_dast - v_comp) / abs(v_comp) * 100.0)
+
+def apply_outlier_filter(
+    df: pd.DataFrame,
+    value_col: str,
+    *,
+    method: str = _DEFAULT_OUTLIER_METHOD,
+    group_cols: tuple[str, ...] = ("x_value", "Baseline"),
+    n_std: float = _DEFAULT_OUTLIER_N_STD,
+    iqr_k: float = _DEFAULT_OUTLIER_IQR_K,
+) -> tuple[pd.DataFrame, int]:
+    """Drop outliers on value_col within each group (nσ or IQR)."""
+    if df.empty:
+        return df, 0
+    n_before = len(df)
+    kept = []
+    for _, grp in df.groupby(list(group_cols), sort=False):
+        vals = grp[value_col].to_numpy()
+        if method == "nstd":
+            mask = _keeper_mask_n_std(vals, n_std=n_std)
+        elif method == "iqr":
+            mask = _keeper_mask_iqr(vals, iqr_k=iqr_k)
+        else:
+            raise ValueError(f"Unknown outlier method: {method!r}")
+        kept.append(grp.iloc[mask])
+    filtered = pd.concat(kept, ignore_index=True) if kept else df.iloc[0:0]
+    return filtered, n_before - len(filtered)
+
+
+def filter_experiments_by_min_x(
+    experiments: list[dict],
+    min_x: float,
+    *,
+    sweep_kind: SweepKind,
+) -> list[dict]:
+    """Keep only experiments with x_value >= min_x (improvement + STZ)."""
+    kept = [e for e in experiments if e["x_value"] >= min_x]
+    if not kept:
+        avail = sorted({e["x_value"] for e in experiments})
+        raise RuntimeError(
+            f"No experiments with {sweep_kind} >= {min_x:g} "
+            f"(had {len(experiments)} pickle(s); available: {avail}). "
+            f"Lower the cutoff with --min-pilot-frac {min(avail):g}."
+        )
+    if len(kept) < len(experiments):
+        print(
+            f"[INFO] min {sweep_kind} {min_x:g}: "
+            f"kept {len(kept)}/{len(experiments)} experiment(s) "
+            f"(improvement + STZ)"
+        )
+    return kept
+
+
+def resolve_min_sweep_value(args: argparse.Namespace) -> float | None:
+    if args.min_sweep_value is not None:
+        return float(args.min_sweep_value)
+    return None
 
 
 def _is_main_pkl(path: Path) -> bool:
@@ -442,16 +481,47 @@ def summarize_stz_by_sweep(
     experiments: list[dict],
     baselines: list[str],
     das_algo: str = DAST_ALGO,
-) -> pd.DataFrame:
+    *,
+    filter_outliers: bool = False,
+    outlier_method: str = _DEFAULT_OUTLIER_METHOD,
+    n_std: float = _DEFAULT_OUTLIER_N_STD,
+    iqr_k: float = _DEFAULT_OUTLIER_IQR_K,
+) -> tuple[pd.DataFrame, int, int]:
     """Mean ± 95% CI of STZ advantage across runs, one row per (x_value, comparator)."""
-    rows = []
+    parts: list[pd.DataFrame] = []
     for exp in experiments:
         df = compute_stz_records(exp["results"], baselines, das_algo=das_algo)
         if df.empty:
             continue
+        df = df.copy()
+        df["x_value"] = exp["x_value"]
+        df["n_sims_file"] = exp["n_sims"]
+        parts.append(df)
+
+    if not parts:
+        return pd.DataFrame(), 0, 0
+
+    combined = pd.concat(parts, ignore_index=True)
+    n_filtered = 0
+    if filter_outliers:
+        combined, n_filtered = apply_outlier_filter(
+            combined,
+            "Advantage",
+            method=outlier_method,
+            n_std=n_std,
+            iqr_k=iqr_k,
+        )
+    n_kept_total = len(combined)
+
+    rows = []
+    for exp in experiments:
+        xv = exp["x_value"]
+        slice_x = combined[combined["x_value"] == xv]
+        if slice_x.empty:
+            continue
         for b in baselines:
             label = baseline_label(b)
-            sub = df[df["Baseline"] == b]["Advantage"]
+            sub = slice_x[slice_x["Baseline"] == b]["Advantage"]
             if sub.empty:
                 continue
             n = len(sub)
@@ -459,7 +529,7 @@ def summarize_stz_by_sweep(
             ci = float(sub.sem() * stats.t.ppf(0.975, n - 1)) if n > 1 else 0.0
             rows.append(
                 {
-                    "x_value": exp["x_value"],
+                    "x_value": xv,
                     "Baseline": b,
                     "Baseline_Label": label,
                     "Mean": mean,
@@ -468,7 +538,7 @@ def summarize_stz_by_sweep(
                     "n_sims_file": exp["n_sims"],
                 }
             )
-    return pd.DataFrame(rows)
+    return pd.DataFrame(rows), n_kept_total, n_filtered
 
 
 def compute_lift_records(
@@ -477,6 +547,7 @@ def compute_lift_records(
     eval_method: str,
     das_algo: str = DAST_ALGO,
 ) -> pd.DataFrame:
+    """Build per-run lift records for one sweep pickle."""
     records = []
     for i, run in enumerate(results_list):
         vt = safe_get_value(run, das_algo, eval_method)
@@ -505,17 +576,52 @@ def summarize_by_sweep(
     baselines: list[str],
     eval_method: str,
     das_algo: str = DAST_ALGO,
-) -> pd.DataFrame:
-    rows = []
+    *,
+    filter_outliers: bool = False,
+    outlier_method: str = _DEFAULT_OUTLIER_METHOD,
+    n_std: float = _DEFAULT_OUTLIER_N_STD,
+    iqr_k: float = _DEFAULT_OUTLIER_IQR_K,
+) -> tuple[pd.DataFrame, int, int]:
+    parts: list[pd.DataFrame] = []
     for exp in experiments:
         df = compute_lift_records(
-            exp["results"], baselines, eval_method, das_algo=das_algo
+            exp["results"],
+            baselines,
+            eval_method,
+            das_algo=das_algo,
         )
         if df.empty:
             continue
+        df = df.copy()
+        df["x_value"] = exp["x_value"]
+        df["n_sims_file"] = exp["n_sims"]
+        parts.append(df)
+
+    if not parts:
+        return pd.DataFrame(), 0, 0
+
+    combined = pd.concat(parts, ignore_index=True)
+    n_before = len(combined)
+    n_filtered = 0
+    if filter_outliers:
+        combined, n_filtered = apply_outlier_filter(
+            combined,
+            "Lift",
+            method=outlier_method,
+            n_std=n_std,
+            iqr_k=iqr_k,
+        )
+    n_kept_total = len(combined)
+
+    rows = []
+    for exp in experiments:
+        xv = exp["x_value"]
+        slice_x = combined[combined["x_value"] == xv]
+        if slice_x.empty:
+            continue
         for b in baselines:
             label = baseline_label(b)
-            sub = df[df["Baseline"] == b]["Lift"]
+            sub = slice_x[slice_x["Baseline"] == b]["Lift"]
             if sub.empty:
                 continue
             n = len(sub)
@@ -527,7 +633,7 @@ def summarize_by_sweep(
                 ci = 0.0
             rows.append(
                 {
-                    "x_value": exp["x_value"],
+                    "x_value": xv,
                     "Baseline": b,
                     "Baseline_Label": label,
                     "Mean": mean,
@@ -536,7 +642,7 @@ def summarize_by_sweep(
                     "n_sims_file": exp["n_sims"],
                 }
             )
-    return pd.DataFrame(rows)
+    return pd.DataFrame(rows), n_kept_total, n_filtered
 
 
 def ordered_labels(labels: list[str]) -> list[str]:
@@ -819,18 +925,23 @@ def parse_args() -> argparse.Namespace:
         )
     )
     parser.add_argument(
+        "exp_dir",
+        nargs="?",
+        default=None,
+        help="Directory with pilot_frac_*.pkl or sample_frac_*.pkl experiment files.",
+    )
+    parser.add_argument(
         "--exp-dir",
         "--exp_dir",
-        required=True,
-        help=(
-            "Directory with pilot_frac_*.pkl or sample_frac_*.pkl experiment files."
-        ),
+        dest="exp_dir_opt",
+        default=None,
+        help="Same as positional exp_dir.",
     )
     parser.add_argument(
         "--fig-dir",
         "--fig_dir",
-        default=FIG_DIR,
-        help="Output directory for figures.",
+        default=None,
+        help="Output directory for figures (default: same as --exp-dir).",
     )
     parser.add_argument(
         "--min-sims",
@@ -849,20 +960,82 @@ def parse_args() -> argparse.Namespace:
             "both:        save both figures."
         ),
     )
+    parser.add_argument(
+        "--min-sweep-value",
+        "--min_sweep_value",
+        "--min-pilot-frac",
+        "--min_pilot_frac",
+        type=float,
+        default=None,
+        metavar="X",
+        help=(
+            "Only plot sweep points with x_value >= X "
+            "(pilot_frac or sample_frac). Default: plot all available points."
+        ),
+    )
+    parser.add_argument(
+        "--outlier-filter",
+        action="store_true",
+        help=(
+            "Enable statistical outlier filtering for improvement and STZ plots "
+            "(per sweep point, comparator)."
+        ),
+    )
+    parser.add_argument(
+        "--outlier-method",
+        choices=["nstd", "iqr"],
+        default=_DEFAULT_OUTLIER_METHOD,
+        help=(
+            "Outlier rule within each (sweep point, comparator) group: "
+            "nstd (mean±k·std, MAD if σ=0) or iqr (Tukey Q1/Q3±k·IQR)."
+        ),
+    )
+    parser.add_argument(
+        "--outlier-n-std",
+        type=float,
+        default=_DEFAULT_OUTLIER_N_STD,
+        help=(
+            "For --outlier-method nstd: drop records with |z| above this "
+            "many sample std devs (default: 3)."
+        ),
+    )
+    parser.add_argument(
+        "--outlier-iqr-k",
+        type=float,
+        default=_DEFAULT_OUTLIER_IQR_K,
+        help=(
+            "For --outlier-method iqr: Tukey fence multiplier (default: 1.5)."
+        ),
+    )
     return parser.parse_args()
 
 
 def main() -> None:
     args = parse_args()
+    exp_dir_arg = args.exp_dir_opt or args.exp_dir
+    if not exp_dir_arg:
+        raise SystemExit("error: exp_dir required (positional or --exp-dir)")
     warnings.simplefilter(action="ignore", category=FutureWarning)
     configure_plot_style()
 
-    exp_dir = Path(args.exp_dir).expanduser().resolve()
-    fig_dir = Path(args.fig_dir).expanduser().resolve()
+    exp_dir = Path(exp_dir_arg).expanduser().resolve()
+    fig_dir = (
+        Path(args.fig_dir).expanduser().resolve()
+        if args.fig_dir is not None
+        else exp_dir
+    )
     sweep_kind = detect_sweep_kind(exp_dir)
     experiments, incomplete_pkls = load_experiment_pkls(
         exp_dir, min_sims=args.min_sims, sweep_kind=sweep_kind
     )
+    min_x = resolve_min_sweep_value(args)
+    if min_x is not None:
+        experiments = filter_experiments_by_min_x(
+            experiments,
+            min_x,
+            sweep_kind=sweep_kind,
+        )
+
     params0, sweep = assert_consistent_experiment_meta(experiments, sweep_kind)
 
     baselines = discover_baselines(experiments[0]["results"])
@@ -873,6 +1046,7 @@ def main() -> None:
     n_sims = int(params0.get("N_sim", 100))
 
     print(f"Loaded {len(experiments)} experiments from {exp_dir}")
+    print(f"Figures -> {fig_dir}")
     print(f"Sweep axis: {sweep.kind}")
     print(f"{sweep.x_label}: {[e['x_value'] for e in experiments]}")
     if sweep.fixed_pilot_frac is not None:
@@ -886,11 +1060,40 @@ def main() -> None:
     slug = plot_title.lower().replace(" – ", "_").replace(" ", "_")
     do_improvement = args.metric in ("improvement", "both")
     do_advantage   = args.metric in ("advantage",   "both")
+    filter_outliers = args.outlier_filter
+    outlier_method = str(args.outlier_method)
+    n_std = float(args.outlier_n_std)
+    iqr_k = float(args.outlier_iqr_k)
+    if filter_outliers:
+        if outlier_method == "iqr":
+            print(
+                "Outlier filter: "
+                f"IQR {iqr_k:g}× per (sweep point, comparator); "
+                "skip if IQR=0 or n<4"
+            )
+        else:
+            print(
+                "Outlier filter: "
+                f"{n_std:g}σ per (sweep point, comparator); MAD if σ=0"
+            )
 
     # ---- DAS improvement ratio (OPE-based, one figure per eval method) ----
     if do_improvement:
         for ev in DEFAULT_EVAL_METHODS:
-            stats_df = summarize_by_sweep(experiments, baselines, ev)
+            stats_df, n_kept, n_filtered = summarize_by_sweep(
+                experiments,
+                baselines,
+                ev,
+                filter_outliers=filter_outliers,
+                outlier_method=outlier_method,
+                n_std=n_std,
+                iqr_k=iqr_k,
+            )
+            if filter_outliers and n_filtered:
+                print(
+                    f"[INFO] eval={ev}: kept {n_kept} lift records, "
+                    f"filtered {n_filtered} outlier(s)"
+                )
             if stats_df.empty:
                 print(f"[WARN] No data for eval_method={ev}; skip improvement plot.")
                 continue
@@ -922,8 +1125,25 @@ def main() -> None:
                 "(local sidecar, merged automatically when present)."
             )
         else:
+            stz_x = sorted({e["x_value"] for e in experiments})
+            print(
+                f"STZ sweep points ({sweep.x_label}): "
+                f"{[sweep.to_display_pct(x) for x in stz_x]}"
+            )
             print(f"Runs with implementation data: {n_runs_with_impl}")
-            stz_df = summarize_stz_by_sweep(experiments, baselines)
+            stz_df, n_kept, n_filtered = summarize_stz_by_sweep(
+                experiments,
+                baselines,
+                filter_outliers=filter_outliers,
+                outlier_method=outlier_method,
+                n_std=n_std,
+                iqr_k=iqr_k,
+            )
+            if filter_outliers and n_filtered:
+                print(
+                    f"[INFO] STZ: kept {n_kept} advantage records, "
+                    f"filtered {n_filtered} outlier(s)"
+                )
             if stz_df.empty:
                 print("[WARN] STZ evaluator returned no finite values; skip advantage plot.")
             else:
