@@ -51,6 +51,7 @@ from evaluation import (
     evaluate_policy_ipw,
 )
 from outcome_model import META_LEARNER_MU_MODEL_TYPE, tau_model_type_from_mu
+from exp_io import write_run_params_json
 from s_learner import fit_s_learner, predict_mu_s_learner_matrix
 from segmentation import run_dast_all_M_curves
 from t_learner import fit_t_learner, predict_mu_t_learner_matrix
@@ -191,6 +192,7 @@ def _stz_payload_for_save(experiment_data: dict, stz_path: str) -> dict:
 def _save_experiment_checkpoints(out_path: str, stz_path: str, experiment_data: dict) -> None:
     _pkl_dump(out_path, _main_payload_for_save(experiment_data))
     _pkl_dump(stz_path, _stz_payload_for_save(experiment_data, stz_path))
+    write_run_params_json(out_path, experiment_data.get("params", {}))
 
 
 def _compute_dast_stz_scores(sim_result: dict, M_candidates: list[int]) -> None:
@@ -268,9 +270,10 @@ def _evaluate_baseline(
     mu_pilot_models,
     action_K: int,
     seed: int,
+    meta_learner_mu_model_type: str,
 ) -> dict:
     """Fit one meta-learner baseline and return OPE metrics + runtime."""
-    mu_model_type = META_LEARNER_MU_MODEL_TYPE
+    mu_model_type = meta_learner_mu_model_type
     t0 = time.perf_counter()
     actions_all = np.arange(action_K, dtype=int)
     action_identity = actions_all.copy()
@@ -312,7 +315,7 @@ def _evaluate_baseline(
         if action_K > 2:
             dr_model = fit_dr_learner_k_armed(
                 X=X_pilot, D=D_pilot, y=y_pilot,
-                K=action_K, pi=pi_vec, baseline=0, n_folds=5,
+                K=action_K, pi=pi_vec, baseline=0, n_folds=3,
                 mu_model_type=mu_model_type,
                 tau_model_type=tau_model_type_from_mu(mu_model_type),
             )
@@ -365,7 +368,10 @@ def run_single_all_M_experiment(
     action_method: str,
     M_candidates: list[int],
     seed: int,
+    meta_learner_mu_model_type: str | None = None,
 ) -> dict:
+    if meta_learner_mu_model_type is None:
+        meta_learner_mu_model_type = META_LEARNER_MU_MODEL_TYPE
     dataset_loaders = {
         "hillstrom": load_hillstrom,
         "criteo": load_criteo,
@@ -409,6 +415,7 @@ def run_single_all_M_experiment(
             mu_pilot_models,
             action_K,
             seed,
+            meta_learner_mu_model_type=meta_learner_mu_model_type,
         )
         sim_result[algo] = metrics
         _record_impl_action(impl_actions, algo, seg_labels_impl)
@@ -426,6 +433,7 @@ def run_single_all_M_experiment(
         value_type_dast=value_type_dast,
         value_type_dams=value_type_dams,
         action_method=action_method,
+        n_folds=5,
     )
     sim_result["dast"]["best_M"] = int(best_M)
     for ev in eval_methods:
@@ -482,6 +490,7 @@ def _run_worker(payload: dict) -> dict:
             dataset=payload["dataset"],
             target_col=payload["target_col"],
             mu_model_type=payload["mu_model_type"],
+            meta_learner_mu_model_type=payload["meta_learner_mu_model_type"],
             value_type_dast=payload["value_type_dast"],
             value_type_dams=payload["value_type_dams"],
             action_method=payload["action_method"],
@@ -531,9 +540,12 @@ def run_multiple_all_M_experiments(
     M_candidates: list[int],
     seed_sequence: int | None,
     n_jobs: int,
+    meta_learner_mu_model_type: str | None = None,
     fig_dir: Path | None = None,
     no_plot: bool = False,
 ) -> dict:
+    if meta_learner_mu_model_type is None:
+        meta_learner_mu_model_type = META_LEARNER_MU_MODEL_TYPE
     inner_threads = 1
     n_jobs = int(n_jobs)
     max_attempts = int(N_sim) * 5
@@ -550,7 +562,7 @@ def run_multiple_all_M_experiments(
         "dataset": dataset,
         "target_col": target_col,
         "mu_model_type": mu_model_type,
-        "meta_learner_mu_model_type": META_LEARNER_MU_MODEL_TYPE,
+        "meta_learner_mu_model_type": meta_learner_mu_model_type,
         "value_type_dast": value_type_dast,
         "value_type_dams": value_type_dams,
         "action_method": action_method,
@@ -568,6 +580,8 @@ def run_multiple_all_M_experiments(
     experiment_data["params"]["out_path"] = out_path
     stz_path = resolve_stz_pkl_path(out_path)
     experiment_data["params"]["stz_path"] = stz_path
+    json_path = write_run_params_json(out_path, experiment_data["params"])
+    print(f"Wrote run params → {json_path}")
 
     print("Experiment parameters:")
     for k, v in experiment_data["params"].items():
@@ -584,6 +598,7 @@ def run_multiple_all_M_experiments(
             "dataset": dataset,
             "target_col": target_col,
             "mu_model_type": mu_model_type,
+            "meta_learner_mu_model_type": meta_learner_mu_model_type,
             "value_type_dast": value_type_dast,
             "value_type_dams": value_type_dams,
             "action_method": action_method,
@@ -614,6 +629,7 @@ def run_multiple_all_M_experiments(
                     dataset=dataset,
                     target_col=target_col,
                     mu_model_type=mu_model_type,
+                    meta_learner_mu_model_type=meta_learner_mu_model_type,
                     value_type_dast=value_type_dast,
                     value_type_dams=value_type_dams,
                     action_method=action_method,
@@ -755,7 +771,24 @@ def main() -> None:
             "mlp_clf",
             "lightgbm_clf",
         ],
-        help="Outcome model for pilot nuisances / DAST (meta-learners fixed to mlp_reg)",
+        help="Outcome model for pilot nuisances / DAST / OPE",
+    )
+    parser.add_argument(
+        "--meta_learner_mu_model_type",
+        type=str,
+        default=META_LEARNER_MU_MODEL_TYPE,
+        choices=[
+            "linear",
+            "mlp_reg",
+            "lightgbm_reg",
+            "logistic",
+            "mlp_clf",
+            "lightgbm_clf",
+        ],
+        help=(
+            "μ head for t/s/x/dr_learner baselines "
+            f"(default: {META_LEARNER_MU_MODEL_TYPE})"
+        ),
     )
     parser.add_argument(
         "--value_type_dast",
@@ -840,6 +873,7 @@ def main() -> None:
         dataset=args.dataset,
         target_col=args.target,
         mu_model_type=args.mu_model_type,
+        meta_learner_mu_model_type=args.meta_learner_mu_model_type,
         value_type_dast=args.value_type_dast,
         value_type_dams=args.value_type_dams,
         action_method=args.action_method,

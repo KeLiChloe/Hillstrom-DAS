@@ -2,7 +2,7 @@
 import numpy as np
 from sklearn.cluster import KMeans
 from sklearn.mixture import GaussianMixture
-from sklearn.model_selection import KFold
+from sklearn.model_selection import KFold, train_test_split
 from scoring import dams_score, kmeans_silhouette_score
 from dast import DASTree
 from estimation import estimate_segment_policy  
@@ -108,17 +108,24 @@ def _prepare_dams_kfold(
     *,
     n_folds: int,
     cv_random_state: int,
+    M_candidates=None,
+    heldout_test_frac: float = 0.3,
 ):
-    """Validate pilot arrays and return (X, D, y, Gamma, fold_splits)."""
+    """Validate pilot arrays and return (X, D, y, Gamma, fold_splits).
+
+    n_folds >= 2: KFold CV.
+    n_folds == 1: single heldout split (train vs val), size controlled by
+    heldout_test_frac (default 0.3, matching historical train_frac=0.7).
+    """
     X_pilot = np.asarray(X_pilot)
     D_pilot = np.asarray(D_pilot).astype(int)
     y_pilot = np.asarray(y_pilot, dtype=float)
     Gamma_pilot = np.asarray(Gamma_pilot, dtype=float)
 
     n_pilot = X_pilot.shape[0]
-    if n_folds < 2:
-        raise ValueError(f"n_folds must be >= 2, got {n_folds}.")
-    if n_pilot < n_folds:
+    if n_folds < 1:
+        raise ValueError(f"n_folds must be >= 1, got {n_folds}.")
+    if n_folds >= 2 and n_pilot < n_folds:
         raise ValueError(
             f"Cannot run {n_folds}-fold DAMS with only {n_pilot} pilot samples."
         )
@@ -128,10 +135,30 @@ def _prepare_dams_kfold(
         raise ValueError(
             f"Gamma_pilot length {Gamma_pilot.shape[0]} != n_pilot {n_pilot}."
         )
+    if M_candidates is not None and len(list(M_candidates)) == 0:
+        raise ValueError("M_candidates must be non-empty.")
 
-    kf = KFold(n_splits=n_folds, shuffle=True, random_state=cv_random_state)
-    return X_pilot, D_pilot, y_pilot, Gamma_pilot, list(kf.split(X_pilot))
+    if n_folds == 1:
+        if not (0.0 < heldout_test_frac < 1.0):
+            raise ValueError(
+                f"heldout_test_frac must be in (0, 1), got {heldout_test_frac}."
+            )
+        idx = np.arange(n_pilot)
+        tr_idx, va_idx = train_test_split(
+            idx,
+            test_size=heldout_test_frac,
+            random_state=cv_random_state,
+        )
+        fold_splits = [(tr_idx, va_idx)]
+    else:
+        kf = KFold(n_splits=n_folds, shuffle=True, random_state=cv_random_state)
+        fold_splits = list(kf.split(X_pilot))
 
+    return X_pilot, D_pilot, y_pilot, Gamma_pilot, fold_splits
+
+
+def _dams_cv_label(n_folds: int) -> str:
+    return "heldout" if n_folds == 1 else f"{n_folds}-fold"
 
 def run_kmeans_dams_segmentation(
     X_pilot,
@@ -142,7 +169,7 @@ def run_kmeans_dams_segmentation(
     random_state,
     value_type_dams,
     action_method,
-    n_folds: int = 5,
+    n_folds: int,
     cv_random_state: int = 0,
 ):
     print("\n" + "=" * 60)
@@ -156,6 +183,7 @@ def run_kmeans_dams_segmentation(
         Gamma_pilot,
         n_folds=n_folds,
         cv_random_state=cv_random_state,
+        M_candidates=M_candidates,
     )
 
     best_M = None
@@ -250,7 +278,7 @@ def run_gmm_dams_segmentation(
     random_state,
     value_type_dams,
     action_method,
-    n_folds: int = 5,
+    n_folds: int,
     cv_random_state: int = 0,
 ):
     print("\n" + "=" * 60)
@@ -264,6 +292,7 @@ def run_gmm_dams_segmentation(
         Gamma_pilot,
         n_folds=n_folds,
         cv_random_state=cv_random_state,
+        M_candidates=M_candidates,
     )
 
     best_M = None
@@ -355,7 +384,7 @@ def select_dast_M_via_dams(
     value_type_dast,
     value_type_dams,
     action_method,
-    n_folds: int = 5,
+    n_folds: int,
     cv_random_state: int = 0,
 ):
     """
@@ -375,6 +404,7 @@ def select_dast_M_via_dams(
         Gamma_pilot,
         n_folds=n_folds,
         cv_random_state=cv_random_state,
+        M_candidates=M_candidates,
     )
 
     H_full = dast_candidate_thresholds(X_pilot)
@@ -494,7 +524,7 @@ def run_dast_all_M_curves(
     value_type_dast,
     value_type_dams,
     action_method,
-    n_folds: int = 5,
+    n_folds: int,
     cv_random_state: int = 0,
 ):
     """
@@ -547,7 +577,7 @@ def run_dast_dams(
     value_type_dast,
     value_type_dams,
     action_method,
-    n_folds: int = 5,
+    n_folds: int,
     cv_random_state: int = 0,
 ):
     best_M, _, H_full = select_dast_M_via_dams(
@@ -617,7 +647,7 @@ def run_clr_dams_segmentation(
     random_state,
     value_type_dams,
     action_method,
-    n_folds: int = 5,
+    n_folds: int,
     cv_random_state: int = 0,
 ):
     print("\n" + "=" * 60)
@@ -631,6 +661,7 @@ def run_clr_dams_segmentation(
         Gamma_pilot,
         n_folds=n_folds,
         cv_random_state=cv_random_state,
+        M_candidates=M_candidates,
     )
 
     best_M = None
@@ -704,7 +735,7 @@ def run_mst_dams(
     min_leaf_size,
     value_type_dams,
     action_method,
-    n_folds: int = 5,
+    n_folds: int,
     cv_random_state: int = 0,
 ):
     X_pilot, D_pilot, y_pilot, Gamma_pilot, fold_splits = _prepare_dams_kfold(
@@ -714,6 +745,7 @@ def run_mst_dams(
         Gamma_pilot,
         n_folds=n_folds,
         cv_random_state=cv_random_state,
+        M_candidates=M_candidates,
     )
 
     d = X_pilot.shape[1]
@@ -746,8 +778,9 @@ def run_mst_dams(
 
     best_M = None
     best_score = -np.inf
+    cv_label = _dams_cv_label(n_folds)
 
-    print(f"\nTesting M candidates for MST with {n_folds}-fold DAMS: {list(M_candidates)}")
+    print(f"\nTesting M candidates for MST with {cv_label} DAMS: {list(M_candidates)}")
     for M in M_candidates:
         if M == 1:
             depth = 0
@@ -812,7 +845,7 @@ def run_mst_dams(
 
     print(
         f"\n✓ MST: selected M = {best_M} with "
-        f"{n_folds}-fold mean DAMS-score = {best_score:.6f}\n"
+        f"{cv_label} mean DAMS-score = {best_score:.6f}\n"
     )
 
     # Refit on full pilot

@@ -1,0 +1,47 @@
+{
+  "ALGO_LIST": [
+    "dast",
+    "causal_forest",
+    "mst",
+    "clr",
+    "kmeans",
+    "gmm",
+    "t_learner",
+    "s_learner",
+    "x_learner",
+    "dr_learner"
+  ],
+  "M_candidates": [
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10
+  ],
+  "N_sim": 20,
+  "action_method": "diff_in_means",
+  "attempts_used": 0,
+  "dataset": "criteo",
+  "eval_methods": [
+    "dr",
+    "dual_dr",
+    "ipw"
+  ],
+  "max_attempts": 100,
+  "meta_learner_mu_model_type": "lightgbm_reg",
+  "mu_model_type": "lightgbm_reg",
+  "out_path": "exp_july/criteo/conversion/lightgbm_reg/sample_frac_with_fixed_0.40_pilot_frac/sample_frac_005.pkl",
+  "pilot_frac": 0.4,
+  "sample_frac": 0.05,
+  "seed_sequence": 1088,
+  "seeds": [],
+  "stz_path": "exp_july/criteo/conversion/lightgbm_reg/sample_frac_with_fixed_0.40_pilot_frac/sample_frac_005_stz.pkl",
+  "target_col": "conversion",
+  "train_frac": 0.7,
+  "value_type_dams": "hybrid",
+  "value_type_dast": "hybrid"
+}

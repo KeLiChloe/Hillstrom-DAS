@@ -7,8 +7,10 @@ from lightgbm import LGBMRegressor, LGBMClassifier
 
 CLASSIFIER_MU_TYPES = frozenset({"logistic", "mlp_clf", "lightgbm_clf"})
 
-# Fixed outcome head for meta-learner baselines (t/s/x/dr); matches May experiments.
-META_LEARNER_MU_MODEL_TYPE = "mlp_reg"
+# Default meta-learner μ head (t/s/x/dr). Override via --meta_learner_mu_model_type
+# or META_LEARNER_MU_MODEL_TYPE in run_pilot_frac.sh / run_sample_frac.sh.
+# Choices: linear, mlp_reg, lightgbm_reg, logistic, mlp_clf, lightgbm_clf
+META_LEARNER_MU_MODEL_TYPE = "lightgbm_reg"
 
 
 def is_classifier_mu_type(mu_model_type: str) -> bool:

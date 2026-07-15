@@ -1,36 +1,19 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-VALID_MU_TYPES=(linear mlp_reg lightgbm_reg logistic mlp_clf lightgbm_clf)
-
+EXP_ROOT="${EXP_ROOT:-exp_july}"
+DATASET="${DATASET:-criteo}"
+TARGET="${TARGET:-conversion}"
+PILOT_FRAC="${PILOT_FRAC:-0.40}"
+MU_MODEL_TYPE="${MU_MODEL_TYPE:-lightgbm_reg}"
+META_LEARNER_MU_MODEL_TYPE="${META_LEARNER_MU_MODEL_TYPE:-lightgbm_reg}"
 VALUE_TYPE_DAST="${VALUE_TYPE_DAST:-hybrid}"
 VALUE_TYPE_DAMS="${VALUE_TYPE_DAMS:-hybrid}"
 ACTION_METHOD="${ACTION_METHOD:-diff_in_means}"
-SEED_SEQUENCE="${SEED_SEQUENCE:-202}"
-PILOT_FRAC="${PILOT_FRAC:-0.20}"
-N_JOBS="${N_JOBS:-1}"
+SEED_SEQUENCE="${SEED_SEQUENCE:-1088}"
+N_SIM="${N_SIM:-20}"
 
-DATASET="${DATASET:-criteo}"
-TARGET="${TARGET:-conversion}"
-
-case "${TARGET}" in
-    visit|conversion)
-        MU_MODEL_TYPE="${MU_MODEL_TYPE:-lightgbm_clf}"
-        ;;
-    *)
-        MU_MODEL_TYPE="${MU_MODEL_TYPE:-lightgbm_reg}"
-        ;;
-esac
-
-if ! printf '%s\n' "${VALID_MU_TYPES[@]}" | grep -qx "${MU_MODEL_TYPE}"; then
-    echo "Invalid MU_MODEL_TYPE=${MU_MODEL_TYPE}" >&2
-    echo "Choose one of: ${VALID_MU_TYPES[*]}" >&2
-    exit 1
-fi
-
-PILOT_TAG=$(printf "%03d" "$(awk -v p="${PILOT_FRAC}" 'BEGIN { printf "%d", p * 100 }')")
-
-OUTDIR="exp_july/${DATASET}/${TARGET}/sample_frac_with_fixed_${PILOT_TAG}_pilot"
+OUTDIR="${EXP_ROOT}/${DATASET}/${TARGET}/${MU_MODEL_TYPE}/sample_frac_with_fixed_${PILOT_FRAC}_pilot_frac"
 mkdir -p "${OUTDIR}"
 
 for sample_int in $(seq 5 5 50); do
@@ -43,9 +26,10 @@ for sample_int in $(seq 5 5 50); do
         continue
     fi
 
-    echo "[RUN ] sample_frac=${sample_frac}, pilot_frac=${PILOT_FRAC} -> ${outpath}"
+    echo "[RUN ] sample_frac=${sample_frac} -> ${outpath}"
     python run_sims.py \
         --mu_model_type "${MU_MODEL_TYPE}" \
+        --meta_learner_mu_model_type "${META_LEARNER_MU_MODEL_TYPE}" \
         --value_type_dast "${VALUE_TYPE_DAST}" \
         --value_type_dams "${VALUE_TYPE_DAMS}" \
         --seed_sequence "${SEED_SEQUENCE}" \
@@ -53,7 +37,7 @@ for sample_int in $(seq 5 5 50); do
         --target "${TARGET}" \
         --sample_frac "${sample_frac}" \
         --pilot_frac "${PILOT_FRAC}" \
-        --n_jobs "${N_JOBS}" \
         --action_method "${ACTION_METHOD}" \
+        --N_sim "${N_SIM}" \
         --outpath "${outpath}"
 done

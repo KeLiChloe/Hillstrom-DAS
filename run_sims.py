@@ -24,9 +24,9 @@ import gzip
 import os
 import time
 import random
-import concurrent.futures as cf
-import contextlib
-import io
+
+from exp_io import write_run_params_json
+from outcome_model import META_LEARNER_MU_MODEL_TYPE, tau_model_type_from_mu
 
 
 # ---------------------------------------------------------------------------
@@ -48,7 +48,8 @@ def _pkl_load(path: str):
             return pickle.load(f)
 
 
-def _set_thread_env(n: int):
+def _set_thread_env(n: int = 1):
+    """Cap BLAS / OpenMP / sklearn threads for a single-process run."""
     n = int(n)
     os.environ["OMP_NUM_THREADS"] = str(n)
     os.environ["OPENBLAS_NUM_THREADS"] = str(n)
@@ -58,31 +59,6 @@ def _set_thread_env(n: int):
     os.environ["HILLSTORM_SKLEARN_N_JOBS"] = str(n)
 
 
-def _run_single_experiment_worker(payload: dict):
-    """
-    Top-level function so ProcessPoolExecutor can pickle it.
-    payload must be pickleable.
-    """
-    inner_threads = int(payload.get("inner_threads", 1))
-    _set_thread_env(inner_threads)
-
-    # 并行时避免 worker 日志互相打架：把 stdout/stderr 静默掉
-    with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
-        return run_single_experiment(
-            sample_frac=payload["sample_frac"],
-            pilot_frac=payload["pilot_frac"],
-            train_frac=payload["train_frac"],
-            dataset=payload["dataset"],
-            target_col=payload["target_col"],
-            mu_model_type=payload["mu_model_type"],
-            value_type_dast=payload["value_type_dast"],
-            value_type_dams=payload["value_type_dams"],
-            seed=int(payload["seed"]),
-            save_offline_data=bool(payload.get("save_offline_data", True)),
-            action_method=payload.get("action_method", "diff_in_means"),
-        )
-
-from outcome_model import META_LEARNER_MU_MODEL_TYPE, tau_model_type_from_mu
 from data_utils import (
     load_criteo,
     load_hillstrom,
@@ -228,6 +204,7 @@ def _save_experiment_checkpoints(
         _pkl_dump(out_path, _main_payload_for_save(experiment_data))
     else:
         _pkl_dump(out_path, experiment_data)
+    write_run_params_json(out_path, experiment_data.get("params", {}))
 
 
 def _attach_sim_implementation(
@@ -306,8 +283,11 @@ def run_single_experiment(
     value_type_dams,
     seed,
     action_method,
+    meta_learner_mu_model_type=None,
     save_offline_data=True,
 ):
+    if meta_learner_mu_model_type is None:
+        meta_learner_mu_model_type = META_LEARNER_MU_MODEL_TYPE
     # --------------------------------------------------
     # Load dataset based on parameter
     # --------------------------------------------------
@@ -390,7 +370,7 @@ def run_single_experiment(
             D_pilot,
             y_pilot,
             K=action_K,
-            model_type=META_LEARNER_MU_MODEL_TYPE,
+            model_type=meta_learner_mu_model_type,
             random_state=seed,
         )
 
@@ -429,7 +409,7 @@ def run_single_experiment(
             D_pilot,
             y_pilot,
             K=action_K,
-            model_type=META_LEARNER_MU_MODEL_TYPE,
+            model_type=meta_learner_mu_model_type,
             random_state=seed,
         )
 
@@ -471,7 +451,7 @@ def run_single_experiment(
             mu_pilot_models=mu_pilot_models,
              
             control_action=0,        # Hillstrom: 通常 0 是 control
-            mu_model_type=META_LEARNER_MU_MODEL_TYPE,
+            mu_model_type=meta_learner_mu_model_type,
             random_state=seed,
         )
 
@@ -519,9 +499,9 @@ def run_single_experiment(
                 K=action_K,
                 pi=pi_vec,  # length K
                 baseline=0,          # Hillstrom: 0 is control
-                n_folds=5,
-                mu_model_type=META_LEARNER_MU_MODEL_TYPE,
-                tau_model_type=tau_model_type_from_mu(META_LEARNER_MU_MODEL_TYPE),
+                n_folds=3,
+                mu_model_type=meta_learner_mu_model_type,
+                tau_model_type=tau_model_type_from_mu(meta_learner_mu_model_type),
             )
 
             # 2) predict individual best action on IMPLEMENTATION
@@ -536,8 +516,8 @@ def run_single_experiment(
 
                 e=e,  # P(D=1)
                 n_folds=3,
-                mu_model_type=META_LEARNER_MU_MODEL_TYPE,
-                tau_model_type=tau_model_type_from_mu(META_LEARNER_MU_MODEL_TYPE),
+                mu_model_type=meta_learner_mu_model_type,
+                tau_model_type=tau_model_type_from_mu(meta_learner_mu_model_type),
             )
 
             # 2) predict individual best action on IMPLEMENTATION
@@ -645,6 +625,7 @@ def run_single_experiment(
                 random_state=seed,
                 value_type_dams=value_type_dams,
                 action_method=action_method,
+                n_folds=5,
             )
         )
         sim_result["kmeans_dams"]["best_M"] = best_M_kmeans_dams
@@ -734,6 +715,7 @@ def run_single_experiment(
                 random_state=seed,
                 value_type_dams=value_type_dams,
                 action_method=action_method,
+                n_folds=5,
             )
         )
         
@@ -826,6 +808,7 @@ def run_single_experiment(
                 random_state=seed,
                 value_type_dams=value_type_dams,
                 action_method=action_method,
+                n_folds=5,
             )
         )
         sim_result["clr_dams"]["best_M"] = best_M_clr_dams
@@ -880,6 +863,7 @@ def run_single_experiment(
             value_type_dast=value_type_dast,
             value_type_dams=value_type_dams,
             action_method=action_method,
+            n_folds=5,
         )
         
         sim_result["dast"]["best_M"] = best_M_dast
@@ -924,6 +908,7 @@ def run_single_experiment(
             min_leaf_size=10,
             value_type_dams=value_type_dams,
             action_method=action_method,
+            n_folds=1,  # TEMP: heldout
         )
         action_mst = estimate_segment_policy(
             X_pilot, y_pilot, D_pilot, seg_labels_pilot_mst,
@@ -1105,14 +1090,13 @@ def run_multiple_experiments(
     value_type_dast,
     value_type_dams,
     seed_sequence,
-    n_jobs,
     action_method,
+    meta_learner_mu_model_type=None,
     save_offline_data=True,
 ):
-    # 并行配置：
-    # - inner_threads 写死为 1，避免每个进程内部再开多线程导致过度并行
-    inner_threads = 1
-    n_jobs = int(n_jobs)
+    if meta_learner_mu_model_type is None:
+        meta_learner_mu_model_type = META_LEARNER_MU_MODEL_TYPE
+    _set_thread_env(1)
     max_attempts = int(N_sim) * 5
     out_path = normalize_main_pkl_path(out_path)
     stz_path = resolve_stz_pkl_path(out_path) if save_offline_data else None
@@ -1129,11 +1113,9 @@ def run_multiple_experiments(
         "value_type_dast": value_type_dast,
         "value_type_dams": value_type_dams,
         "mu_model_type": mu_model_type,
-        "meta_learner_mu_model_type": META_LEARNER_MU_MODEL_TYPE,
+        "meta_learner_mu_model_type": meta_learner_mu_model_type,
         "action_method": action_method,
         "out_path": out_path,
-        "n_jobs": n_jobs,
-        "inner_threads": inner_threads,
         "ALGO_LIST": list(ALGO_LIST),
         "eval_methods": list(eval_methods),
         "M_candidates": list(M_candidates),
@@ -1149,6 +1131,8 @@ def run_multiple_experiments(
         experiment_data["params"]["stz_path"] = stz_path
     if save_offline_data and stz_path and os.path.isfile(stz_path):
         _merge_stz_into_results(experiment_data, _pkl_load(stz_path))
+    json_path = write_run_params_json(out_path, experiment_data["params"])
+    print(f"Wrote run params → {json_path}")
     if already_complete:
         return
 
@@ -1165,215 +1149,52 @@ def run_multiple_experiments(
         else:
             print(f"  {k:15s}: {v}")
 
-    def _payload(seed: int) -> dict:
-        return {
-            "sample_frac": sample_frac,
-            "pilot_frac": pilot_frac,
-            "train_frac": train_frac,
-            "dataset": dataset,
-            "target_col": target_col,
-            "mu_model_type": mu_model_type,
-            "value_type_dast": value_type_dast,
-            "value_type_dams": value_type_dams,
-            "seed": int(seed),
-            "inner_threads": int(inner_threads),
-            "save_offline_data": bool(save_offline_data),
-            "action_method": action_method,
-        }
-
     # 串行：直到凑满 N_sim 条成功结果（单次失败则换新 seed 重试）；最多 max_attempts 次单次运行
-    if int(n_jobs) <= 1:
-        _set_thread_env(inner_threads)
-        attempts_used = int(experiment_data["params"].get("attempts_used", 0))
-        while len(experiment_data["results"]) < N_sim:
-            if attempts_used >= max_attempts:
-                experiment_data["params"]["attempts_used"] = attempts_used
-                _save_experiment_checkpoints(
-                    out_path, stz_path, experiment_data, save_offline_data=save_offline_data
-                )
-                raise RuntimeError(
-                    f"Exceeded max_attempts={max_attempts} (completed runs); "
-                    f"only {len(experiment_data['results'])}/{N_sim} successes. "
-                    f"Partial results saved to {out_path!r}."
-                )
-            attempts_used += 1
+    attempts_used = int(experiment_data["params"].get("attempts_used", 0))
+    while len(experiment_data["results"]) < N_sim:
+        if attempts_used >= max_attempts:
             experiment_data["params"]["attempts_used"] = attempts_used
-            seed = random.randint(0, 1_000_000)
-            try:
-                res = run_single_experiment(
-                    sample_frac=sample_frac,
-                    pilot_frac=pilot_frac,
-                    train_frac=train_frac,
-                    dataset=dataset,
-                    target_col=target_col,
-                    mu_model_type=mu_model_type,
-                    value_type_dast=value_type_dast,
-                    value_type_dams=value_type_dams,
-                    seed=int(seed),
-                    save_offline_data=save_offline_data,
-                    action_method=action_method,
-                )
-                experiment_data["results"].append(res)
-                experiment_data["params"]["seeds"].append(int(seed))
-                _save_experiment_checkpoints(
-                    out_path, stz_path, experiment_data, save_offline_data=save_offline_data
-                )
-                print(f'[SIM {len(experiment_data["results"])}/{N_sim}] saved → {out_path}')
-                print("-" * 60)
-            except Exception:
-                import traceback
-
-                traceback.print_exc()
-                _save_experiment_checkpoints(
-                    out_path, stz_path, experiment_data, save_offline_data=save_offline_data
-                )
-                continue
-    else:
-        # 并行：主进程负责按完成顺序收集结果并覆盖保存（同样抗中断）
-        _set_thread_env(inner_threads)
-
-        # 重要：并行 worker 里会同时调用 sklift 的 fetch_* 下载/解压数据，
-        # 在首次运行/无缓存时容易发生并发下载冲突或长时间无输出。
-        # 这里先在主进程预取一次数据，确保缓存就绪，再启动进程池。
+            _save_experiment_checkpoints(
+                out_path, stz_path, experiment_data, save_offline_data=save_offline_data
+            )
+            raise RuntimeError(
+                f"Exceeded max_attempts={max_attempts} (completed runs); "
+                f"only {len(experiment_data['results'])}/{N_sim} successes. "
+                f"Partial results saved to {out_path!r}."
+            )
+        attempts_used += 1
+        experiment_data["params"]["attempts_used"] = attempts_used
+        seed = random.randint(0, 1_000_000)
         try:
-            if dataset == "criteo":
-                from sklift.datasets import fetch_criteo
+            res = run_single_experiment(
+                sample_frac=sample_frac,
+                pilot_frac=pilot_frac,
+                train_frac=train_frac,
+                dataset=dataset,
+                target_col=target_col,
+                mu_model_type=mu_model_type,
+                meta_learner_mu_model_type=meta_learner_mu_model_type,
+                value_type_dast=value_type_dast,
+                value_type_dams=value_type_dams,
+                seed=int(seed),
+                save_offline_data=save_offline_data,
+                action_method=action_method,
+            )
+            experiment_data["results"].append(res)
+            experiment_data["params"]["seeds"].append(int(seed))
+            _save_experiment_checkpoints(
+                out_path, stz_path, experiment_data, save_offline_data=save_offline_data
+            )
+            print(f'[SIM {len(experiment_data["results"])}/{N_sim}] saved → {out_path}')
+            print("-" * 60)
+        except Exception:
+            import traceback
 
-                print("Prefetching Criteo dataset cache (main process)...", flush=True)
-                fetch_criteo(
-                    target_col=target_col,
-                    treatment_col="treatment",
-                    percent10=True,
-                    return_X_y_t=True,
-                )
-            elif dataset == "hillstrom":
-                from sklift.datasets import fetch_hillstrom
-
-                print("Prefetching Hillstrom dataset cache (main process)...", flush=True)
-                fetch_hillstrom(
-                    target_col=target_col,
-                    treatment_col="segment",
-                    return_X_y_t=True,
-                )
-            elif dataset == "lenta":
-                from sklift.datasets import fetch_lenta
-
-                print("Prefetching Lenta dataset cache (main process)...", flush=True)
-                fetch_lenta(
-                    target_col=target_col,
-                    treatment_col="treatment",
-                    return_X_y_t=True,
-                )
-        except Exception as e:
-            print(f"Prefetch failed (will continue anyway): {e}", flush=True)
-
-        t_start = time.perf_counter()
-        pending = {}
-        # 与串行一致：上限统计「发起的单次实验次数」（submit），避免因并行在途任务导致远超 max_attempts 次实际运行
-        attempts_used = int(experiment_data["params"].get("attempts_used", 0))
-
-        def submit_one(pool_ex):
-            nonlocal attempts_used
-            if attempts_used >= max_attempts:
-                return False
-            s = random.randint(0, 1_000_000)
-            fut = pool_ex.submit(_run_single_experiment_worker, _payload(s))
-            pending[fut] = s
-            attempts_used += 1
-            experiment_data["params"]["attempts_used"] = attempts_used
-            return True
-
-        with cf.ProcessPoolExecutor(max_workers=int(n_jobs)) as ex:
-            for _ in range(min(int(n_jobs), N_sim)):
-                if not submit_one(ex):
-                    break
-
-            # 已满 N_sim 成功则退出；否则在仍有预算时保持 pending 非空。
-            while len(experiment_data["results"]) < N_sim:
-                if not pending:
-                    if attempts_used >= max_attempts:
-                        break
-                    if not submit_one(ex):
-                        break
-                done, _ = cf.wait(set(pending.keys()), return_when=cf.FIRST_COMPLETED)
-                for fut in done:
-                    seed_used = pending.pop(fut)
-
-                    # 同一轮可能多个 future 同时完成；已满 N_sim 后丢弃多余结果
-                    if len(experiment_data["results"]) >= N_sim:
-                        try:
-                            fut.result()
-                        except Exception:
-                            pass
-                        continue
-
-                    try:
-                        res = fut.result()
-                        experiment_data["results"].append(res)
-                        experiment_data["params"]["seeds"].append(int(seed_used))
-                        _save_experiment_checkpoints(
-                            out_path, stz_path, experiment_data, save_offline_data=save_offline_data
-                        )
-                        completed = len(experiment_data["results"])
-                        elapsed = time.perf_counter() - t_start
-                        pct = 100.0 * completed / float(N_sim)
-                        print(
-                            f"\r[SIM {completed}/{N_sim}] {pct:6.2f}% | elapsed {elapsed:8.1f}s | saved → {out_path}",
-                            end="",
-                            flush=True,
-                        )
-
-                        seed_done = int(res.get("seed", seed_used))
-                        total_time = 0.0
-                        for algo in ALGO_LIST:
-                            if isinstance(res.get(algo), dict):
-                                total_time += float(res[algo].get("time", 0.0) or 0.0)
-
-                        parts = [f"seed={seed_done}", f"total_time={total_time:.1f}s"]
-                        for algo in ALGO_LIST:
-                            if not isinstance(res.get(algo), dict):
-                                continue
-                            if "dual_dr" in res[algo]:
-                                parts.append(f"{algo}.dual_dr={res[algo]['dual_dr']:.4g}")
-                            elif "dr" in res[algo]:
-                                parts.append(f"{algo}.dr={res[algo]['dr']:.4g}")
-                            elif "ipw" in res[algo]:
-                                parts.append(f"{algo}.ipw={res[algo]['ipw']:.4g}")
-
-                        print("\n  " + " | ".join(parts), flush=True)
-                    except Exception:
-                        import traceback
-
-                        traceback.print_exc()
-                        _save_experiment_checkpoints(
-                            out_path, stz_path, experiment_data, save_offline_data=save_offline_data
-                        )
-
-                    if len(experiment_data["results"]) < N_sim and attempts_used < max_attempts:
-                        submit_one(ex)
-
-            # 已有 N_sim 条成功结果，或已达尝试上限：吞掉仍在跑的任务
-            while pending:
-                done, _ = cf.wait(set(pending.keys()), return_when=cf.FIRST_COMPLETED)
-                for fut in done:
-                    pending.pop(fut)
-                    try:
-                        fut.result()
-                    except Exception:
-                        pass
-
-            if len(experiment_data["results"]) < N_sim:
-                experiment_data["params"]["attempts_used"] = attempts_used
-                _save_experiment_checkpoints(
-                    out_path, stz_path, experiment_data, save_offline_data=save_offline_data
-                )
-                raise RuntimeError(
-                    f"Exceeded max_attempts={max_attempts} (submitted runs); "
-                    f"only {len(experiment_data['results'])}/{N_sim} successes. "
-                    f"Partial results saved to {out_path!r}."
-                )
-
-        print("")  # 换行收尾
+            traceback.print_exc()
+            _save_experiment_checkpoints(
+                out_path, stz_path, experiment_data, save_offline_data=save_offline_data
+            )
+            continue
 
     print("\nALL SIMULATIONS DONE.")
     print(f"Results saved in '{out_path}'")
@@ -1432,7 +1253,25 @@ if __name__ == "__main__":
             "mlp_clf",
             "lightgbm_clf",
         ],
-        help="Outcome model for pilot nuisances / DAST (meta-learners fixed to mlp_reg)",
+        help="Outcome model for pilot nuisances / DAST / OPE",
+    )
+
+    parser.add_argument(
+        "--meta_learner_mu_model_type",
+        type=str,
+        default=META_LEARNER_MU_MODEL_TYPE,
+        choices=[
+            "linear",
+            "mlp_reg",
+            "lightgbm_reg",
+            "logistic",
+            "mlp_clf",
+            "lightgbm_clf",
+        ],
+        help=(
+            "μ head for t/s/x/dr_learner baselines "
+            f"(default: {META_LEARNER_MU_MODEL_TYPE})"
+        ),
     )
     
     parser.add_argument(
@@ -1453,12 +1292,6 @@ if __name__ == "__main__":
         type=int,
         help="Seed sequence for reproducibility",
     )
-    parser.add_argument(
-        "--n_jobs",
-        type=int,
-        default=1,
-        help="Number of parallel simulations to run (outer parallelism).",
-    )
 
     parser.add_argument(
         "--action_method",
@@ -1466,6 +1299,15 @@ if __name__ == "__main__":
         choices=["diff_in_means", "gamma", "logistic"],
         required=True,
         help="Method to estimate segment-level action.",
+    )
+
+    parser.add_argument(
+        "--N-sim",
+        "--N_sim",
+        type=int,
+        default=100,
+        dest="N_sim",
+        help="Number of successful simulation runs (default: 100)",
     )
 
     args = parser.parse_args()
@@ -1478,7 +1320,7 @@ if __name__ == "__main__":
         print(f"Using fixed sequence seed: {args.seed_sequence}")
 
     run_multiple_experiments(
-        N_sim=100,
+        N_sim=args.N_sim,
         sample_frac=args.sample_frac,
         pilot_frac=pilot_frac,
         train_frac=train_frac,
@@ -1486,9 +1328,9 @@ if __name__ == "__main__":
         dataset=args.dataset,
         target_col=args.target,
         mu_model_type=args.mu_model_type,
+        meta_learner_mu_model_type=args.meta_learner_mu_model_type,
         value_type_dast=args.value_type_dast,
         value_type_dams=args.value_type_dams,
         seed_sequence=args.seed_sequence if args.seed_sequence is not None else None,
-        n_jobs=args.n_jobs,
         action_method=args.action_method,
     )
