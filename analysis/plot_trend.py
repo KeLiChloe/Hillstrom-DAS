@@ -3,12 +3,12 @@ Trend plot across experiment pickles.
 
 Two metrics (--metric):
   improvement  DAS_improvement_ratio = (DAST - comparator) / comparator * 100
-               Plots dual_dr OPE improvement (dr/ipw omitted).
+               Plots dual_dr and ipw OPE improvement.
                Optional outlier removal per (sweep point, comparator) via
                --outlier-filter; method via --outlier-method (nstd or iqr).
 
-  advantage    DAS_advantage_ratio = STZ_evaluator (Simester, Timoshenko, and Zoumpoulis)
-               Uses per-customer logged data in run["implementation"].
+  advantage    DAS_advantage_ratio via STZ / STZ_VR on logged Y
+               (basic: full impl set; VR: disagreement-restricted).
                Loads implementation from *_stz.pkl sidecars.
                Same optional outlier removal as improvement.
 
@@ -44,7 +44,7 @@ import seaborn as sns
 from matplotlib import ticker
 from scipy import stats
 
-from stz import STZ_evaluator
+from stz import STZ_VR, STZ_basic
 from plot_style import (
         PREFERRED_ORDER,
         baseline_color,
@@ -68,7 +68,23 @@ def _pkl_load(path):
 # Defaults
 # ---------------------------------------------------------------------------
 DAST_ALGO = "dast"  # algorithm compared against baselines (CI_plot.py)
-DEFAULT_EVAL_METHODS = ["dual_dr"]
+DEFAULT_EVAL_METHODS = ["dual_dr", "ipw", "dm"]
+
+# Display names for figure titles (evaluation method).
+EVAL_METHOD_TITLE = {
+    "dual_dr": "mixed Y and μ",
+    "dr": "DR (μ + Y)",
+    "ipw": "IPW (Y)",
+    "dm": "Direct Method (μ only)",
+    "stz": "Y only (STZ)",
+    "stz_vr": "Y only (STZ-VR)",
+}
+
+# STZ variants plotted under --metric advantage / both.
+STZ_VARIANTS = (
+    ("stz", STZ_basic),
+    ("stz_vr", STZ_VR),
+)
 
 REQUESTED_BASELINES = [
     "kmeans",
@@ -91,6 +107,9 @@ SweepKind = Literal["pilot_frac", "sample_frac"]
 class SweepConfig:
     kind: SweepKind
     fixed_pilot_frac: float | None = None
+    # Criteo is loaded with percent10=True, so stored sample_frac is relative to
+    # that 10% slice; display as fraction of the full dataset → ÷10.
+    dataset: str | None = None
 
     @property
     def x_param(self) -> str:
@@ -108,15 +127,21 @@ class SweepConfig:
 
     def to_display_pct(self, x_value: float) -> float:
         """
-        Convert stored parameter value to display percentage.
+        Convert stored parameter value to display percentage of the full dataset.
 
-        pilot_frac  : stored value IS the true fraction  → × 100
-        sample_frac : stored value is 10× the true fraction (e.g. 0.05 → 0.5%)
-                      → ÷ 10 × 100  =  × 10
+        pilot_frac  : stored value IS the true fraction → × 100
+        sample_frac :
+          - criteo: loaders use percent10=True, so stored sample_frac is relative
+            to the 10% public slice → effective full-data fraction is ×0.1
+            → display = x_value × 10  (e.g. 0.05 → 0.5%)
+          - others (hillstrom, lenta, …): stored value is already the true
+            fraction → × 100  (e.g. 0.50 → 50%)
         """
         if self.kind == "pilot_frac":
             return x_value * 100.0
-        return x_value * 10.0
+        if (self.dataset or "").lower() == "criteo":
+            return x_value * 10.0
+        return x_value * 100.0
 
     def format_fixed_pilot_frac(self) -> str:
         if self.fixed_pilot_frac is None:
@@ -458,12 +483,14 @@ def compute_stz_records(
     results_list: list[dict],
     baselines: list[str],
     das_algo: str = DAST_ALGO,
+    *,
+    stz_fn=STZ_VR,
 ) -> pd.DataFrame:
     """Per-run STZ advantage for every (DAST, comparator) pair."""
     records = []
     for i, run in enumerate(results_list):
         for b in baselines:
-            adv = STZ_evaluator(run, das_algo, b)
+            adv = stz_fn(run, das_algo, b)
             if not np.isfinite(adv):
                 continue
             records.append(
@@ -482,6 +509,7 @@ def summarize_stz_by_sweep(
     baselines: list[str],
     das_algo: str = DAST_ALGO,
     *,
+    stz_fn=STZ_VR,
     filter_outliers: bool = False,
     outlier_method: str = _DEFAULT_OUTLIER_METHOD,
     n_std: float = _DEFAULT_OUTLIER_N_STD,
@@ -490,7 +518,9 @@ def summarize_stz_by_sweep(
     """Mean ± 95% CI of STZ advantage across runs, one row per (x_value, comparator)."""
     parts: list[pd.DataFrame] = []
     for exp in experiments:
-        df = compute_stz_records(exp["results"], baselines, das_algo=das_algo)
+        df = compute_stz_records(
+            exp["results"], baselines, das_algo=das_algo, stz_fn=stz_fn
+        )
         if df.empty:
             continue
         df = df.copy()
@@ -658,6 +688,14 @@ def format_plot_title(params: dict) -> str:
     return f"{dataset} – {target_metric}"
 
 
+def eval_method_title(eval_method: str) -> str:
+    """Human-readable evaluation method for plot titles."""
+    key = str(eval_method).lower()
+    if key in EVAL_METHOD_TITLE:
+        return EVAL_METHOD_TITLE[key]
+    return str(eval_method).replace("_", " ")
+
+
 def assert_consistent_experiment_meta(
     experiments: list[dict], sweep_kind: SweepKind
 ) -> tuple[dict, SweepConfig]:
@@ -698,7 +736,11 @@ def assert_consistent_experiment_meta(
                     f"expected {fixed_sample!r}, got {p.get('sample_frac')!r}."
                 )
 
-    sweep = SweepConfig(kind=sweep_kind, fixed_pilot_frac=fixed_pilot)
+    sweep = SweepConfig(
+        kind=sweep_kind,
+        fixed_pilot_frac=fixed_pilot,
+        dataset=str(dataset) if dataset is not None else None,
+    )
     return ref, sweep
 
 
@@ -710,10 +752,12 @@ def plot_trend(
     n_sims: int,
     out_stem: str,
     fig_dir: Path,
+    eval_method: str = "dual_dr",
 ) -> None:
     labels = ordered_labels(stats_df["Baseline_Label"].unique().tolist())
     x_vals = sorted(stats_df["x_value"].unique())
     x_pct = [sweep.to_display_pct(x) for x in x_vals]
+    eval_label = eval_method_title(eval_method)
 
     fig, ax = plt.subplots(figsize=(6.6, 4.0))
 
@@ -758,7 +802,7 @@ def plot_trend(
     ax.set_xlabel(sweep.x_label, fontweight="bold", labelpad=8)
     ax.set_ylabel("DAS improvement ratio", fontweight="bold", labelpad=8)
     ax.set_title(
-        f"DAS improvement ratio on {dataset_target}",
+        f"DAS improvement ratio on {dataset_target} ({eval_label})",
         fontweight="bold",
         fontsize=13,
         pad=20,
@@ -817,11 +861,13 @@ def plot_stz_trend(
     n_sims: int,
     out_stem: str,
     fig_dir: Path,
+    eval_method: str = "stz_vr",
 ) -> None:
-    """Plot DAS_advantage_ratio (STZ evaluator) trend figure."""
+    """Plot DAS_advantage_ratio (STZ / STZ-VR) trend figure."""
     labels = ordered_labels(stats_df["Baseline_Label"].unique().tolist())
     x_vals = sorted(stats_df["x_value"].unique())
     x_pct = [sweep.to_display_pct(x) for x in x_vals]
+    eval_label = eval_method_title(eval_method)
 
     fig, ax = plt.subplots(figsize=(6.6, 4.0))
 
@@ -866,7 +912,7 @@ def plot_stz_trend(
     ax.set_xlabel(sweep.x_label, fontweight="bold", labelpad=8)
     ax.set_ylabel("DAS advantage ratio (% of comparator)", fontweight="bold", labelpad=8)
     ax.set_title(
-        f"DAS advantage ratio on {dataset_target}",
+        f"DAS advantage ratio on {dataset_target} ({eval_label})",
         fontweight="bold",
         fontsize=13,
         pad=20,
@@ -956,7 +1002,7 @@ def parse_args() -> argparse.Namespace:
         choices=["improvement", "advantage", "both"],
         help=(
             "improvement: DAS_improvement_ratio from OPE scalars (default). "
-            "advantage:   DAS_advantage_ratio via STZ evaluator (needs *_stz.pkl). "
+            "advantage:   DAS_advantage_ratio via STZ / STZ-VR (needs *_stz.pkl). "
             "both:        save both figures."
         ),
     )
@@ -1048,7 +1094,11 @@ def main() -> None:
     print(f"Loaded {len(experiments)} experiments from {exp_dir}")
     print(f"Figures -> {fig_dir}")
     print(f"Sweep axis: {sweep.kind}")
-    print(f"{sweep.x_label}: {[e['x_value'] for e in experiments]}")
+    print(
+        f"{sweep.x_label}: "
+        f"{[sweep.to_display_pct(e['x_value']) for e in experiments]} "
+        f"(stored={[e['x_value'] for e in experiments]})"
+    )
     if sweep.fixed_pilot_frac is not None:
         print(f"Fixed pilot fraction: {sweep.format_fixed_pilot_frac()}")
     print(f"Comparators: {baselines}")
@@ -1105,9 +1155,10 @@ def main() -> None:
                 n_sims=n_sims,
                 out_stem=out_stem,
                 fig_dir=fig_dir,
+                eval_method=ev,
             )
 
-    # ---- DAS advantage ratio (STZ evaluator, needs implementation data) ----
+    # ---- DAS advantage ratio (STZ / STZ-VR, needs implementation data) ----
     if do_advantage:
         n_merged = merge_stz_sidecars(experiments)
         if n_merged:
@@ -1131,23 +1182,27 @@ def main() -> None:
                 f"{[sweep.to_display_pct(x) for x in stz_x]}"
             )
             print(f"Runs with implementation data: {n_runs_with_impl}")
-            stz_df, n_kept, n_filtered = summarize_stz_by_sweep(
-                experiments,
-                baselines,
-                filter_outliers=filter_outliers,
-                outlier_method=outlier_method,
-                n_std=n_std,
-                iqr_k=iqr_k,
-            )
-            if filter_outliers and n_filtered:
-                print(
-                    f"[INFO] STZ: kept {n_kept} advantage records, "
-                    f"filtered {n_filtered} outlier(s)"
+            for stz_key, stz_fn in STZ_VARIANTS:
+                stz_df, n_kept, n_filtered = summarize_stz_by_sweep(
+                    experiments,
+                    baselines,
+                    stz_fn=stz_fn,
+                    filter_outliers=filter_outliers,
+                    outlier_method=outlier_method,
+                    n_std=n_std,
+                    iqr_k=iqr_k,
                 )
-            if stz_df.empty:
-                print("[WARN] STZ evaluator returned no finite values; skip advantage plot.")
-            else:
-                out_stem = f"{sweep.out_stem_prefix}_{slug}_stz"
+                if filter_outliers and n_filtered:
+                    print(
+                        f"[INFO] {stz_key}: kept {n_kept} advantage records, "
+                        f"filtered {n_filtered} outlier(s)"
+                    )
+                if stz_df.empty:
+                    print(
+                        f"[WARN] {stz_key} returned no finite values; skip plot."
+                    )
+                    continue
+                out_stem = f"{sweep.out_stem_prefix}_{slug}_{stz_key}"
                 plot_stz_trend(
                     stz_df,
                     dataset_target=plot_title,
@@ -1155,6 +1210,7 @@ def main() -> None:
                     n_sims=n_sims,
                     out_stem=out_stem,
                     fig_dir=fig_dir,
+                    eval_method=stz_key,
                 )
 
     print_incomplete_pkl_warning(incomplete_pkls, experiments, args.min_sims)

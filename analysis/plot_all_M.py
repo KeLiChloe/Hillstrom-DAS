@@ -3,7 +3,8 @@ Plot DAST policy value vs. segment count M (all candidate M on one curve).
 
 Expects pickle output from run_all_M.py:
   results[i]["dast"]["dual_dr"]["2"], ..., results[i]["dast"]["best_M"]
-  results[i]["dast"]["stz"]["2"]["t_learner"], ...  (STZ advantage vs baseline)
+  results[i]["dast"]["stz"]["2"]["t_learner"], ...      (STZ_basic advantage)
+  results[i]["dast"]["stz_vr"]["2"]["t_learner"], ...   (STZ_VR advantage)
   baselines: results[i][algo]["dual_dr"] as scalars.
 
 STZ implementation actions may be in a *_stz.pkl sidecar (merged at load time).
@@ -21,7 +22,7 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
 
-DEFAULT_EVAL_METHODS = ("dr", "dual_dr", "ipw", "stz")
+DEFAULT_EVAL_METHODS = ("dr", "dual_dr", "ipw", "dm", "stz", "stz_vr")
 FIG_DIR = "figures"
 
 SKIP_BASELINE_KEYS = {"seed", "dast", "random", "implementation"}
@@ -119,11 +120,13 @@ def extract_dast_curve(dast: dict, eval_method: str) -> tuple[list[int], list[fl
 
 
 def extract_dast_stz_curves(
-    dast: dict, baselines: list[str]
+    dast: dict, baselines: list[str], *, stz_key: str = "stz"
 ) -> dict[str, tuple[list[int], list[float]]]:
-    sub = dast.get("stz")
+    sub = dast.get(stz_key)
     if not isinstance(sub, dict):
-        raise KeyError("dast['stz'] missing; re-run with updated run_all_M.py.")
+        raise KeyError(
+            f"dast['{stz_key}'] missing; re-run with updated run_all_M.py."
+        )
     curves: dict[str, tuple[list[int], list[float]]] = {}
     for b in baselines:
         pairs: list[tuple[int, float]] = []
@@ -138,7 +141,7 @@ def extract_dast_stz_curves(
             pairs.sort(key=lambda x: x[0])
             curves[b] = ([p[0] for p in pairs], [p[1] for p in pairs])
     if not curves:
-        raise ValueError("No STZ curves found under dast['stz'].")
+        raise ValueError(f"No STZ curves found under dast['{stz_key}'].")
     return curves
 
 
@@ -293,10 +296,11 @@ def plot_all_M_stz(
     *,
     fig_dir: Path,
     out_stem: str,
+    stz_key: str = "stz",
 ) -> list[Path]:
     dast = run["dast"]
     baselines = baseline_algorithms(run)
-    curves = extract_dast_stz_curves(dast, baselines)
+    curves = extract_dast_stz_curves(dast, baselines, stz_key=stz_key)
     all_M = sorted({m for xs, _ in curves.values() for m in xs})
     x_min, x_max = min(all_M), max(all_M)
     best_M = dast.get("best_M")
@@ -351,8 +355,9 @@ def plot_all_M_stz(
             )
 
     title, _ = target_labels(params.get("target_col"))
-    ax.set_title(f"{title}\n(STZ advantage vs meta-learners)", pad=14)
-    ax.set_ylabel("DAS STZ advantage (%)")
+    stz_label = "STZ-VR" if stz_key == "stz_vr" else "STZ"
+    ax.set_title(f"{title}\n({stz_label} advantage vs meta-learners)", pad=14)
+    ax.set_ylabel(f"DAS {stz_label} advantage (%)")
     ax.set_xlabel("Number of segments (M)")
     ax.set_xlim(x_min - 0.2, x_max + 0.2)
     ax.xaxis.set_major_locator(ticker.MaxNLocator(integer=True))
@@ -404,8 +409,10 @@ def plot_experiment(
     print("PLOTTING (plot_all_M)")
     print(f"  run_index={run_index}, seed={seed}, best_M={run['dast'].get('best_M')}")
     print("=" * 60)
-    if eval_method == "stz":
-        return plot_all_M_stz(params, run, fig_dir=fig_dir, out_stem=out_stem)
+    if eval_method in ("stz", "stz_vr"):
+        return plot_all_M_stz(
+            params, run, fig_dir=fig_dir, out_stem=out_stem, stz_key=eval_method
+        )
     return plot_all_M(
         params, run, eval_method=eval_method, fig_dir=fig_dir, out_stem=out_stem
     )
@@ -464,8 +471,8 @@ def parse_args() -> argparse.Namespace:
         "--eval-method",
         "--eval_method",
         default="dual_dr",
-        choices=["dual_dr", "stz", "dr", "ipw"],
-        help="Score to plot: dual_dr OPE value or STZ advantage curves (default: dual_dr).",
+        choices=["dual_dr", "stz", "stz_vr", "dr", "ipw", "dm"],
+        help="Score to plot: dual_dr OPE, STZ_basic, or STZ_VR (default: dual_dr).",
     )
     return parser.parse_args()
 

@@ -3,7 +3,8 @@ Sweep DAST segment count M and compare OPE curves to meta-learner baselines.
 
 Pickle layout (consumed by analysis/plot_all_M.py):
   results[i]["dast"]["dual_dr"]["5"]  -> policy value at M=5
-  results[i]["dast"]["stz"]["5"]["t_learner"]  -> STZ advantage vs baseline at M=5
+  results[i]["dast"]["stz"]["5"]["t_learner"]     -> STZ_basic advantage vs baseline at M=5
+  results[i]["dast"]["stz_vr"]["5"]["t_learner"]  -> STZ_VR advantage vs baseline at M=5
   results[i]["dast"]["best_M"]        -> DAMS-selected M (same rule as run_sims)
   results[i]["t_learner"]["dual_dr"]  -> scalar baseline (no M axis)
 
@@ -48,6 +49,7 @@ from evaluation import (
     _get_propensity_per_action,
     evaluate_policy_dr,
     evaluate_policy_dual_dr,
+    evaluate_policy_dm,
     evaluate_policy_ipw,
 )
 from outcome_model import META_LEARNER_MU_MODEL_TYPE, tau_model_type_from_mu
@@ -60,11 +62,12 @@ from x_learner import fit_x_learner, predict_best_action_x_learner
 # Meta-learner baselines only (DAST is evaluated per M separately).
 ALGO_LIST = ["causal_forest", "t_learner", "s_learner", "x_learner", "dr_learner"]
 
-eval_methods = ["dr", "dual_dr", "ipw"]
+eval_methods = ["dr", "dual_dr", "ipw", "dm"]
 eval_classes = {
     "dr": evaluate_policy_dr,
     "dual_dr": evaluate_policy_dual_dr,
     "ipw": evaluate_policy_ipw,
+    "dm": evaluate_policy_dm,
 }
 
 DEFAULT_M_CANDIDATES = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
@@ -199,17 +202,23 @@ def _compute_dast_stz_scores(sim_result: dict, M_candidates: list[int]) -> None:
     analysis_dir = _REPO_ROOT / "analysis"
     if str(analysis_dir) not in sys.path:
         sys.path.insert(0, str(analysis_dir))
-    from stz import STZ_evaluator
+    from stz import STZ_VR, STZ_basic
 
     stz_by_M: dict[str, dict[str, float]] = {}
+    stz_vr_by_M: dict[str, dict[str, float]] = {}
     for M in M_candidates:
         dast_key = _dast_impl_key(M)
         stz_by_M[str(M)] = {}
+        stz_vr_by_M[str(M)] = {}
         for algo in ALGO_LIST:
-            adv = STZ_evaluator(sim_result, dast_key, algo)
+            adv = STZ_basic(sim_result, dast_key, algo)
             if np.isfinite(adv):
                 stz_by_M[str(M)][algo] = float(adv)
+            adv_vr = STZ_VR(sim_result, dast_key, algo)
+            if np.isfinite(adv_vr):
+                stz_vr_by_M[str(M)][algo] = float(adv_vr)
     sim_result["dast"]["stz"] = stz_by_M
+    sim_result["dast"]["stz_vr"] = stz_vr_by_M
 
 
 def _pkl_dump(path: str, data) -> None:

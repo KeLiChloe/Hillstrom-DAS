@@ -46,6 +46,7 @@ def fit_x_learner(
     effect_model=None,
     # gating options
     random_state: int = 0,
+    mu_hparams=None,
 ):
     """
     Multi-action X-learner (one-vs-control).
@@ -84,6 +85,7 @@ def fit_x_learner(
         effect_model = make_mu_model(
             tau_model_type_from_mu(mu_model_type),
             random_state=random_state,
+            params=mu_hparams,
         )
 
 

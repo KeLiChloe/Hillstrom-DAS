@@ -6,14 +6,24 @@ DATASET="${DATASET:-hillstrom}"
 TARGET="${TARGET:-conversion}"
 SAMPLE_FRAC="${SAMPLE_FRAC:-1}"
 MU_MODEL_TYPE="${MU_MODEL_TYPE:-lightgbm_reg}"
-META_LEARNER_MU_MODEL_TYPE="${META_LEARNER_MU_MODEL_TYPE:-lightgbm_reg}"
+META_LEARNER_MU_MODEL_TYPE="${META_LEARNER_MU_MODEL_TYPE:-mlp_reg}"
 VALUE_TYPE_DAST="${VALUE_TYPE_DAST:-hybrid}"
 VALUE_TYPE_DAMS="${VALUE_TYPE_DAMS:-hybrid}"
-ACTION_METHOD="${ACTION_METHOD:-diff_in_means}"
-SEED_SEQUENCE="${SEED_SEQUENCE:-1024}"
-N_SIM="${N_SIM:-20}"
+ACTION_METHOD="${ACTION_METHOD:-logistic}"
+SEED_SEQUENCE="${SEED_SEQUENCE:-899}"
+N_SIM="${N_SIM:-50}"
+N_FOLDS_DAMS="${N_FOLDS_DAMS:-5}"
 
-OUTDIR="${EXP_ROOT}/${DATASET}/${TARGET}/${MU_MODEL_TYPE}/pilot_frac_with_fixed_${SAMPLE_FRAC}_sample_frac"
+BASE_OUTDIR="${EXP_ROOT}/${DATASET}/${TARGET}/${MU_MODEL_TYPE}/pilot_frac_with_fixed_${SAMPLE_FRAC}_sample_frac"
+OUTDIR="${BASE_OUTDIR}"
+if [[ -e "${OUTDIR}" ]]; then
+    i=1
+    while [[ -e "${BASE_OUTDIR}(${i})" ]]; do
+        i=$((i + 1))
+    done
+    OUTDIR="${BASE_OUTDIR}(${i})"
+    echo "[INFO] ${BASE_OUTDIR} exists → using ${OUTDIR}"
+fi
 mkdir -p "${OUTDIR}"
 
 for pilot_int in $(seq 5 5 50); do
@@ -39,5 +49,6 @@ for pilot_int in $(seq 5 5 50); do
         --pilot_frac "${pilot_frac}" \
         --action_method "${ACTION_METHOD}" \
         --N_sim "${N_SIM}" \
+        --n_folds_dams "${N_FOLDS_DAMS}" \
         --outpath "${outpath}"
 done

@@ -278,7 +278,48 @@ def evaluate_policy_dr(
 
 
 # =========================================================
-# 4. 纯 IPW 版本
+# 4. Direct Method（纯 μ，不用 Y）
+# =========================================================
+
+def evaluate_policy_dm(
+        X_impl, D_impl, y_impl,
+        seg_labels_impl,
+        mu_models,
+        action,
+        propensities,
+    ):
+    """
+    Direct Method (regression) policy evaluation：只用 μ，不用 Y / propensity。
+
+        V_hat = (1/n) * sum_i μ_{a_i}(x_i),  a_i = π(X_i)
+
+    签名与其它 evaluator 对齐（D_impl / y_impl / propensities 未使用）。
+    """
+    X_impl = np.asarray(X_impl)
+    seg_labels_impl = np.asarray(seg_labels_impl, dtype=int)
+    action = np.asarray(action, dtype=int)
+
+    n = X_impl.shape[0]
+    _, K = _infer_actions(D_impl, mu_models)
+    mu_mat = _build_mu_matrix(mu_models, X_impl, K)
+
+    if seg_labels_impl.max() >= len(action):
+        raise ValueError(
+            f"Segment label {seg_labels_impl.max()} exceeds action array length {len(action)}. "
+            f"Expected seg_labels in [0, {len(action)-1}]."
+        )
+
+    a_i = action[seg_labels_impl].astype(int)
+    v = mu_mat[np.arange(n), a_i]
+
+    return {
+        "value_mean": float(v.mean()),
+        "value_sum": float(v.sum()),
+    }
+
+
+# =========================================================
+# 5. 纯 IPW 版本
 # =========================================================
 
 def evaluate_policy_ipw(

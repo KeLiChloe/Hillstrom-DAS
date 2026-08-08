@@ -29,42 +29,74 @@ def tau_model_type_from_mu(mu_model_type: str) -> str:
     }.get(mu_model_type, mu_model_type)
 
 
-def make_mu_model(mu_model_type: str, *, random_state: int = 42, y=None):
+def _coerce_hparams(params: dict | None) -> dict:
+    """JSON may store tuples as lists (e.g. hidden_layer_sizes)."""
+    if not params:
+        return {}
+    out = dict(params)
+    hls = out.get("hidden_layer_sizes")
+    if isinstance(hls, list):
+        out["hidden_layer_sizes"] = tuple(hls)
+    return out
+
+
+def make_mu_model(mu_model_type: str, *, random_state: int = 42, y=None, params: dict | None = None):
     """
     Shared sklearn estimator factory for all mu heads (OPE + meta-learners).
 
     Pass y when building lightgbm_clf (for scale_pos_weight).
+    Optional ``params`` overrides constructor defaults (from finetune JSON).
+    ``random_state`` always comes from the caller (per-sim seed), not from params.
     """
+    p = _coerce_hparams(params)
+
     if mu_model_type == "linear":
+        # LinearRegression has no useful tunable params in our grid.
         return LinearRegression()
 
     if mu_model_type == "mlp_reg":
-        return MLPRegressor(
+        kwargs = dict(
             hidden_layer_sizes=(64, 32),
             activation="relu",
             max_iter=5000,
             early_stopping=True,
             random_state=random_state,
         )
+        kwargs.update(p)
+        kwargs["random_state"] = random_state
+        return MLPRegressor(**kwargs)
 
     if mu_model_type == "lightgbm_reg":
-        return LGBMRegressor(
+        kwargs = dict(
             n_estimators=200,
             learning_rate=0.05,
+            num_leaves=15,
+            min_child_samples=20,
+            verbosity=-1,
             random_state=random_state,
         )
+        kwargs.update(p)
+        kwargs["random_state"] = random_state
+        kwargs.setdefault("verbosity", -1)
+        return LGBMRegressor(**kwargs)
 
     if mu_model_type == "logistic":
-        return LogisticRegression(max_iter=500, random_state=random_state)
+        kwargs = dict(max_iter=500, random_state=random_state)
+        kwargs.update(p)
+        kwargs["random_state"] = random_state
+        return LogisticRegression(**kwargs)
 
     if mu_model_type == "mlp_clf":
-        return MLPClassifier(
+        kwargs = dict(
             hidden_layer_sizes=(64, 32),
             activation="relu",
             max_iter=5000,
             early_stopping=True,
             random_state=random_state,
         )
+        kwargs.update(p)
+        kwargs["random_state"] = random_state
+        return MLPClassifier(**kwargs)
 
     if mu_model_type == "lightgbm_clf":
         if y is None:
@@ -75,13 +107,23 @@ def make_mu_model(mu_model_type: str, *, random_state: int = 42, y=None):
         if n_pos == 0 or n_neg == 0:
             raise ValueError(f"y is degenerate (n_pos={n_pos}, n_neg={n_neg})")
         pos_weight = n_neg / n_pos
-        return LGBMClassifier(
+        kwargs = dict(
             objective="binary",
             n_estimators=200,
             learning_rate=0.05,
+            num_leaves=15,
+            min_child_samples=20,
             scale_pos_weight=pos_weight,
+            verbosity=-1,
             random_state=random_state,
         )
+        kwargs.update(p)
+        kwargs["random_state"] = random_state
+        kwargs.setdefault("verbosity", -1)
+        # Always recompute scale_pos_weight from the fit slice unless explicitly set.
+        if "scale_pos_weight" not in p:
+            kwargs["scale_pos_weight"] = pos_weight
+        return LGBMClassifier(**kwargs)
 
     raise ValueError(f"Unknown mu_model_type: {mu_model_type}")
 
@@ -113,7 +155,7 @@ def _safe_fit(model, X, y, min_pos=10):
     return model
 
 
-def fit_mu_models(X, D, y, mu_model_type, random_state=42):
+def fit_mu_models(X, D, y, mu_model_type, random_state=42, mu_hparams=None):
     """
     对每个 action a 拟合 μ_a(x) = E[Y|X,D=a].
     Classifiers return P(y=1|x); regressors return E[Y|x].
@@ -135,6 +177,7 @@ def fit_mu_models(X, D, y, mu_model_type, random_state=42):
             mu_model_type,
             random_state=random_state,
             y=ya if mu_model_type == "lightgbm_clf" else None,
+            params=mu_hparams,
         )
         model = _safe_fit(model, Xa, ya, min_pos=2)
         mu_models[int(a)] = model

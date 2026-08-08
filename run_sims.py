@@ -27,6 +27,7 @@ import random
 
 from exp_io import write_run_params_json
 from outcome_model import META_LEARNER_MU_MODEL_TYPE, tau_model_type_from_mu
+from mu_hparams import resolve_mu_hparams
 
 
 # ---------------------------------------------------------------------------
@@ -68,7 +69,13 @@ from data_utils import (
 )
 
 from estimation import estimate_segment_policy
-from evaluation import evaluate_policy_dual_dr, evaluate_policy_dr, evaluate_policy_ipw, _get_propensity_per_action  # 已改成多 action 版
+from evaluation import (  # 已改成多 action 版
+    evaluate_policy_dual_dr,
+    evaluate_policy_dr,
+    evaluate_policy_dm,
+    evaluate_policy_ipw,
+    _get_propensity_per_action,
+)
 from t_learner import fit_t_learner, predict_mu_t_learner_matrix
 from s_learner import fit_s_learner, predict_mu_s_learner_matrix
 from dr_learner import ( dr_learner_policy_binary, fit_dr_learner_binary,
@@ -97,12 +104,13 @@ POLICYTREE_DEPTH = 2
 ALGO_LIST = ["dast", "causal_forest", "mst", "clr", "kmeans", "gmm", "t_learner", "s_learner", "x_learner", "dr_learner"] #
 # ALGO_LIST = ["kmeans", "kmeans_dams", "gmm", "gmm_dams", "clr", "clr_dams", "dast"]
 
-eval_methods = ["dr", "dual_dr", "ipw"]
+eval_methods = ["dr", "dual_dr", "ipw", "dm"]
 
 eval_classes = {
     "dr":      evaluate_policy_dr,
     "dual_dr": evaluate_policy_dual_dr,
     "ipw":     evaluate_policy_ipw,
+    "dm":      evaluate_policy_dm,
 }
 
 M_candidates = [2, 3, 4, 5, 6, 7, 8, 9, 10]
@@ -285,6 +293,9 @@ def run_single_experiment(
     action_method,
     meta_learner_mu_model_type=None,
     save_offline_data=True,
+    n_folds_dams=5,
+    ope_mu_hparams=None,
+    meta_mu_hparams=None,
 ):
     if meta_learner_mu_model_type is None:
         meta_learner_mu_model_type = META_LEARNER_MU_MODEL_TYPE
@@ -316,6 +327,7 @@ def run_single_experiment(
         pilot_frac=pilot_frac,
         mu_model_type=mu_model_type,
         return_impl_customer_id=save_offline_data,
+        mu_hparams=ope_mu_hparams,
     )
     if save_offline_data:
         (
@@ -372,6 +384,7 @@ def run_single_experiment(
             K=action_K,
             model_type=meta_learner_mu_model_type,
             random_state=seed,
+            mu_hparams=meta_mu_hparams,
         )
 
         mu_mat_impl_t = predict_mu_t_learner_matrix(
@@ -411,6 +424,7 @@ def run_single_experiment(
             K=action_K,
             model_type=meta_learner_mu_model_type,
             random_state=seed,
+            mu_hparams=meta_mu_hparams,
         )
 
         mu_mat_impl_s = predict_mu_s_learner_matrix(
@@ -453,6 +467,7 @@ def run_single_experiment(
             control_action=0,        # Hillstrom: 通常 0 是 control
             mu_model_type=meta_learner_mu_model_type,
             random_state=seed,
+            mu_hparams=meta_mu_hparams,
         )
 
         # 2) predict individual best action on IMPLEMENTATION set
@@ -502,6 +517,7 @@ def run_single_experiment(
                 n_folds=3,
                 mu_model_type=meta_learner_mu_model_type,
                 tau_model_type=tau_model_type_from_mu(meta_learner_mu_model_type),
+                mu_hparams=meta_mu_hparams,
             )
 
             # 2) predict individual best action on IMPLEMENTATION
@@ -518,6 +534,7 @@ def run_single_experiment(
                 n_folds=3,
                 mu_model_type=meta_learner_mu_model_type,
                 tau_model_type=tau_model_type_from_mu(meta_learner_mu_model_type),
+                mu_hparams=meta_mu_hparams,
             )
 
             # 2) predict individual best action on IMPLEMENTATION
@@ -625,7 +642,7 @@ def run_single_experiment(
                 random_state=seed,
                 value_type_dams=value_type_dams,
                 action_method=action_method,
-                n_folds=5,
+                n_folds=n_folds_dams,
             )
         )
         sim_result["kmeans_dams"]["best_M"] = best_M_kmeans_dams
@@ -715,7 +732,7 @@ def run_single_experiment(
                 random_state=seed,
                 value_type_dams=value_type_dams,
                 action_method=action_method,
-                n_folds=5,
+                n_folds=n_folds_dams,
             )
         )
         
@@ -808,7 +825,7 @@ def run_single_experiment(
                 random_state=seed,
                 value_type_dams=value_type_dams,
                 action_method=action_method,
-                n_folds=5,
+                n_folds=n_folds_dams,
             )
         )
         sim_result["clr_dams"]["best_M"] = best_M_clr_dams
@@ -863,7 +880,7 @@ def run_single_experiment(
             value_type_dast=value_type_dast,
             value_type_dams=value_type_dams,
             action_method=action_method,
-            n_folds=5,
+            n_folds=n_folds_dams,
         )
         
         sim_result["dast"]["best_M"] = best_M_dast
@@ -908,7 +925,7 @@ def run_single_experiment(
             min_leaf_size=10,
             value_type_dams=value_type_dams,
             action_method=action_method,
-            n_folds=1,  # TEMP: heldout
+            n_folds=1,  # heldout
         )
         action_mst = estimate_segment_policy(
             X_pilot, y_pilot, D_pilot, seg_labels_pilot_mst,
@@ -1029,6 +1046,13 @@ def _load_experiment_checkpoint(out_path: str, expected_params: dict) -> tuple[d
     Load an existing checkpoint or return a fresh experiment_data dict.
     Returns (experiment_data, already_complete).
     """
+    # Pre-CLI checkpoints omitted these keys; treat missing as historical hardcodes.
+    _legacy_fold_defaults = {
+        "n_folds_dams": 5,
+        "n_folds_mst": 1,
+        "n_folds_dr": 3,
+    }
+
     if not os.path.isfile(out_path):
         return {
             "params": dict(expected_params),
@@ -1045,7 +1069,10 @@ def _load_experiment_checkpoint(out_path: str, expected_params: dict) -> tuple[d
     saved = experiment_data["params"]
     mismatches = []
     for key, expected in expected_params.items():
-        saved_val = saved.get(key)
+        if key not in saved and key in _legacy_fold_defaults:
+            saved_val = _legacy_fold_defaults[key]
+        else:
+            saved_val = saved.get(key)
         if key == "out_path":
             if normalize_main_pkl_path(str(saved_val or "")) != normalize_main_pkl_path(
                 str(expected)
@@ -1066,6 +1093,9 @@ def _load_experiment_checkpoint(out_path: str, expected_params: dict) -> tuple[d
 
     n_done = len(experiment_data["results"])
     n_sim = int(saved.get("N_sim", expected_params["N_sim"]))
+    # Backfill fold params onto legacy checkpoints so run_params.json stays complete.
+    for key in _legacy_fold_defaults:
+        saved.setdefault(key, expected_params[key])
     if n_done >= n_sim:
         print(f"Checkpoint already complete ({n_done}/{n_sim}): {out_path}")
         return experiment_data, True
@@ -1093,6 +1123,10 @@ def run_multiple_experiments(
     action_method,
     meta_learner_mu_model_type=None,
     save_offline_data=True,
+    n_folds_dams=5,
+    mu_hparams_json=None,
+    ope_mu_hparams=None,
+    meta_mu_hparams=None,
 ):
     if meta_learner_mu_model_type is None:
         meta_learner_mu_model_type = META_LEARNER_MU_MODEL_TYPE
@@ -1115,6 +1149,12 @@ def run_multiple_experiments(
         "mu_model_type": mu_model_type,
         "meta_learner_mu_model_type": meta_learner_mu_model_type,
         "action_method": action_method,
+        "n_folds_dams": int(n_folds_dams),
+        "n_folds_mst": 1,
+        "n_folds_dr": 3,
+        "mu_hparams_json": mu_hparams_json,
+        "ope_mu_hparams": ope_mu_hparams,
+        "meta_mu_hparams": meta_mu_hparams,
         "out_path": out_path,
         "ALGO_LIST": list(ALGO_LIST),
         "eval_methods": list(eval_methods),
@@ -1179,6 +1219,9 @@ def run_multiple_experiments(
                 seed=int(seed),
                 save_offline_data=save_offline_data,
                 action_method=action_method,
+                n_folds_dams=n_folds_dams,
+                ope_mu_hparams=ope_mu_hparams,
+                meta_mu_hparams=meta_mu_hparams,
             )
             experiment_data["results"].append(res)
             experiment_data["params"]["seeds"].append(int(seed))
@@ -1310,6 +1353,23 @@ if __name__ == "__main__":
         help="Number of successful simulation runs (default: 100)",
     )
 
+    parser.add_argument(
+        "--n_folds_dams",
+        type=int,
+        default=5,
+        help="K-fold for DAMS M-selection (DAST/kmeans_dams/gmm_dams/clr_dams; default: 5)",
+    )
+
+    parser.add_argument(
+        "--mu_hparams_json",
+        type=str,
+        default=None,
+        help=(
+            "Optional μ hparams JSON. If omitted, loads permanent "
+            "hparams/{dataset}/{target}.json when present; else factory defaults."
+        ),
+    )
+
     args = parser.parse_args()
 
     pilot_frac = args.pilot_frac  # fraction of data for pilot
@@ -1318,6 +1378,23 @@ if __name__ == "__main__":
     if args.seed_sequence is not None:
         random.seed(args.seed_sequence)
         print(f"Using fixed sequence seed: {args.seed_sequence}")
+
+    mu_hparams_path, ope_mu_hparams, meta_mu_hparams = resolve_mu_hparams(
+        dataset=args.dataset,
+        target=args.target,
+        mu_model_type=args.mu_model_type,
+        meta_learner_mu_model_type=args.meta_learner_mu_model_type,
+        explicit_path=args.mu_hparams_json,
+    )
+    if mu_hparams_path:
+        print(f"Loaded permanent μ hparams from {mu_hparams_path}")
+        print(f"  ope ({args.mu_model_type}): {ope_mu_hparams}")
+        print(f"  meta ({args.meta_learner_mu_model_type}): {meta_mu_hparams}")
+    else:
+        print(
+            "[WARN] No permanent μ hparams found; using factory defaults. "
+            "Run: python finetune_mu.py --dataset ... --target ..."
+        )
 
     run_multiple_experiments(
         N_sim=args.N_sim,
@@ -1333,4 +1410,8 @@ if __name__ == "__main__":
         value_type_dams=args.value_type_dams,
         seed_sequence=args.seed_sequence if args.seed_sequence is not None else None,
         action_method=args.action_method,
+        n_folds_dams=args.n_folds_dams,
+        mu_hparams_json=mu_hparams_path,
+        ope_mu_hparams=ope_mu_hparams,
+        meta_mu_hparams=meta_mu_hparams,
     )

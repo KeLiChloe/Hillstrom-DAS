@@ -8,7 +8,7 @@ def _clip_prob(p, eps=1e-6):
 
 
 def _fit_mu_models_by_action(
-    X_train, D_train, y_train, K, model_type, *, random_state: int = 0
+    X_train, D_train, y_train, K, model_type, *, random_state: int = 0, mu_hparams=None
 ):
     """Fit mu_a(x)=E[Y|X,D=a] on a training split."""
     mu_models = {}
@@ -21,6 +21,7 @@ def _fit_mu_models_by_action(
             model_type,
             random_state=random_state,
             y=ya if model_type == "lightgbm_clf" else None,
+            params=mu_hparams,
         )
         m.fit(X_train[mask], ya)
         mu_models[a] = m
@@ -37,6 +38,7 @@ def fit_dr_learner_binary(
     n_folds: int,
     mu_model_type: str,
     tau_model_type: str,
+    mu_hparams=None,
 ):
     X = np.asarray(X)
     D = np.asarray(D).astype(int).reshape(-1)
@@ -60,7 +62,9 @@ def fit_dr_learner_binary(
         X_te, D_te, y_te = X[test_idx], D[test_idx], y[test_idx]
 
         # nuisances on TRAIN folds
-        mu_models = _fit_mu_models_by_action(X_tr, D_tr, y_tr, K=2, model_type=mu_model_type)
+        mu_models = _fit_mu_models_by_action(
+            X_tr, D_tr, y_tr, K=2, model_type=mu_model_type, mu_hparams=mu_hparams
+        )
 
         # pseudo on HELD-OUT fold
         m0 = predict_mu_values(mu_models[0], X_te)
@@ -69,12 +73,14 @@ def fit_dr_learner_binary(
         pseudo = ((D_te - e) / (e * (1 - e))) * (y_te - mD) + (m1 - m0)
 
         # second-stage model trained on THIS fold's pseudo
-        tau_f = make_mu_model(tau_model_type, random_state=fold)
+        tau_f = make_mu_model(tau_model_type, random_state=fold, params=mu_hparams)
         tau_f.fit(X_te, pseudo)
         tau_models.append(tau_f)
 
     # optional: fit nuisance on all data for better outcome prediction in policy
-    mu_models_full = _fit_mu_models_by_action(X, D, y, K=2, model_type=mu_model_type)
+    mu_models_full = _fit_mu_models_by_action(
+        X, D, y, K=2, model_type=mu_model_type, mu_hparams=mu_hparams
+    )
 
     return {
         "type": "binary_crossfit_ensemble",
@@ -111,6 +117,7 @@ def fit_dr_learner_k_armed(
     n_folds: int,
     mu_model_type: str,
     tau_model_type: str,
+    mu_hparams=None,
 ):
     X = np.asarray(X)
     D = np.asarray(D).astype(int).reshape(-1)
@@ -142,7 +149,9 @@ def fit_dr_learner_k_armed(
         X_te, D_te, y_te = X[test_idx], D[test_idx], y[test_idx]
 
         # nuisances on TRAIN folds
-        mu_models = _fit_mu_models_by_action(X_tr, D_tr, y_tr, K=K, model_type=mu_model_type)
+        mu_models = _fit_mu_models_by_action(
+            X_tr, D_tr, y_tr, K=K, model_type=mu_model_type, mu_hparams=mu_hparams
+        )
 
         # pseudo on HELD-OUT fold
         mu_hat = {a: predict_mu_values(mu_models[a], X_te) for a in range(K)}
@@ -158,12 +167,14 @@ def fit_dr_learner_k_armed(
 
             pseudo = (mua - mub) + (Ia / pia) * (y_te - mua) - (Ib / pib) * (y_te - mub)
 
-            tau_f = make_mu_model(tau_model_type, random_state=fold)
+            tau_f = make_mu_model(tau_model_type, random_state=fold, params=mu_hparams)
             tau_f.fit(X_te, pseudo)
             tau_models_by_a[a].append(tau_f)
 
     # optional: fit nuisance on all data for better baseline prediction in policy
-    mu_models_full = _fit_mu_models_by_action(X, D, y, K=K, model_type=mu_model_type)
+    mu_models_full = _fit_mu_models_by_action(
+        X, D, y, K=K, model_type=mu_model_type, mu_hparams=mu_hparams
+    )
 
     return {
         "type": "k_armed_crossfit_ensemble",

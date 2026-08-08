@@ -26,6 +26,7 @@ def fit_s_learner(
     K: int,
     model_type: str,
     random_state: int,
+    mu_hparams=None,
 ):
     """
     训练 multi-action S-learner：一个模型拟合 mu(x,a)=E[Y|X,D=a]
@@ -42,6 +43,7 @@ def fit_s_learner(
         model_type,
         random_state=random_state,
         y=y if model_type == "lightgbm_clf" else None,
+        params=mu_hparams,
     )
     model.fit(X_s, y)
     return model

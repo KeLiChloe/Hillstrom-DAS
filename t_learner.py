@@ -10,6 +10,7 @@ def fit_t_learner(
     K: int,
     model_type: str,
     random_state: int,
+    mu_hparams=None,
 ):
     """
     训练 multi-action T-learner：
@@ -35,6 +36,7 @@ def fit_t_learner(
             model_type,
             random_state=random_state,
             y=ya if model_type == "lightgbm_clf" else None,
+            params=mu_hparams,
         )
         model.fit(Xa, ya)
         models.append(model)

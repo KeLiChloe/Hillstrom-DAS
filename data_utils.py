@@ -403,7 +403,7 @@ def load_lenta(sample_frac, seed, target_col=None):
 # 1. pilot / implementation 划分 + outcome model + Gamma (K-action)
 # =========================================================
 def prepare_pilot_impl(
-    X, y, D, pilot_frac, mu_model_type, return_impl_customer_id=False
+    X, y, D, pilot_frac, mu_model_type, return_impl_customer_id=False, mu_hparams=None
 ):
     """
     K-action 版本
@@ -453,6 +453,7 @@ def prepare_pilot_impl(
         D_pilot,
         y_fit,
         mu_model_type=mu_model_type,
+        mu_hparams=mu_hparams,
     )
 
     K = int(np.max(D)) + 1   # 用全数据 D，不用 D_pilot
