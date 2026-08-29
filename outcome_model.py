@@ -136,10 +136,10 @@ def predict_mu_values(model, X) -> np.ndarray:
     return model.predict(X).astype(float)
 
 
-def _safe_fit(model, X, y, min_pos=10):
+def _safe_fit(model, X, y, min_pos=1):
     """
     - y 只有一个取值 => 报错
-    - 若是 {0,1} 二分类 => 正类数 < min_pos 报错
+    - 若是 {0,1} 二分类 => 正类数 < min_pos 报错（默认 1：至少要有一个正例）
     """
     y = np.asarray(y)
     uniq = np.unique(y)
@@ -179,7 +179,7 @@ def fit_mu_models(X, D, y, mu_model_type, random_state=42, mu_hparams=None):
             y=ya if mu_model_type == "lightgbm_clf" else None,
             params=mu_hparams,
         )
-        model = _safe_fit(model, Xa, ya, min_pos=2)
+        model = _safe_fit(model, Xa, ya, min_pos=1)
         mu_models[int(a)] = model
 
     return mu_models

@@ -1,6 +1,8 @@
 import numpy as np
 from sklearn.metrics import silhouette_score
 
+from estimation import gamma_with_action_cost
+
 
 def kmeans_silhouette_score(seg_model, X_pilot):
     """
@@ -22,7 +24,16 @@ def kmeans_silhouette_score(seg_model, X_pilot):
     return silhouette_score(X_pilot, labels)
 
 
-def dams_score(seg_model, X_val, D_val, y_val, Gamma_val, action, value_type_dams):
+def dams_score(
+    seg_model,
+    X_val,
+    D_val,
+    y_val,
+    Gamma_val,
+    action,
+    value_type_dams,
+    treatment_cost: float = 0.0,
+):
     """
     Decision-Aware Model Selection 的 scoring 函数（Algorithm 3），
     K-action 通用版本。
@@ -48,6 +59,7 @@ def dams_score(seg_model, X_val, D_val, y_val, Gamma_val, action, value_type_dam
     float
         DAMS 的 validation score（平均 policy value）
     """
+    treatment_cost = float(treatment_cost)
     X_val = np.asarray(X_val)
     D_val = np.asarray(D_val).astype(int)
     y_val = np.asarray(y_val, dtype=float)
@@ -67,10 +79,18 @@ def dams_score(seg_model, X_val, D_val, y_val, Gamma_val, action, value_type_dam
     if value_type_dams == "hybrid":
         v_hat[mask_match] = y_val[mask_match]
         idx_mismatch = np.where(mask_mismatch)[0]
-        v_hat[idx_mismatch] = Gamma_val[idx_mismatch, a_i[idx_mismatch]]
+        v_hat[idx_mismatch] = gamma_with_action_cost(
+            Gamma_val[idx_mismatch, a_i[idx_mismatch]],
+            a_i[idx_mismatch],
+            treatment_cost,
+        )
     elif value_type_dams == "dr":
         N = X_val.shape[0]
-        v_hat = Gamma_val[np.arange(N), a_i]
+        v_hat = gamma_with_action_cost(
+            Gamma_val[np.arange(N), a_i],
+            a_i,
+            treatment_cost,
+        )
     else:
         raise ValueError(
             f"Unknown value_type_dams='{value_type_dams}'. Expected 'hybrid' or 'dr'."

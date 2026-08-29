@@ -2,5 +2,7 @@ __pycache__
 figures/
 archived
 *.png
+logs/*
+
 # STZ offline payloads (large; keep local only)
 *_stz.pkl

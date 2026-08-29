@@ -6,7 +6,7 @@ matplotlib>=3.7
 seaborn>=0.13
 lightgbm>=4.0
 
-# Uplift datasets (Hillstrom/Criteo/Lenta loaders)
+# Uplift datasets (Hillstrom/Criteo loaders)
 scikit-uplift>=0.5
 
 # R bridge used by policytree/causal_forest modules

@@ -1,0 +1,95 @@
+{
+  "models": {
+    "lightgbm_clf": {
+      "cv_score": 0.6241838648513683,
+      "metric": "log_loss",
+      "mu_model_type": "lightgbm_clf",
+      "params": {
+        "learning_rate": 0.05,
+        "min_child_samples": 20,
+        "n_estimators": 300,
+        "num_leaves": 31
+      }
+    },
+    "lightgbm_reg": {
+      "cv_score": 0.12119713916170179,
+      "metric": "mse",
+      "mu_model_type": "lightgbm_reg",
+      "params": {
+        "learning_rate": 0.05,
+        "min_child_samples": 50,
+        "n_estimators": 100,
+        "num_leaves": 8
+      }
+    },
+    "linear": {
+      "cv_score": 0.12079633562772847,
+      "metric": "mse",
+      "mu_model_type": "linear",
+      "params": {}
+    },
+    "logistic": {
+      "cv_score": 0.3991690339400318,
+      "metric": "log_loss",
+      "mu_model_type": "logistic",
+      "params": {
+        "C": 0.1
+      }
+    },
+    "mlp_clf": {
+      "cv_score": 0.40300897406982494,
+      "metric": "log_loss",
+      "mu_model_type": "mlp_clf",
+      "params": {
+        "alpha": 0.001,
+        "hidden_layer_sizes": [
+          64,
+          32
+        ]
+      }
+    },
+    "mlp_reg": {
+      "cv_score": 0.12212593762646125,
+      "metric": "mse",
+      "mu_model_type": "mlp_reg",
+      "params": {
+        "alpha": 0.01,
+        "hidden_layer_sizes": [
+          32
+        ]
+      }
+    }
+  },
+  "protocol": {
+    "dataset": "hillstrom",
+    "n_folds": 5,
+    "sample_frac": 1.0,
+    "seed": 42,
+    "target": "visit",
+    "tuning_on": "full_sample",
+    "types_completed": [
+      "linear",
+      "mlp_reg",
+      "lightgbm_reg",
+      "logistic",
+      "mlp_clf",
+      "lightgbm_clf"
+    ],
+    "types_planned": [
+      "linear",
+      "mlp_reg",
+      "lightgbm_reg",
+      "logistic",
+      "mlp_clf",
+      "lightgbm_clf"
+    ],
+    "types_tuned": [
+      "linear",
+      "mlp_reg",
+      "lightgbm_reg",
+      "logistic",
+      "mlp_clf",
+      "lightgbm_clf"
+    ]
+  }
+}

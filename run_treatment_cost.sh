@@ -1,43 +1,39 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-EXP_ROOT="${EXP_ROOT:-exp_july}"
-DATASET="${DATASET:-hillstrom}"
+EXP_ROOT="${EXP_ROOT:-exp_aug}"
+DATASET="${DATASET:-criteo}"
 TARGET="${TARGET:-conversion}"
-SAMPLE_FRAC="${SAMPLE_FRAC:-1}"
+SAMPLE_FRAC="${SAMPLE_FRAC:-0.1}"
+PILOT_FRAC="${PILOT_FRAC:-0.40}"
 MU_MODEL_TYPE="${MU_MODEL_TYPE:-lightgbm_reg}"
 META_LEARNER_MU_MODEL_TYPE="${META_LEARNER_MU_MODEL_TYPE:-mlp_reg}"
 VALUE_TYPE_DAST="${VALUE_TYPE_DAST:-hybrid}"
 VALUE_TYPE_DAMS="${VALUE_TYPE_DAMS:-hybrid}"
 ACTION_METHOD="${ACTION_METHOD:-diff_in_means}"
-TREATMENT_COST="${TREATMENT_COST:-0}"
-SEED_SEQUENCE="${SEED_SEQUENCE:-899}"
+SEED_SEQUENCE="${SEED_SEQUENCE:-1088}"
 N_SIM="${N_SIM:-50}"
 N_FOLDS_DAMS="${N_FOLDS_DAMS:-5}"
 
-BASE_OUTDIR="${EXP_ROOT}/${DATASET}/${TARGET}/${MU_MODEL_TYPE}/pilot_frac_with_fixed_${SAMPLE_FRAC}_sample_frac"
-OUTDIR="${BASE_OUTDIR}"
-if [[ -e "${OUTDIR}" ]]; then
-    i=1
-    while [[ -e "${BASE_OUTDIR}(${i})" ]]; do
-        i=$((i + 1))
-    done
-    OUTDIR="${BASE_OUTDIR}(${i})"
-    echo "[INFO] ${BASE_OUTDIR} exists → using ${OUTDIR}"
-fi
-mkdir -p "${OUTDIR}"
+# Space-separated cost grid: 0, 0.0005, ..., 0.002 (step 0.0005)
+COST_VALUES="${COST_VALUES:-0 0.0005 0.001 0.0015 0.002}"
 
-for pilot_int in $(seq 5 5 50); do
-    pilot_frac=$(printf "0.%02d" "${pilot_int}")
-    pilot_tag=$(printf "%03d" "${pilot_int}")
-    outpath="${OUTDIR}/pilot_frac_${pilot_tag}.pkl"
+OUTDIR="${EXP_ROOT}/${DATASET}/${TARGET}/${MU_MODEL_TYPE}/treatment_cost_with_fixed_${SAMPLE_FRAC}_sample_frac_${PILOT_FRAC}_pilot_frac"
+mkdir -p "${OUTDIR}"
+echo "[INFO] outdir=${OUTDIR}"
+echo "[INFO] cost grid: ${COST_VALUES}"
+
+for cost in ${COST_VALUES}; do
+    # Filesystem tag: 0 -> cost_0, 0.01 -> cost_0p01
+    cost_tag=$(echo "${cost}" | sed 's/\./p/')
+    outpath="${OUTDIR}/treatment_cost_${cost_tag}.pkl"
 
     if [[ -f "${outpath}" ]]; then
         echo "[SKIP] ${outpath} already exists"
         continue
     fi
 
-    echo "[RUN ] pilot_frac=${pilot_frac} -> ${outpath}"
+    echo "[RUN ] treatment_cost=${cost} -> ${outpath}"
     python run_sims.py \
         --mu_model_type "${MU_MODEL_TYPE}" \
         --meta_learner_mu_model_type "${META_LEARNER_MU_MODEL_TYPE}" \
@@ -47,9 +43,9 @@ for pilot_int in $(seq 5 5 50); do
         --dataset "${DATASET}" \
         --target "${TARGET}" \
         --sample_frac "${SAMPLE_FRAC}" \
-        --pilot_frac "${pilot_frac}" \
+        --pilot_frac "${PILOT_FRAC}" \
         --action_method "${ACTION_METHOD}" \
-        --treatment_cost "${TREATMENT_COST}" \
+        --treatment_cost "${cost}" \
         --N_sim "${N_SIM}" \
         --n_folds_dams "${N_FOLDS_DAMS}" \
         --outpath "${outpath}"

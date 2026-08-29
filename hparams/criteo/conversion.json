@@ -1,0 +1,362 @@
+{
+  "dast": {
+    "lightgbm_clf|diff_in_means|hybrid|hybrid": {
+      "best_M": 10,
+      "cv_score": 0.021241850722006596,
+      "grid_results": [
+        {
+          "best_M": 10,
+          "cv_score": 0.021241850722006596,
+          "min_leaf_size": 5
+        }
+      ],
+      "min_leaf_size": 5,
+      "protocol": {
+        "M_candidates": [
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10
+        ],
+        "action_method": "diff_in_means",
+        "dataset": "criteo",
+        "leaf_grid": [
+          5,
+          10,
+          20,
+          50
+        ],
+        "mu_model_type": "lightgbm_clf",
+        "n_folds_dams": 5,
+        "sample_frac": 1.0,
+        "seed": 42,
+        "target": "conversion",
+        "value_type_dams": "hybrid",
+        "value_type_dast": "hybrid"
+      },
+      "status": "in_progress"
+    },
+    "lightgbm_reg|diff_in_means|hybrid|hybrid": {
+      "best_M": 10,
+      "cv_score": 0.0030710674601780947,
+      "grid_results": [
+        {
+          "best_M": 8,
+          "cv_score": 0.003063942424598921,
+          "min_leaf_size": 5
+        },
+        {
+          "best_M": 10,
+          "cv_score": 0.0030647403585950606,
+          "min_leaf_size": 10
+        },
+        {
+          "best_M": 10,
+          "cv_score": 0.0030710674601780947,
+          "min_leaf_size": 20
+        },
+        {
+          "best_M": 9,
+          "cv_score": 0.0030640934035570193,
+          "min_leaf_size": 50
+        }
+      ],
+      "min_leaf_size": 20,
+      "protocol": {
+        "M_candidates": [
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10
+        ],
+        "action_method": "diff_in_means",
+        "dataset": "criteo",
+        "leaf_grid": [
+          5,
+          10,
+          20,
+          50
+        ],
+        "mu_model_type": "lightgbm_reg",
+        "n_folds_dams": 5,
+        "sample_frac": 1.0,
+        "seed": 42,
+        "target": "conversion",
+        "value_type_dams": "hybrid",
+        "value_type_dast": "hybrid"
+      },
+      "status": "complete"
+    },
+    "linear|diff_in_means|hybrid|hybrid": {
+      "best_M": 10,
+      "cv_score": 0.00307703819746048,
+      "grid_results": [
+        {
+          "best_M": 10,
+          "cv_score": 0.0030674673923844287,
+          "min_leaf_size": 5
+        },
+        {
+          "best_M": 10,
+          "cv_score": 0.00307703819746048,
+          "min_leaf_size": 10
+        },
+        {
+          "best_M": 10,
+          "cv_score": 0.003072161606264866,
+          "min_leaf_size": 20
+        },
+        {
+          "best_M": 8,
+          "cv_score": 0.003064919574458094,
+          "min_leaf_size": 50
+        }
+      ],
+      "min_leaf_size": 10,
+      "protocol": {
+        "M_candidates": [
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10
+        ],
+        "action_method": "diff_in_means",
+        "dataset": "criteo",
+        "leaf_grid": [
+          5,
+          10,
+          20,
+          50
+        ],
+        "mu_model_type": "linear",
+        "n_folds_dams": 5,
+        "sample_frac": 1.0,
+        "seed": 42,
+        "target": "conversion",
+        "value_type_dams": "hybrid",
+        "value_type_dast": "hybrid"
+      },
+      "status": "complete"
+    },
+    "logistic|diff_in_means|hybrid|hybrid": {
+      "best_M": 2,
+      "cv_score": 0.003095158640067485,
+      "grid_results": [
+        {
+          "best_M": 2,
+          "cv_score": 0.003095158640067485,
+          "min_leaf_size": 5
+        },
+        {
+          "best_M": 2,
+          "cv_score": 0.003095158640067485,
+          "min_leaf_size": 10
+        },
+        {
+          "best_M": 2,
+          "cv_score": 0.003095158640067485,
+          "min_leaf_size": 20
+        },
+        {
+          "best_M": 2,
+          "cv_score": 0.003095158640067485,
+          "min_leaf_size": 50
+        }
+      ],
+      "min_leaf_size": 5,
+      "protocol": {
+        "M_candidates": [
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10
+        ],
+        "action_method": "diff_in_means",
+        "dataset": "criteo",
+        "leaf_grid": [
+          5,
+          10,
+          20,
+          50
+        ],
+        "mu_model_type": "logistic",
+        "n_folds_dams": 5,
+        "sample_frac": 1.0,
+        "seed": 42,
+        "target": "conversion",
+        "value_type_dams": "hybrid",
+        "value_type_dast": "hybrid"
+      },
+      "status": "complete"
+    },
+    "mlp_reg|diff_in_means|hybrid|hybrid": {
+      "best_M": 10,
+      "cv_score": 0.0032071727885310494,
+      "grid_results": [
+        {
+          "best_M": 10,
+          "cv_score": 0.0031827185476142154,
+          "min_leaf_size": 5
+        },
+        {
+          "best_M": 9,
+          "cv_score": 0.0031844317825501325,
+          "min_leaf_size": 10
+        },
+        {
+          "best_M": 10,
+          "cv_score": 0.0031987721012609,
+          "min_leaf_size": 20
+        },
+        {
+          "best_M": 10,
+          "cv_score": 0.0032071727885310494,
+          "min_leaf_size": 50
+        }
+      ],
+      "min_leaf_size": 50,
+      "protocol": {
+        "M_candidates": [
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10
+        ],
+        "action_method": "diff_in_means",
+        "dataset": "criteo",
+        "leaf_grid": [
+          5,
+          10,
+          20,
+          50
+        ],
+        "mu_model_type": "mlp_reg",
+        "n_folds_dams": 5,
+        "sample_frac": 1.0,
+        "seed": 42,
+        "target": "conversion",
+        "value_type_dams": "hybrid",
+        "value_type_dast": "hybrid"
+      },
+      "status": "complete"
+    }
+  },
+  "models": {
+    "lightgbm_clf": {
+      "cv_score": 0.17086107385390598,
+      "metric": "log_loss",
+      "mu_model_type": "lightgbm_clf",
+      "params": {
+        "learning_rate": 0.03,
+        "min_child_samples": 20,
+        "n_estimators": 300,
+        "num_leaves": 31
+      }
+    },
+    "lightgbm_reg": {
+      "cv_score": 0.0024988028172023536,
+      "metric": "mse",
+      "mu_model_type": "lightgbm_reg",
+      "params": {
+        "learning_rate": 0.05,
+        "min_child_samples": 50,
+        "n_estimators": 100,
+        "num_leaves": 8
+      }
+    },
+    "linear": {
+      "cv_score": 0.0025541124197935817,
+      "metric": "mse",
+      "mu_model_type": "linear",
+      "params": {}
+    },
+    "logistic": {
+      "cv_score": 0.012647076117183983,
+      "metric": "log_loss",
+      "mu_model_type": "logistic",
+      "params": {
+        "C": 10.0
+      }
+    },
+    "mlp_clf": {
+      "cv_score": 0.01246197560870799,
+      "metric": "log_loss",
+      "mu_model_type": "mlp_clf",
+      "params": {
+        "alpha": 0.01,
+        "hidden_layer_sizes": [
+          64
+        ]
+      }
+    },
+    "mlp_reg": {
+      "cv_score": 0.002539607857507773,
+      "metric": "mse",
+      "mu_model_type": "mlp_reg",
+      "params": {
+        "alpha": 0.01,
+        "hidden_layer_sizes": [
+          64,
+          32
+        ]
+      }
+    }
+  },
+  "protocol": {
+    "dataset": "criteo",
+    "n_folds": 5,
+    "sample_frac": 1.0,
+    "seed": 42,
+    "target": "conversion",
+    "tuning_on": "full_sample",
+    "types_completed": [
+      "linear",
+      "mlp_reg",
+      "lightgbm_reg",
+      "logistic",
+      "mlp_clf",
+      "lightgbm_clf"
+    ],
+    "types_planned": [
+      "linear",
+      "mlp_reg",
+      "lightgbm_reg",
+      "logistic",
+      "mlp_clf",
+      "lightgbm_clf"
+    ],
+    "types_tuned": [
+      "linear",
+      "mlp_reg",
+      "lightgbm_reg",
+      "logistic",
+      "mlp_clf",
+      "lightgbm_clf"
+    ]
+  }
+}

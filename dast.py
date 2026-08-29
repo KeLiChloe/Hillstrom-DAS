@@ -15,7 +15,7 @@ exactly M leaves are reached or no positive-gain split exists.
 import copy
 import warnings
 import numpy as np
-from estimation import _action_for_subset
+from estimation import _action_for_subset, gamma_with_action_cost
 
 
 class DASTNode:
@@ -56,6 +56,7 @@ class DASTree:
         min_leaf_size: int,
         value_type_dast: str,
         action_method: str,
+        treatment_cost: float = 0.0,
     ):
         """
         Parameters
@@ -82,6 +83,7 @@ class DASTree:
         self.min_leaf_size = min_leaf_size
         self.value_type_dast = value_type_dast
         self.action_method = action_method
+        self.treatment_cost = float(treatment_cost)
 
         self.actions = np.unique(self.D)
         self.K = int(self.gamma.shape[1])
@@ -281,6 +283,7 @@ class DASTree:
         return _action_for_subset(
             self.x, self.y, self.D, self.gamma,
             indices, self.action_method, self.actions,
+            self.treatment_cost,
         )
 
     # ======================================================================
@@ -311,10 +314,14 @@ class DASTree:
         Gamma_L = self.gamma[indices, :]
 
         mask_a = (D_L == best_a)
+        gamma_best = gamma_with_action_cost(
+            Gamma_L[:, best_a], best_a, self.treatment_cost,
+            reference_action=int(np.min(self.actions)),
+        )
         if self.value_type_dast == 'hybrid':
-            v = np.where(mask_a, y_L, Gamma_L[:, best_a])
+            v = np.where(mask_a, y_L, gamma_best)
         else:  # 'dr'
-            v = Gamma_L[:, best_a]
+            v = gamma_best
 
         return float(v.sum())
 

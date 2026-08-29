@@ -7,9 +7,9 @@ Pickle layout (two files when save_offline_data=True):
       data["params"]
       data["results"][i]["seed"], ["dast"], ["t_learner"], ...
 
-  STZ   *_stz.pkl sidecar  (local only, for STZ evaluator)
+  STZ   *_stz.pkl sidecar  (local only, for STZ / offline evaluators)
       data["results"][i]["seed"], ["implementation"]
-          ["customer_id"], ["D"], ["y"], ["actions"][algo]
+          ["customer_id"], ["D"], ["y"], ["Gamma"], ["mu_impl"], ["actions"][algo]
 
 ⚠ 现在是 K-action 版本：
   - D 可以是 {0,1,...,K-1}，例如 Hillstrom 三个 action。
@@ -27,7 +27,7 @@ import random
 
 from exp_io import write_run_params_json
 from outcome_model import META_LEARNER_MU_MODEL_TYPE, tau_model_type_from_mu
-from mu_hparams import resolve_mu_hparams
+from mu_hparams import resolve_hparams
 
 
 # ---------------------------------------------------------------------------
@@ -63,17 +63,18 @@ def _set_thread_env(n: int = 1):
 from data_utils import (
     load_criteo,
     load_hillstrom,
-    load_lenta,
     prepare_pilot_impl,
     verify_impl_customer_alignment,
 )
 
-from estimation import estimate_segment_policy
+from estimation import estimate_segment_policy, cost_adjusted_argmax_rows
 from evaluation import (  # 已改成多 action 版
     evaluate_policy_dual_dr,
     evaluate_policy_dr,
     evaluate_policy_dm,
     evaluate_policy_ipw,
+    compute_dr_gamma_matrix,
+    _build_mu_matrix,
     _get_propensity_per_action,
 )
 from t_learner import fit_t_learner, predict_mu_t_learner_matrix
@@ -131,6 +132,32 @@ def _record_impl_action(impl_actions, algo, seg_labels_impl, action_per_segment=
         impl_actions[algo] = _impl_actions_from_segments(
             seg_labels_impl, action_per_segment
         )
+
+
+def _record_ope_scores(
+    sim_result,
+    algo: str,
+    *,
+    X_impl,
+    D_impl,
+    y_impl,
+    seg_labels_impl,
+    action_per_segment,
+    mu_models,
+):
+    """Store gross OPE scalars (dm, dual_dr, ipw, dr)."""
+    action = np.asarray(action_per_segment, dtype=int)
+    for eval in eval_methods:
+        value = eval_classes[eval](
+            X_impl,
+            D_impl,
+            y_impl,
+            seg_labels_impl,
+            mu_models,
+            action,
+            propensities=None,
+        )
+        sim_result[algo][eval] = float(value["value_mean"])
 
 
 def normalize_main_pkl_path(out_path: str) -> str:
@@ -225,6 +252,8 @@ def _attach_sim_implementation(
     D_cohort,
     y_cohort,
     cohort_size,
+    gamma_impl=None,
+    mu_impl=None,
 ):
     """
   Attach implementation-phase data to one simulation dict (one entry in
@@ -261,6 +290,26 @@ def _attach_sim_implementation(
             )
         actions[algo] = a[order].astype(np.int8)
 
+    gamma_out = None
+    if gamma_impl is not None:
+        gamma_arr = np.asarray(gamma_impl, dtype=np.float32)
+        if gamma_arr.shape[0] != n:
+            raise ValueError(
+                f"implementation alignment error for Gamma: "
+                f"rows={gamma_arr.shape[0]} != n_impl={n}"
+            )
+        gamma_out = gamma_arr[order]
+
+    mu_out = None
+    if mu_impl is not None:
+        mu_arr = np.asarray(mu_impl, dtype=np.float32)
+        if mu_arr.shape[0] != n:
+            raise ValueError(
+                f"implementation alignment error for mu_impl: "
+                f"rows={mu_arr.shape[0]} != n_impl={n}"
+            )
+        mu_out = mu_arr[order]
+
     verify_impl_customer_alignment(
         customer_id,
         D,
@@ -274,6 +323,8 @@ def _attach_sim_implementation(
         "customer_id": customer_id,
         "D": D,
         "y": y,
+        "Gamma": gamma_out,
+        "mu_impl": mu_out,
         "actions": actions,
         "cohort_size": int(cohort_size),
         "n_impl": int(n),
@@ -296,9 +347,16 @@ def run_single_experiment(
     n_folds_dams=5,
     ope_mu_hparams=None,
     meta_mu_hparams=None,
+    *,
+    min_leaf_size: int,
+    treatment_cost: float = 0.0,
 ):
     if meta_learner_mu_model_type is None:
         meta_learner_mu_model_type = META_LEARNER_MU_MODEL_TYPE
+    min_leaf_size = int(min_leaf_size)
+    treatment_cost = float(treatment_cost)
+    if treatment_cost > 0:
+        print(f"[run_sims] treatment_cost={treatment_cost} (net action selection enabled)")
     # --------------------------------------------------
     # Load dataset based on parameter
     # --------------------------------------------------
@@ -307,7 +365,6 @@ def run_single_experiment(
     dataset_loaders = {
         "hillstrom": load_hillstrom,
         "criteo": load_criteo,
-        "lenta": load_lenta,
     }
     
     if dataset not in dataset_loaders:
@@ -342,6 +399,16 @@ def run_single_experiment(
             impl_customer_id,
         ) = prep_out
         cohort_size = len(X)
+        gamma_impl = compute_dr_gamma_matrix(
+            X_impl,
+            D_impl,
+            y_impl,
+            mu_pilot_models,
+            propensities=None,
+        ).astype(np.float32)
+        mu_impl = _build_mu_matrix(
+            mu_pilot_models, X_impl, Gamma_pilot.shape[1]
+        ).astype(np.float32)
     else:
         (
             X_pilot,
@@ -353,6 +420,8 @@ def run_single_experiment(
             mu_pilot_models,
             Gamma_pilot,
         ) = prep_out
+        gamma_impl = None
+        mu_impl = None
 
     # K 个动作（0..K-1）
     action_K = Gamma_pilot.shape[1]
@@ -392,20 +461,23 @@ def run_single_experiment(
             X_impl,
         )
 
-        a_hat_t = np.argmax(mu_mat_impl_t, axis=1).astype(int)
+        a_hat_t = cost_adjusted_argmax_rows(
+            mu_mat_impl_t, treatment_cost=treatment_cost,
+        )
         seg_labels_impl_t = a_hat_t
         action_identity = np.arange(action_K, dtype=int)
 
-        for eval in eval_methods:
-            value_t = eval_classes[eval](
-                X_impl, D_impl, y_impl,
-                seg_labels_impl_t,
-                mu_pilot_models,
-                action_identity,
-                propensities=None,
-                 
-            )
-            sim_result["t_learner"][f"{eval}"] = float(value_t["value_mean"])
+        _record_ope_scores(
+            sim_result,
+            "t_learner",
+            X_impl=X_impl,
+            D_impl=D_impl,
+            y_impl=y_impl,
+            seg_labels_impl=seg_labels_impl_t,
+            action_per_segment=action_identity,
+            mu_models=mu_pilot_models,
+            
+        )
 
         t1 = time.perf_counter()
         sim_result["t_learner"]["time"] = float(t1 - t0)
@@ -433,19 +505,22 @@ def run_single_experiment(
             K=action_K,
              
         )
-        a_hat_s = np.argmax(mu_mat_impl_s, axis=1).astype(int)
+        a_hat_s = cost_adjusted_argmax_rows(
+            mu_mat_impl_s, treatment_cost=treatment_cost,
+        )
         seg_labels_impl_s = a_hat_s
         action_identity = np.arange(action_K, dtype=int)
-        for eval in eval_methods:
-            value_s = eval_classes[eval](
-                X_impl, D_impl, y_impl,
-                seg_labels_impl_s,
-                mu_pilot_models,        
-                action_identity,
-                propensities=None,
-                 
-            )
-            sim_result["s_learner"][f"{eval}"] = float(value_s["value_mean"])
+        _record_ope_scores(
+            sim_result,
+            "s_learner",
+            X_impl=X_impl,
+            D_impl=D_impl,
+            y_impl=y_impl,
+            seg_labels_impl=seg_labels_impl_s,
+            action_per_segment=action_identity,
+            mu_models=mu_pilot_models,
+            
+        )
 
         
         t1 = time.perf_counter()
@@ -477,22 +552,26 @@ def run_single_experiment(
             mu_pilot_models=mu_pilot_models,
              
         )
+        a_hat_x = cost_adjusted_argmax_rows(
+            mu_hat_x, treatment_cost=treatment_cost,
+        )
 
         # 3) evaluate with your existing multi-action dual DR evaluator
         # trick: treat each action as its own "segment id"
         seg_labels_impl_x = a_hat_x
         action_identity = np.arange(action_K, dtype=int)  # segment m -> action m
 
-        for eval in eval_methods:
-            value_x = eval_classes[eval](
-                X_impl, D_impl, y_impl,
-                seg_labels_impl_x,
-                mu_pilot_models,
-                action_identity,
-                propensities=None,
-                 
-            )
-            sim_result["x_learner"][f"{eval}"] = float(value_x["value_mean"])  
+        _record_ope_scores(
+            sim_result,
+            "x_learner",
+            X_impl=X_impl,
+            D_impl=D_impl,
+            y_impl=y_impl,
+            seg_labels_impl=seg_labels_impl_x,
+            action_per_segment=action_identity,
+            mu_models=mu_pilot_models,
+            
+        )
         
         t1 = time.perf_counter()
         sim_result["x_learner"]["time"] = float(t1 - t0)
@@ -521,7 +600,7 @@ def run_single_experiment(
             )
 
             # 2) predict individual best action on IMPLEMENTATION
-            a_hat_dr, _ = dr_learner_policy_k_armed(dr_model, X_impl)
+            a_hat_dr, mu_hat_dr = dr_learner_policy_k_armed(dr_model, X_impl)
         
         elif action_K == 2:
             e = float(pi_vec[1])
@@ -538,22 +617,27 @@ def run_single_experiment(
             )
 
             # 2) predict individual best action on IMPLEMENTATION
-            a_hat_dr, _ = dr_learner_policy_binary(dr_model, X_impl)
+            a_hat_dr, mu_hat_dr = dr_learner_policy_binary(dr_model, X_impl)
+
+        a_hat_dr = cost_adjusted_argmax_rows(
+            mu_hat_dr, treatment_cost=treatment_cost,
+        )
             
         # 3) evaluate with your unified OPE interface
         seg_labels_impl_dr = a_hat_dr.astype(int)
         action_identity = np.arange(action_K, dtype=int)
 
-        for eval in eval_methods:
-            value_dr = eval_classes[eval](
-                X_impl, D_impl, y_impl,
-                seg_labels_impl_dr,
-                mu_pilot_models,
-                action_identity,
-                propensities=None,
-                 
-            )
-            sim_result["dr_learner"][f"{eval}"] = float(value_dr["value_mean"])
+        _record_ope_scores(
+            sim_result,
+            "dr_learner",
+            X_impl=X_impl,
+            D_impl=D_impl,
+            y_impl=y_impl,
+            seg_labels_impl=seg_labels_impl_dr,
+            action_per_segment=action_identity,
+            mu_models=mu_pilot_models,
+            
+        )
 
         t1 = time.perf_counter()
         sim_result["dr_learner"]["time"] = float(t1 - t0)
@@ -571,19 +655,23 @@ def run_single_experiment(
             num_trees=10,
             seed=int(seed),
         )
-        a_hat_cf, _ = predict_best_action_multiarm(cf_model, X_impl)
+        a_hat_cf, mu_hat_cf = predict_best_action_multiarm(cf_model, X_impl)
+        a_hat_cf = cost_adjusted_argmax_rows(
+            mu_hat_cf, treatment_cost=treatment_cost,
+        )
         seg_labels_impl_cf = a_hat_cf.astype(int)      # (n,)
         action_identity = np.arange(action_K, dtype=int)      # segment m -> action m
-        for eval in eval_methods:
-            value_cf = eval_classes[eval](
-                X_impl, D_impl, y_impl,
-                seg_labels_impl_cf,
-                mu_pilot_models,
-                action_identity,
-                propensities=None,
-                 
-            )
-            sim_result["causal_forest"][f"{eval}"] = float(value_cf["value_mean"])
+        _record_ope_scores(
+            sim_result,
+            "causal_forest",
+            X_impl=X_impl,
+            D_impl=D_impl,
+            y_impl=y_impl,
+            seg_labels_impl=seg_labels_impl_cf,
+            action_per_segment=action_identity,
+            mu_models=mu_pilot_models,
+            
+        )
            
             
         t1 = time.perf_counter()
@@ -604,20 +692,20 @@ def run_single_experiment(
         action_kmeans = estimate_segment_policy(
             X_pilot, y_pilot, D_pilot, seg_labels_pilot_kmeans,
             method=action_method, Gamma=Gamma_pilot,
+            treatment_cost=treatment_cost,
         )  # shape (M_k,), each in {0,...,K-1}
         seg_labels_impl_kmeans = kmeans_seg.assign(X_impl)
-        for eval in eval_methods:
-            value_kmeans = eval_classes[eval](
-                X_impl,
-                D_impl,
-                y_impl,
-                seg_labels_impl_kmeans,
-                mu_pilot_models,
-                action_kmeans,
-                propensities=None,
-                 
-            )
-            sim_result["kmeans"][f"{eval}"] = float(value_kmeans["value_mean"])
+        _record_ope_scores(
+            sim_result,
+            "kmeans",
+            X_impl=X_impl,
+            D_impl=D_impl,
+            y_impl=y_impl,
+            seg_labels_impl=seg_labels_impl_kmeans,
+            action_per_segment=action_kmeans,
+            mu_models=mu_pilot_models,
+            
+        )
             
         t1 = time.perf_counter()
         sim_result["kmeans"]["time"] = float(t1 - t0)
@@ -643,6 +731,7 @@ def run_single_experiment(
                 value_type_dams=value_type_dams,
                 action_method=action_method,
                 n_folds=n_folds_dams,
+                treatment_cost=treatment_cost,
             )
         )
         sim_result["kmeans_dams"]["best_M"] = best_M_kmeans_dams
@@ -650,20 +739,20 @@ def run_single_experiment(
         action_kmeans_dams = estimate_segment_policy(
             X_pilot, y_pilot, D_pilot, seg_labels_pilot_kmeans_dams,
             method=action_method, Gamma=Gamma_pilot,
+            treatment_cost=treatment_cost,
         )
         seg_labels_impl_kmeans_dams = kmeans_dams_seg.assign(X_impl)
-        for eval in eval_methods:
-            value_kmeans_dams = eval_classes[eval](
-                X_impl,
-                D_impl,
-                y_impl,
-                seg_labels_impl_kmeans_dams,
-                mu_pilot_models,
-                action_kmeans_dams,
-                propensities=None,
-                 
-            )
-            sim_result["kmeans_dams"][f"{eval}"] = float(value_kmeans_dams["value_mean"])
+        _record_ope_scores(
+            sim_result,
+            "kmeans_dams",
+            X_impl=X_impl,
+            D_impl=D_impl,
+            y_impl=y_impl,
+            seg_labels_impl=seg_labels_impl_kmeans_dams,
+            action_per_segment=action_kmeans_dams,
+            mu_models=mu_pilot_models,
+            
+        )
         
         t1 = time.perf_counter()
         sim_result["kmeans_dams"]["time"] = float(t1 - t0)
@@ -694,20 +783,20 @@ def run_single_experiment(
         action_gmm = estimate_segment_policy(
             X_pilot, y_pilot, D_pilot, seg_labels_pilot_gmm,
             method=action_method, Gamma=Gamma_pilot,
+            treatment_cost=treatment_cost,
         )
         seg_labels_impl_gmm = gmm_seg.assign(X_impl)
-        for eval in eval_methods:
-            value_gmm = eval_classes[eval](
-                X_impl,
-                D_impl,
-                y_impl,
-                seg_labels_impl_gmm,
-                mu_pilot_models,
-                action_gmm,
-                propensities=None,
-                 
-            )
-            sim_result["gmm"][f"{eval}"] = float(value_gmm["value_mean"])
+        _record_ope_scores(
+            sim_result,
+            "gmm",
+            X_impl=X_impl,
+            D_impl=D_impl,
+            y_impl=y_impl,
+            seg_labels_impl=seg_labels_impl_gmm,
+            action_per_segment=action_gmm,
+            mu_models=mu_pilot_models,
+            
+        )
             
         t1 = time.perf_counter()
         sim_result["gmm"]["time"] = float(t1 - t0)
@@ -733,6 +822,7 @@ def run_single_experiment(
                 value_type_dams=value_type_dams,
                 action_method=action_method,
                 n_folds=n_folds_dams,
+                treatment_cost=treatment_cost,
             )
         )
         
@@ -741,20 +831,20 @@ def run_single_experiment(
         action_gmm_dams = estimate_segment_policy(
             X_pilot, y_pilot, D_pilot, seg_labels_pilot_gmm_dams,
             method=action_method, Gamma=Gamma_pilot,
+            treatment_cost=treatment_cost,
         )
         seg_labels_impl_gmm_dams = gmm_dams_seg.assign(X_impl)
-        for eval in eval_methods:
-            value_gmm_dams = eval_classes[eval](
-                X_impl,
-                D_impl,
-                y_impl,
-                seg_labels_impl_gmm_dams,
-                mu_pilot_models,
-                action_gmm_dams,
-                propensities=None,
-                 
-            )
-            sim_result["gmm_dams"][f"{eval}"] = float(value_gmm_dams["value_mean"])
+        _record_ope_scores(
+            sim_result,
+            "gmm_dams",
+            X_impl=X_impl,
+            D_impl=D_impl,
+            y_impl=y_impl,
+            seg_labels_impl=seg_labels_impl_gmm_dams,
+            action_per_segment=action_gmm_dams,
+            mu_models=mu_pilot_models,
+            
+        )
             
         t1 = time.perf_counter()
         sim_result["gmm_dams"]["time"] = float(t1 - t0)
@@ -787,20 +877,20 @@ def run_single_experiment(
         action_clr = estimate_segment_policy(
             X_pilot, y_pilot, D_pilot, seg_labels_pilot_clr,
             method=action_method, Gamma=Gamma_pilot,
+            treatment_cost=treatment_cost,
         )
         seg_labels_impl_clr = clr_seg.assign(X_impl)
-        for eval in eval_methods:
-            value_clr = eval_classes[eval](
-                X_impl,
-                D_impl,
-                y_impl,
-                seg_labels_impl_clr,
-                mu_pilot_models,
-                action_clr,
-                propensities=None,
-                 
-            )
-            sim_result["clr"][f"{eval}"] = float(value_clr["value_mean"])
+        _record_ope_scores(
+            sim_result,
+            "clr",
+            X_impl=X_impl,
+            D_impl=D_impl,
+            y_impl=y_impl,
+            seg_labels_impl=seg_labels_impl_clr,
+            action_per_segment=action_clr,
+            mu_models=mu_pilot_models,
+            
+        )
             
         t1 = time.perf_counter()
         sim_result["clr"]["time"] = float(t1 - t0)
@@ -826,26 +916,27 @@ def run_single_experiment(
                 value_type_dams=value_type_dams,
                 action_method=action_method,
                 n_folds=n_folds_dams,
+                treatment_cost=treatment_cost,
             )
         )
         sim_result["clr_dams"]["best_M"] = best_M_clr_dams
         action_clr_dams = estimate_segment_policy(
             X_pilot, y_pilot, D_pilot, seg_labels_pilot_clr_dams,
             method=action_method, Gamma=Gamma_pilot,
+            treatment_cost=treatment_cost,
         )
         seg_labels_impl_clr_dams = clr_dams_seg.assign(X_impl)
-        for eval in eval_methods:
-            value_clr_dams = eval_classes[eval](
-                X_impl,
-                D_impl,
-                y_impl,
-                seg_labels_impl_clr_dams,
-                mu_pilot_models,
-                action_clr_dams,
-                propensities=None,
-                 
-            )
-            sim_result["clr_dams"][f"{eval}"] = float(value_clr_dams["value_mean"])
+        _record_ope_scores(
+            sim_result,
+            "clr_dams",
+            X_impl=X_impl,
+            D_impl=D_impl,
+            y_impl=y_impl,
+            seg_labels_impl=seg_labels_impl_clr_dams,
+            action_per_segment=action_clr_dams,
+            mu_models=mu_pilot_models,
+            
+        )
         t1 = time.perf_counter()
         sim_result["clr_dams"]["time"] = float(t1 - t0)
         if save_offline_data:
@@ -876,28 +967,28 @@ def run_single_experiment(
             y_pilot,
             Gamma_pilot,
             M_candidates,
-            min_leaf_size=10,
+            min_leaf_size=min_leaf_size,
             value_type_dast=value_type_dast,
             value_type_dams=value_type_dams,
             action_method=action_method,
             n_folds=n_folds_dams,
+            treatment_cost=treatment_cost,
         )
         
         sim_result["dast"]["best_M"] = best_M_dast
 
         seg_labels_impl_dast = tree_final.assign(X_impl)
-        for eval in eval_methods:
-            value_dast = eval_classes[eval](
-                X_impl,
-                D_impl,
-                y_impl,
-                seg_labels_impl_dast,
-                mu_pilot_models,
-                best_action_dast_pilot,
-                propensities=None,
-                 
-            )
-            sim_result["dast"][f"{eval}"] = float(value_dast["value_mean"])
+        _record_ope_scores(
+            sim_result,
+            "dast",
+            X_impl=X_impl,
+            D_impl=D_impl,
+            y_impl=y_impl,
+            seg_labels_impl=seg_labels_impl_dast,
+            action_per_segment=best_action_dast_pilot,
+            mu_models=mu_pilot_models,
+            
+        )
             
         t1 = time.perf_counter()
         sim_result["dast"]["time"] = float(t1 - t0)
@@ -922,14 +1013,16 @@ def run_single_experiment(
             y_pilot,
             Gamma_pilot,
             M_candidates,
-            min_leaf_size=10,
+            min_leaf_size=min_leaf_size,
             value_type_dams=value_type_dams,
             action_method=action_method,
             n_folds=1,  # heldout
+            treatment_cost=treatment_cost,
         )
         action_mst = estimate_segment_policy(
             X_pilot, y_pilot, D_pilot, seg_labels_pilot_mst,
             method=action_method, Gamma=Gamma_pilot,
+            treatment_cost=treatment_cost,
         )
         sim_result["mst"]["best_M"] = best_M_mst
 
@@ -939,18 +1032,17 @@ def run_single_experiment(
         )
 
         seg_labels_impl_mst = tree_mst.assign(X_impl)
-        for eval in eval_methods:
-            value_mst = eval_classes[eval](
-                X_impl,
-                D_impl,
-                y_impl,
-                seg_labels_impl_mst,
-                mu_pilot_models,
-                action_mst,
-                propensities=None,
-                 
-            )
-            sim_result["mst"][f"{eval}"] = float(value_mst["value_mean"])
+        _record_ope_scores(
+            sim_result,
+            "mst",
+            X_impl=X_impl,
+            D_impl=D_impl,
+            y_impl=y_impl,
+            seg_labels_impl=seg_labels_impl_mst,
+            action_per_segment=action_mst,
+            mu_models=mu_pilot_models,
+            
+        )
         
         t1 = time.perf_counter()
         sim_result["mst"]["time"] = float(t1 - t0)
@@ -969,23 +1061,24 @@ def run_single_experiment(
             X_pilot, y_pilot, D_pilot,
             X_impl,
             depth=POLICYTREE_DEPTH,
+            treatment_cost=treatment_cost,
         )
 
         sim_result["policytree"]["depth"] = POLICYTREE_DEPTH
 
         # Treat each impl customer as their own "segment" for OPE reuse
         seg_labels_individual = np.arange(len(X_impl))
-        for eval in eval_methods:
-            value_policy = eval_classes[eval](
-                X_impl,
-                D_impl,
-                y_impl,
-                seg_labels_individual,
-                mu_pilot_models,
-                action_impl_policytree,
-                propensities=None,
-            )
-            sim_result["policytree"][f"{eval}"] = float(value_policy["value_mean"])
+        _record_ope_scores(
+            sim_result,
+            "policytree",
+            X_impl=X_impl,
+            D_impl=D_impl,
+            y_impl=y_impl,
+            seg_labels_impl=seg_labels_individual,
+            action_per_segment=action_impl_policytree,
+            mu_models=mu_pilot_models,
+            
+        )
 
         t1 = time.perf_counter()
         sim_result["policytree"]["time"] = float(t1 - t0)
@@ -1013,6 +1106,8 @@ def run_single_experiment(
             D_cohort=np.asarray(D, dtype=int),
             y_cohort=np.asarray(y, dtype=float),
             cohort_size=cohort_size,
+            gamma_impl=gamma_impl,
+            mu_impl=mu_impl,
         )
 
     print("\nResult for this run:")
@@ -1051,6 +1146,7 @@ def _load_experiment_checkpoint(out_path: str, expected_params: dict) -> tuple[d
         "n_folds_dams": 5,
         "n_folds_mst": 1,
         "n_folds_dr": 3,
+        "treatment_cost": 0.0,
     }
 
     if not os.path.isfile(out_path):
@@ -1127,9 +1223,14 @@ def run_multiple_experiments(
     mu_hparams_json=None,
     ope_mu_hparams=None,
     meta_mu_hparams=None,
+    *,
+    min_leaf_size: int,
+    treatment_cost: float = 0.0,
 ):
     if meta_learner_mu_model_type is None:
         meta_learner_mu_model_type = META_LEARNER_MU_MODEL_TYPE
+    min_leaf_size = int(min_leaf_size)
+    treatment_cost = float(treatment_cost)
     _set_thread_env(1)
     max_attempts = int(N_sim) * 5
     out_path = normalize_main_pkl_path(out_path)
@@ -1149,12 +1250,14 @@ def run_multiple_experiments(
         "mu_model_type": mu_model_type,
         "meta_learner_mu_model_type": meta_learner_mu_model_type,
         "action_method": action_method,
+        "treatment_cost": float(treatment_cost),
         "n_folds_dams": int(n_folds_dams),
         "n_folds_mst": 1,
         "n_folds_dr": 3,
         "mu_hparams_json": mu_hparams_json,
         "ope_mu_hparams": ope_mu_hparams,
         "meta_mu_hparams": meta_mu_hparams,
+        "min_leaf_size": min_leaf_size,
         "out_path": out_path,
         "ALGO_LIST": list(ALGO_LIST),
         "eval_methods": list(eval_methods),
@@ -1222,6 +1325,8 @@ def run_multiple_experiments(
                 n_folds_dams=n_folds_dams,
                 ope_mu_hparams=ope_mu_hparams,
                 meta_mu_hparams=meta_mu_hparams,
+                min_leaf_size=min_leaf_size,
+                treatment_cost=treatment_cost,
             )
             experiment_data["results"].append(res)
             experiment_data["params"]["seeds"].append(int(seed))
@@ -1262,7 +1367,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--dataset",
         type=str,
-        choices=["hillstrom", "criteo", "lenta"],
+        choices=["hillstrom", "criteo"],
         help="Dataset to use (default: criteo)",
     )
     
@@ -1361,16 +1466,26 @@ if __name__ == "__main__":
     )
 
     parser.add_argument(
+        "--treatment_cost",
+        type=float,
+        default=0.0,
+        help="Per-unit implementation cost c for action selection and DAST/DAMS (default: 0)",
+    )
+
+    parser.add_argument(
         "--mu_hparams_json",
         type=str,
         default=None,
         help=(
-            "Optional μ hparams JSON. If omitted, loads permanent "
-            "hparams/{dataset}/{target}.json when present; else factory defaults."
+            "Optional override path to hparams JSON. If omitted, requires "
+            "hparams/{dataset}/{target}.json (finetune_mu + finetune_leaf)."
         ),
     )
 
     args = parser.parse_args()
+
+    if args.treatment_cost < 0:
+        parser.error("--treatment_cost must be >= 0")
 
     pilot_frac = args.pilot_frac  # fraction of data for pilot
     train_frac = 0.7  # 70% pilot for training
@@ -1379,22 +1494,22 @@ if __name__ == "__main__":
         random.seed(args.seed_sequence)
         print(f"Using fixed sequence seed: {args.seed_sequence}")
 
-    mu_hparams_path, ope_mu_hparams, meta_mu_hparams = resolve_mu_hparams(
+    mu_hparams_path, ope_mu_hparams, meta_mu_hparams, min_leaf_size = resolve_hparams(
         dataset=args.dataset,
         target=args.target,
         mu_model_type=args.mu_model_type,
         meta_learner_mu_model_type=args.meta_learner_mu_model_type,
+        value_type_dast=args.value_type_dast,
+        value_type_dams=args.value_type_dams,
+        action_method=args.action_method,
         explicit_path=args.mu_hparams_json,
+        require_leaf=True,
+        treatment_cost=args.treatment_cost,
     )
-    if mu_hparams_path:
-        print(f"Loaded permanent μ hparams from {mu_hparams_path}")
-        print(f"  ope ({args.mu_model_type}): {ope_mu_hparams}")
-        print(f"  meta ({args.meta_learner_mu_model_type}): {meta_mu_hparams}")
-    else:
-        print(
-            "[WARN] No permanent μ hparams found; using factory defaults. "
-            "Run: python finetune_mu.py --dataset ... --target ..."
-        )
+    print(f"Loaded permanent hparams from {mu_hparams_path}")
+    print(f"  ope ({args.mu_model_type}): {ope_mu_hparams}")
+    print(f"  meta ({args.meta_learner_mu_model_type}): {meta_mu_hparams}")
+    print(f"  min_leaf_size: {min_leaf_size}")
 
     run_multiple_experiments(
         N_sim=args.N_sim,
@@ -1414,4 +1529,6 @@ if __name__ == "__main__":
         mu_hparams_json=mu_hparams_path,
         ope_mu_hparams=ope_mu_hparams,
         meta_mu_hparams=meta_mu_hparams,
+        min_leaf_size=min_leaf_size,
+        treatment_cost=args.treatment_cost,
     )

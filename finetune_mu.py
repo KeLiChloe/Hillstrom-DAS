@@ -11,21 +11,20 @@ from __future__ import annotations
 
 import argparse
 import itertools
-import json
 from pathlib import Path
 
 import numpy as np
 from sklearn.metrics import log_loss, mean_squared_error
 from sklearn.model_selection import KFold
+from tqdm import tqdm
 
-from data_utils import load_criteo, load_hillstrom, load_lenta
-from mu_hparams import ALL_MU_MODEL_TYPES, default_mu_hparams_path
+from data_utils import load_criteo, load_hillstrom
+from mu_hparams import ALL_MU_MODEL_TYPES, default_mu_hparams_path, load_hparams_payload, merge_hparams_payload, save_hparams_payload
 from outcome_model import is_classifier_mu_type, make_mu_model
 
 DATASET_LOADERS = {
     "hillstrom": load_hillstrom,
     "criteo": load_criteo,
-    "lenta": load_lenta,
 }
 
 N_FOLDS = 5
@@ -103,7 +102,8 @@ def cv_score_for_params(
         mask = D == a
         Xa, ya = X[mask], y[mask]
         n_a = int(len(ya))
-        if n_a < max(n_folds, 4):
+        # KFold requires n_samples >= n_splits.
+        if n_a < n_folds:
             continue
         if classifier and len(np.unique(ya)) < 2:
             continue
@@ -113,13 +113,33 @@ def cv_score_for_params(
         for fold_i, (tr, te) in enumerate(kf.split(Xa)):
             if classifier and (len(np.unique(ya[tr])) < 2 or len(np.unique(ya[te])) < 2):
                 continue
+            fold_params = dict(params)
             model = make_mu_model(
                 mu_model_type,
                 random_state=seed + 1000 * int(a) + fold_i,
                 y=ya[tr] if mu_model_type == "lightgbm_clf" else None,
-                params=params,
+                params=fold_params,
             )
-            model.fit(Xa[tr], ya[tr])
+            try:
+                model.fit(Xa[tr], ya[tr])
+            except ValueError:
+                # MLP early_stopping's internal stratified val split can fail on
+                # rare-event folds; retry once without it, else skip fold.
+                if mu_model_type not in ("mlp_reg", "mlp_clf"):
+                    continue
+                if fold_params.get("early_stopping") is False:
+                    continue
+                fold_params = {**fold_params, "early_stopping": False}
+                model = make_mu_model(
+                    mu_model_type,
+                    random_state=seed + 1000 * int(a) + fold_i,
+                    y=ya[tr] if mu_model_type == "lightgbm_clf" else None,
+                    params=fold_params,
+                )
+                try:
+                    model.fit(Xa[tr], ya[tr])
+                except ValueError:
+                    continue
             if classifier:
                 pred = model.predict_proba(Xa[te])[:, 1]
             else:
@@ -151,17 +171,19 @@ def tune_mu_model(
     best_score = float("inf")
 
     print(f"[finetune] type={mu_model_type} grid_size={len(grid)} metric={metric}")
-    for i, params in enumerate(grid):
+    pbar = tqdm(grid, desc=f"grid:{mu_model_type}", leave=False)
+    for i, params in enumerate(pbar):
         score = cv_score_for_params(
             X, D, y, mu_model_type, params, n_folds=n_folds, seed=seed
         )
         printable = {
             k: (list(v) if isinstance(v, tuple) else v) for k, v in params.items()
         }
-        print(f"  [{i + 1}/{len(grid)}] score={score:.6g} params={printable}")
+        tqdm.write(f"  [{i + 1}/{len(grid)}] score={score:.6g} params={printable}")
         if score < best_score:
             best_score = score
             best_params = dict(params)
+        pbar.set_postfix(best=f"{best_score:.4g}" if np.isfinite(best_score) else "inf")
 
     best_params_json = {
         k: (list(v) if isinstance(v, tuple) else v) for k, v in best_params.items()
@@ -222,11 +244,6 @@ def main():
         help="Override output path (default: hparams/{dataset}/{target}.json)",
     )
     parser.add_argument("--n_folds", type=int, default=N_FOLDS)
-    parser.add_argument(
-        "--force",
-        action="store_true",
-        help="Overwrite an existing permanent hparams file",
-    )
     args = parser.parse_args()
 
     out_path = Path(
@@ -234,11 +251,8 @@ def main():
         if args.out_json
         else default_mu_hparams_path(args.dataset, args.target)
     )
-    if out_path.is_file() and not args.force:
-        raise SystemExit(
-            f"[finetune] refuse to overwrite existing {out_path}\n"
-            f"  Re-run with --force, or delete the file first."
-        )
+    if out_path.is_file():
+        print(f"[finetune] existing {out_path} will be updated (models overwritten; dast preserved if present)")
 
     X, D, y = load_tuning_cohort(
         dataset=args.dataset,
@@ -261,11 +275,32 @@ def main():
         f"seed={args.seed} types={types_to_tune}"
     )
 
-    models = {}
-    for i, mtype in enumerate(types_to_tune):
-        print("\n" + "=" * 60)
-        print(f"[{i + 1}/{len(types_to_tune)}] {mtype}")
-        print("=" * 60)
+    # Incremental save: keep prior models/dast; overwrite one type at a time.
+    existing = load_hparams_payload(out_path) or {}
+    models = dict(existing.get("models") or {})
+    protocol = {
+        "dataset": args.dataset,
+        "target": args.target,
+        "sample_frac": float(args.sample_frac),
+        "tuning_on": (
+            "full_sample"
+            if float(args.sample_frac) >= 1.0 - 1e-12
+            else "subsample"
+        ),
+        "n_folds": int(args.n_folds),
+        "seed": int(args.seed),
+        "types_planned": types_to_tune,
+        "types_completed": [
+            t for t in types_to_tune if t in models
+        ],
+    }
+
+    type_bar = tqdm(types_to_tune, desc="μ types")
+    for i, mtype in enumerate(type_bar):
+        type_bar.set_postfix_str(mtype)
+        tqdm.write("\n" + "=" * 60)
+        tqdm.write(f"[{i + 1}/{len(types_to_tune)}] {mtype}")
+        tqdm.write("=" * 60)
         models[mtype] = tune_mu_model(
             X,
             D,
@@ -274,25 +309,30 @@ def main():
             n_folds=args.n_folds,
             seed=args.seed + 17 * i,
         )
+        protocol["types_completed"] = [
+            t for t in types_to_tune if t in models
+        ]
+        protocol["types_tuned"] = list(protocol["types_completed"])
+        payload = merge_hparams_payload(
+            existing,
+            {"models": models, "protocol": dict(protocol)},
+        )
+        saved = save_hparams_payload(out_path, payload)
+        existing = payload
+        block = models[mtype]
+        tqdm.write(
+            f"[finetune] checkpoint → {saved} "
+            f"({mtype}: {block.get('metric')}={block.get('cv_score')})"
+        )
 
-    payload = {
-        "models": models,
-        "protocol": {
-            "dataset": args.dataset,
-            "target": args.target,
-            "sample_frac": float(args.sample_frac),
-            "tuning_on": "full_sample",
-            "n_folds": int(args.n_folds),
-            "seed": int(args.seed),
-            "types_tuned": types_to_tune,
-        },
-    }
-
-    out_path.parent.mkdir(parents=True, exist_ok=True)
-    with open(out_path, "w", encoding="utf-8") as f:
-        json.dump(payload, f, indent=2, sort_keys=True)
-        f.write("\n")
-    print(f"\n[finetune] wrote permanent hparams → {out_path}")
+    print("\n[finetune] CV summary (lower is better):")
+    for mtype in types_to_tune:
+        block = models.get(mtype) or {}
+        print(
+            f"  {mtype:16s}  {block.get('metric', '?'):8s}  "
+            f"{block.get('cv_score')}"
+        )
+    print(f"\n[finetune] finished all types → {out_path.resolve()}")
 
 
 if __name__ == "__main__":

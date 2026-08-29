@@ -35,7 +35,6 @@ from causal_forest import fit_multiarm_causal_forest, predict_best_action_multia
 from data_utils import (
     load_criteo,
     load_hillstrom,
-    load_lenta,
     prepare_pilot_impl,
     verify_impl_customer_alignment,
 )
@@ -45,6 +44,7 @@ from dr_learner import (
     fit_dr_learner_binary,
     fit_dr_learner_k_armed,
 )
+from estimation import cost_adjusted_argmax_rows
 from evaluation import (
     _get_propensity_per_action,
     evaluate_policy_dr,
@@ -54,6 +54,7 @@ from evaluation import (
 )
 from outcome_model import META_LEARNER_MU_MODEL_TYPE, tau_model_type_from_mu
 from exp_io import write_run_params_json
+from mu_hparams import resolve_hparams
 from s_learner import fit_s_learner, predict_mu_s_learner_matrix
 from segmentation import run_dast_all_M_curves
 from t_learner import fit_t_learner, predict_mu_t_learner_matrix
@@ -73,7 +74,6 @@ eval_classes = {
 DEFAULT_M_CANDIDATES = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
 DEFAULT_EXP_ROOT = "exp_june"
 TRAIN_FRAC = 0.7
-MIN_LEAF_SIZE = 5
 
 
 def resolve_out_path(
@@ -280,6 +280,8 @@ def _evaluate_baseline(
     action_K: int,
     seed: int,
     meta_learner_mu_model_type: str,
+    meta_mu_hparams=None,
+    treatment_cost: float = 0.0,
 ) -> dict:
     """Fit one meta-learner baseline and return OPE metrics + runtime."""
     mu_model_type = meta_learner_mu_model_type
@@ -291,17 +293,23 @@ def _evaluate_baseline(
         models = fit_t_learner(
             X_pilot, D_pilot, y_pilot,
             K=action_K, model_type=mu_model_type, random_state=seed,
+            mu_hparams=meta_mu_hparams,
         )
         mu_mat = predict_mu_t_learner_matrix(models, X_impl)
-        seg_labels_impl = np.argmax(mu_mat, axis=1).astype(int)
+        seg_labels_impl = cost_adjusted_argmax_rows(
+            mu_mat, treatment_cost=treatment_cost,
+        )
 
     elif algo == "s_learner":
         model = fit_s_learner(
             X_pilot, D_pilot, y_pilot,
             K=action_K, model_type=mu_model_type, random_state=seed,
+            mu_hparams=meta_mu_hparams,
         )
         mu_mat = predict_mu_s_learner_matrix(model, X_impl, K=action_K)
-        seg_labels_impl = np.argmax(mu_mat, axis=1).astype(int)
+        seg_labels_impl = cost_adjusted_argmax_rows(
+            mu_mat, treatment_cost=treatment_cost,
+        )
 
     elif algo == "x_learner":
         x_models = fit_x_learner(
@@ -312,11 +320,15 @@ def _evaluate_baseline(
             control_action=0,
             mu_model_type=mu_model_type,
             random_state=seed,
+            mu_hparams=meta_mu_hparams,
         )
-        seg_labels_impl, _ = predict_best_action_x_learner(
+        seg_labels_impl, mu_hat_x = predict_best_action_x_learner(
             x_learner_models=x_models,
             X=X_impl,
             mu_pilot_models=mu_pilot_models,
+        )
+        seg_labels_impl = cost_adjusted_argmax_rows(
+            mu_hat_x, treatment_cost=treatment_cost,
         )
 
     elif algo == "dr_learner":
@@ -327,25 +339,31 @@ def _evaluate_baseline(
                 K=action_K, pi=pi_vec, baseline=0, n_folds=3,
                 mu_model_type=mu_model_type,
                 tau_model_type=tau_model_type_from_mu(mu_model_type),
+                mu_hparams=meta_mu_hparams,
             )
-            seg_labels_impl, _ = dr_learner_policy_k_armed(dr_model, X_impl)
+            seg_labels_impl, mu_hat_dr = dr_learner_policy_k_armed(dr_model, X_impl)
         else:
             dr_model = fit_dr_learner_binary(
                 X=X_pilot, D=D_pilot, y=y_pilot,
                 e=float(pi_vec[1]), n_folds=3,
                 mu_model_type=mu_model_type,
                 tau_model_type=tau_model_type_from_mu(mu_model_type),
+                mu_hparams=meta_mu_hparams,
             )
-            seg_labels_impl, _ = dr_learner_policy_binary(dr_model, X_impl)
-        seg_labels_impl = seg_labels_impl.astype(int)
+            seg_labels_impl, mu_hat_dr = dr_learner_policy_binary(dr_model, X_impl)
+        seg_labels_impl = cost_adjusted_argmax_rows(
+            mu_hat_dr, treatment_cost=treatment_cost,
+        )
 
     elif algo == "causal_forest":
         cf_model = fit_multiarm_causal_forest(
             X_pilot, y_pilot, D_pilot,
             action_levels=actions_all, num_trees=50, seed=int(seed),
         )
-        seg_labels_impl, _ = predict_best_action_multiarm(cf_model, X_impl)
-        seg_labels_impl = seg_labels_impl.astype(int)
+        seg_labels_impl, mu_hat_cf = predict_best_action_multiarm(cf_model, X_impl)
+        seg_labels_impl = cost_adjusted_argmax_rows(
+            mu_hat_cf, treatment_cost=treatment_cost,
+        )
 
     else:
         raise ValueError(f"Unknown baseline algorithm: {algo}")
@@ -378,13 +396,18 @@ def run_single_all_M_experiment(
     M_candidates: list[int],
     seed: int,
     meta_learner_mu_model_type: str | None = None,
+    ope_mu_hparams=None,
+    meta_mu_hparams=None,
+    min_leaf_size: int,
+    treatment_cost: float = 0.0,
 ) -> dict:
     if meta_learner_mu_model_type is None:
         meta_learner_mu_model_type = META_LEARNER_MU_MODEL_TYPE
+    min_leaf_size = int(min_leaf_size)
+    treatment_cost = float(treatment_cost)
     dataset_loaders = {
         "hillstrom": load_hillstrom,
         "criteo": load_criteo,
-        "lenta": load_lenta,
     }
     if dataset not in dataset_loaders:
         raise ValueError(f"Unknown dataset: {dataset}")
@@ -406,6 +429,7 @@ def run_single_all_M_experiment(
     ) = prepare_pilot_impl(
         X, y, D, pilot_frac=pilot_frac, mu_model_type=mu_model_type,
         return_impl_customer_id=True,
+        mu_hparams=ope_mu_hparams,
     )
 
     action_K = Gamma_pilot.shape[1]
@@ -425,6 +449,8 @@ def run_single_all_M_experiment(
             action_K,
             seed,
             meta_learner_mu_model_type=meta_learner_mu_model_type,
+            meta_mu_hparams=meta_mu_hparams,
+            treatment_cost=treatment_cost,
         )
         sim_result[algo] = metrics
         _record_impl_action(impl_actions, algo, seg_labels_impl)
@@ -438,11 +464,12 @@ def run_single_all_M_experiment(
         X_impl,
         Gamma_pilot,
         M_candidates,
-        min_leaf_size=MIN_LEAF_SIZE,
+        min_leaf_size=min_leaf_size,
         value_type_dast=value_type_dast,
         value_type_dams=value_type_dams,
         action_method=action_method,
         n_folds=5,
+        treatment_cost=treatment_cost,
     )
     sim_result["dast"]["best_M"] = int(best_M)
     for ev in eval_methods:
@@ -505,6 +532,10 @@ def _run_worker(payload: dict) -> dict:
             action_method=payload["action_method"],
             M_candidates=payload["M_candidates"],
             seed=int(payload["seed"]),
+            ope_mu_hparams=payload.get("ope_mu_hparams"),
+            meta_mu_hparams=payload.get("meta_mu_hparams"),
+            min_leaf_size=int(payload["min_leaf_size"]),
+            treatment_cost=float(payload.get("treatment_cost", 0.0)),
         )
 
 
@@ -552,9 +583,16 @@ def run_multiple_all_M_experiments(
     meta_learner_mu_model_type: str | None = None,
     fig_dir: Path | None = None,
     no_plot: bool = False,
+    mu_hparams_json: str | None = None,
+    ope_mu_hparams=None,
+    meta_mu_hparams=None,
+    min_leaf_size: int,
+    treatment_cost: float = 0.0,
 ) -> dict:
     if meta_learner_mu_model_type is None:
         meta_learner_mu_model_type = META_LEARNER_MU_MODEL_TYPE
+    min_leaf_size = int(min_leaf_size)
+    treatment_cost = float(treatment_cost)
     inner_threads = 1
     n_jobs = int(n_jobs)
     max_attempts = int(N_sim) * 5
@@ -575,6 +613,11 @@ def run_multiple_all_M_experiments(
         "value_type_dast": value_type_dast,
         "value_type_dams": value_type_dams,
         "action_method": action_method,
+        "treatment_cost": float(treatment_cost),
+        "mu_hparams_json": mu_hparams_json,
+        "ope_mu_hparams": ope_mu_hparams,
+        "meta_mu_hparams": meta_mu_hparams,
+        "min_leaf_size": min_leaf_size,
         "out_path": out_path,
         "n_jobs": n_jobs,
         "inner_threads": inner_threads,
@@ -614,6 +657,10 @@ def run_multiple_all_M_experiments(
             "M_candidates": list(M_candidates),
             "seed": int(seed),
             "inner_threads": inner_threads,
+            "ope_mu_hparams": ope_mu_hparams,
+            "meta_mu_hparams": meta_mu_hparams,
+            "min_leaf_size": min_leaf_size,
+            "treatment_cost": treatment_cost,
         }
 
     if n_jobs <= 1:
@@ -644,6 +691,10 @@ def run_multiple_all_M_experiments(
                     action_method=action_method,
                     M_candidates=M_candidates,
                     seed=int(seed),
+                    ope_mu_hparams=ope_mu_hparams,
+                    meta_mu_hparams=meta_mu_hparams,
+                    min_leaf_size=min_leaf_size,
+                    treatment_cost=treatment_cost,
                 )
                 experiment_data["results"].append(res)
                 experiment_data["params"]["seeds"].append(int(seed))
@@ -757,7 +808,7 @@ def main() -> None:
     parser.add_argument(
         "--dataset",
         type=str,
-        choices=["hillstrom", "criteo", "lenta"],
+        choices=["hillstrom", "criteo"],
         required=True,
     )
     parser.add_argument("--target", type=str, required=True, help="Target column")
@@ -856,13 +907,48 @@ def main() -> None:
         action="store_true",
         help="Skip plotting after the experiment finishes",
     )
+    parser.add_argument(
+        "--treatment_cost",
+        type=float,
+        default=0.0,
+        help="Per-unit implementation cost c for action selection and DAST/DAMS (default: 0)",
+    )
+    parser.add_argument(
+        "--mu_hparams_json",
+        type=str,
+        default=None,
+        help=(
+            "Optional override path to hparams JSON. If omitted, requires "
+            "hparams/{dataset}/{target}.json (finetune_mu + finetune_leaf)."
+        ),
+    )
     args = parser.parse_args()
+
+    if args.treatment_cost < 0:
+        parser.error("--treatment_cost must be >= 0")
 
     if args.seed_sequence is not None:
         random.seed(args.seed_sequence)
         print(f"Using fixed sequence seed: {args.seed_sequence}")
 
     M_candidates = _parse_M_candidates(args.M_candidates)
+
+    mu_hparams_path, ope_mu_hparams, meta_mu_hparams, min_leaf_size = resolve_hparams(
+        dataset=args.dataset,
+        target=args.target,
+        mu_model_type=args.mu_model_type,
+        meta_learner_mu_model_type=args.meta_learner_mu_model_type,
+        value_type_dast=args.value_type_dast,
+        value_type_dams=args.value_type_dams,
+        action_method=args.action_method,
+        explicit_path=args.mu_hparams_json,
+        require_leaf=True,
+        treatment_cost=args.treatment_cost,
+    )
+    print(f"Loaded permanent hparams from {mu_hparams_path}")
+    print(f"  ope ({args.mu_model_type}): {ope_mu_hparams}")
+    print(f"  meta ({args.meta_learner_mu_model_type}): {meta_mu_hparams}")
+    print(f"  min_leaf_size: {min_leaf_size}")
 
     out_path = resolve_out_path(
         exp_root=args.exp_root,
@@ -891,6 +977,11 @@ def main() -> None:
         n_jobs=args.n_jobs,
         fig_dir=fig_dir,
         no_plot=args.no_plot,
+        mu_hparams_json=mu_hparams_path,
+        ope_mu_hparams=ope_mu_hparams,
+        meta_mu_hparams=meta_mu_hparams,
+        min_leaf_size=min_leaf_size,
+        treatment_cost=args.treatment_cost,
     )
 
 

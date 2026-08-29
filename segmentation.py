@@ -171,6 +171,7 @@ def run_kmeans_dams_segmentation(
     action_method,
     n_folds: int,
     cv_random_state: int = 0,
+    treatment_cost: float = 0.0,
 ):
     print("\n" + "=" * 60)
     print("KMeans_DAMS - selecting optimal K via K-fold DAMS")
@@ -208,6 +209,7 @@ def run_kmeans_dams_segmentation(
                 seg.assign(X_tr),
                 method=action_method,
                 Gamma=Gamma_tr,
+                treatment_cost=treatment_cost,
             )
             fold_scores.append(
                 dams_score(
@@ -218,6 +220,7 @@ def run_kmeans_dams_segmentation(
                     Gamma_val=Gamma_pilot[va_idx],
                     action=action,
                     value_type_dams=value_type_dams,
+                    treatment_cost=treatment_cost,
                 )
             )
 
@@ -280,6 +283,7 @@ def run_gmm_dams_segmentation(
     action_method,
     n_folds: int,
     cv_random_state: int = 0,
+    treatment_cost: float = 0.0,
 ):
     print("\n" + "=" * 60)
     print("GMM_DAMS - selecting optimal K via K-fold DAMS")
@@ -317,6 +321,7 @@ def run_gmm_dams_segmentation(
                 seg.assign(X_tr),
                 method=action_method,
                 Gamma=Gamma_tr,
+                treatment_cost=treatment_cost,
             )
             fold_scores.append(
                 dams_score(
@@ -327,6 +332,7 @@ def run_gmm_dams_segmentation(
                     Gamma_val=Gamma_pilot[va_idx],
                     action=action,
                     value_type_dams=value_type_dams,
+                    treatment_cost=treatment_cost,
                 )
             )
 
@@ -386,6 +392,7 @@ def select_dast_M_via_dams(
     action_method,
     n_folds: int,
     cv_random_state: int = 0,
+    treatment_cost: float = 0.0,
 ):
     """
     Pick M by K-fold DAMS on the full pilot set.
@@ -438,6 +445,7 @@ def select_dast_M_via_dams(
                 min_leaf_size=min_leaf_size,
                 value_type_dast=value_type_dast,
                 action_method=action_method,
+                treatment_cost=treatment_cost,
             )
             tree.build(M)
             fold_leaves.append(len(tree._get_leaf_nodes()))
@@ -450,6 +458,7 @@ def select_dast_M_via_dams(
                 labels_train,
                 method=action_method,
                 Gamma=Gamma_tr,
+                treatment_cost=treatment_cost,
             )
             score_fold = dams_score(
                 seg_model=tree,
@@ -459,6 +468,7 @@ def select_dast_M_via_dams(
                 Gamma_val=Gamma_va,
                 action=action_M,
                 value_type_dams=value_type_dams,
+                treatment_cost=treatment_cost,
             )
             fold_scores.append(float(score_fold))
 
@@ -489,6 +499,7 @@ def fit_dast_pilot_tree_at_M(
     min_leaf_size,
     value_type_dast,
     action_method,
+    treatment_cost: float = 0.0,
 ):
     tree = DASTree(
         x=X_pilot,
@@ -499,6 +510,7 @@ def fit_dast_pilot_tree_at_M(
         min_leaf_size=min_leaf_size,
         value_type_dast=value_type_dast,
         action_method=action_method,
+        treatment_cost=treatment_cost,
     )
     tree.build(M)
     seg_labels_pilot = tree.assign(X_pilot)
@@ -509,6 +521,7 @@ def fit_dast_pilot_tree_at_M(
         seg_labels_pilot,
         method=action_method,
         Gamma=Gamma_pilot,
+        treatment_cost=treatment_cost,
     )
     return tree, seg_labels_pilot, action_pilot
 
@@ -526,6 +539,7 @@ def run_dast_all_M_curves(
     action_method,
     n_folds: int,
     cv_random_state: int = 0,
+    treatment_cost: float = 0.0,
 ):
     """
     K-fold DAMS-select best_M, then fit one pilot tree per candidate M for OPE curves.
@@ -544,6 +558,7 @@ def run_dast_all_M_curves(
         action_method,
         n_folds=n_folds,
         cv_random_state=cv_random_state,
+        treatment_cost=treatment_cost,
     )
     pilot_by_M = {}
     for M in M_candidates:
@@ -557,6 +572,7 @@ def run_dast_all_M_curves(
             min_leaf_size,
             value_type_dast,
             action_method,
+            treatment_cost=treatment_cost,
         )
         seg_labels_impl = tree.assign(X_impl)
         pilot_by_M[M] = (seg_labels_impl, action_pilot)
@@ -579,6 +595,7 @@ def run_dast_dams(
     action_method,
     n_folds: int,
     cv_random_state: int = 0,
+    treatment_cost: float = 0.0,
 ):
     best_M, _, H_full = select_dast_M_via_dams(
         X_pilot,
@@ -592,6 +609,7 @@ def run_dast_dams(
         action_method,
         n_folds=n_folds,
         cv_random_state=cv_random_state,
+        treatment_cost=treatment_cost,
     )
     tree_final, seg_labels_pilot, action_full_pilot = fit_dast_pilot_tree_at_M(
         X_pilot,
@@ -603,6 +621,7 @@ def run_dast_dams(
         min_leaf_size,
         value_type_dast,
         action_method,
+        treatment_cost=treatment_cost,
     )
     return tree_final, seg_labels_pilot, best_M, action_full_pilot
 
@@ -649,6 +668,7 @@ def run_clr_dams_segmentation(
     action_method,
     n_folds: int,
     cv_random_state: int = 0,
+    treatment_cost: float = 0.0,
 ):
     print("\n" + "=" * 60)
     print("CLR_DAMS - selecting optimal K via K-fold DAMS")
@@ -689,6 +709,7 @@ def run_clr_dams_segmentation(
                 seg.assign(X_tr),
                 method=action_method,
                 Gamma=Gamma_tr,
+                treatment_cost=treatment_cost,
             )
             fold_scores.append(
                 dams_score(
@@ -699,6 +720,7 @@ def run_clr_dams_segmentation(
                     Gamma_val=Gamma_pilot[va_idx],
                     action=action,
                     value_type_dams=value_type_dams,
+                    treatment_cost=treatment_cost,
                 )
             )
 
@@ -737,6 +759,7 @@ def run_mst_dams(
     action_method,
     n_folds: int,
     cv_random_state: int = 0,
+    treatment_cost: float = 0.0,
 ):
     X_pilot, D_pilot, y_pilot, Gamma_pilot, fold_splits = _prepare_dams_kfold(
         X_pilot,
@@ -819,6 +842,7 @@ def run_mst_dams(
                 labels_train,
                 method=action_method,
                 Gamma=Gamma_tr,
+                treatment_cost=treatment_cost,
             )
             fold_scores.append(
                 float(
@@ -830,6 +854,7 @@ def run_mst_dams(
                         Gamma_val=Gamma_pilot[va_idx],
                         action=action_M,
                         value_type_dams=value_type_dams,
+                        treatment_cost=treatment_cost,
                     )
                 )
             )

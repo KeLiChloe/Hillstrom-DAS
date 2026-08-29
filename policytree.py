@@ -5,8 +5,9 @@ Policy Tree individual-level policy recommendations via R's policytree package.
 Workflow:
 1. Fit GRF multi_arm_causal_forest on pilot data (W always as factor)
 2. Compute doubly-robust scores (Gamma)
-3. Fit a shallow policy tree on (X, Gamma)
-4. Predict recommended action per implementation customer (type="action.id")
+3. When treatment_cost > 0, subtract c from non-reference Gamma columns (net)
+4. Fit a shallow policy tree on (X, Gamma)
+5. Predict recommended action per implementation customer (type="action.id")
 
 NOTE: we do NOT use a numpy2ri localconverter block.  The numpy2ri converter
 round-trips rpy2 R objects back through numpy, stripping class attributes and
@@ -18,6 +19,8 @@ built explicitly from rpy2 primitive constructors so GRF sees the correct types:
 """
 
 import numpy as np
+
+from estimation import gamma_with_action_cost
 
 _r_initialized = False
 _ro = None
@@ -81,6 +84,39 @@ def _gamma_column_actions(gamma_r) -> np.ndarray:
     return np.array([int(float(str(s))) for s in list(colnames)], dtype=int)
 
 
+def _gamma_r_to_numpy(gamma_r) -> np.ndarray:
+    """R Gamma matrix → (n, K) float64 numpy array."""
+    return np.array(_ro.r["as.matrix"](gamma_r), dtype=np.float64)
+
+
+def _as_r_gamma_matrix(gamma: np.ndarray, action_identity: np.ndarray):
+    """(n, K) numpy array → R matrix with action colnames."""
+    rmat = _as_r_matrix(np.asarray(gamma, dtype=np.float64))
+    _ro.r["colnames"](
+        rmat, _ro.StrVector([str(int(a)) for a in action_identity])
+    )
+    return rmat
+
+
+def _net_gamma_matrix(
+    gamma: np.ndarray,
+    action_identity: np.ndarray,
+    treatment_cost: float,
+    reference_action: int,
+) -> np.ndarray:
+    """Subtract per-treatment cost from non-reference Gamma columns."""
+    c = float(treatment_cost)
+    if c <= 0:
+        return gamma
+    out = gamma.copy()
+    ref = int(reference_action)
+    for j, a in enumerate(action_identity):
+        out[:, j] = gamma_with_action_cost(
+            gamma[:, j], int(a), c, reference_action=ref
+        )
+    return out
+
+
 # =====================================================================
 #  Public API: individual policy (classic policytree usage)
 # =====================================================================
@@ -91,6 +127,8 @@ def run_policytree_individual(
     D_pilot: np.ndarray,
     X_impl: np.ndarray,
     depth: int,
+    treatment_cost: float = 0.0,
+    reference_action: int | None = None,
 ) -> np.ndarray:
     """
     Classic policytree usage: fit on pilot, predict individual actions for
@@ -99,8 +137,9 @@ def run_policytree_individual(
     Steps:
       1. Fit GRF multi_arm_causal_forest on pilot (W as R factor).
       2. Compute double_robust_scores → Gamma (N_pilot × K).
-      3. Fit policy_tree(X_pilot, Gamma, depth=depth) in R.
-      4. Predict per-customer action for each row of X_impl.
+      3. When treatment_cost > 0, use net Gamma (subtract c on non-ref arms).
+      4. Fit policy_tree(X_pilot, Gamma, depth=depth) in R.
+      5. Predict per-customer action for each row of X_impl.
 
     Parameters
     ----------
@@ -108,7 +147,11 @@ def run_policytree_individual(
     y_pilot : (N_pilot,)
     D_pilot : (N_pilot,)  integer-coded treatments
     X_impl  : (N_impl, d)
-    depth   : int  
+    depth   : int
+    treatment_cost : float
+        Per-unit cost on non-reference actions (default 0 = gross Gamma).
+    reference_action : int or None
+        Reference arm with no cost (default: min unique action in pilot).
 
     Returns
     -------
@@ -132,11 +175,14 @@ def run_policytree_individual(
         raise ValueError(
             f"policytree needs >= 2 actions in pilot data, got {unique_actions}"
         )
+    ref = int(np.min(unique_actions) if reference_action is None else reference_action)
+    c = float(treatment_cost)
 
     n_train, n_impl = X_pilot.shape[0], X_impl.shape[0]
     print(
         f"[policytree] start: n_train={n_train}, n_impl={n_impl}, "
-        f"d={X_pilot.shape[1]}, depth={depth}, actions={unique_actions.tolist()}",
+        f"d={X_pilot.shape[1]}, depth={depth}, actions={unique_actions.tolist()}, "
+        f"treatment_cost={c}, ref={ref}",
         flush=True,
     )
 
@@ -153,6 +199,14 @@ def run_policytree_individual(
     print("[policytree] computing double_robust_scores (Gamma) ...", flush=True)
     gamma_r = _policytree_r.double_robust_scores(forest)
     action_identity = _gamma_column_actions(gamma_r)   # actual action labels per column
+    gamma_np = _gamma_r_to_numpy(gamma_r)
+    if c > 0:
+        gamma_np = _net_gamma_matrix(gamma_np, action_identity, c, ref)
+        gamma_r = _as_r_gamma_matrix(gamma_np, action_identity)
+        print(
+            f"[policytree] net Gamma: subtract c={c} on arms != {ref}",
+            flush=True,
+        )
     print(
         f"[policytree] Gamma: {n_train} x {len(action_identity)}, "
         f"column actions = {action_identity.tolist()}",
