@@ -1,0 +1,74 @@
+{
+  "ALGO_LIST": [
+    "dast",
+    "causal_forest",
+    "mst",
+    "clr",
+    "kmeans",
+    "gmm",
+    "t_learner",
+    "s_learner",
+    "x_learner",
+    "dr_learner"
+  ],
+  "M_candidates": [
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10
+  ],
+  "N_sim": 50,
+  "action_method": "diff_in_means",
+  "attempts_used": 5,
+  "dataset": "hillstrom",
+  "eval_methods": [
+    "dr",
+    "dual_dr",
+    "ipw",
+    "dm"
+  ],
+  "max_attempts": 250,
+  "meta_learner_mu_model_type": "mlp_reg",
+  "meta_mu_hparams": {
+    "alpha": 0.01,
+    "hidden_layer_sizes": [
+      32
+    ]
+  },
+  "min_leaf_size": 20,
+  "mu_hparams_json": "/home/5880.li/Hillstrom-DAS/hparams/hillstrom/conversion.json",
+  "mu_model_type": "lightgbm_reg",
+  "n_folds_dams": 5,
+  "n_folds_dr": 3,
+  "n_folds_mst": 1,
+  "ope_mu_hparams": {
+    "learning_rate": 0.03,
+    "min_child_samples": 50,
+    "n_estimators": 100,
+    "num_leaves": 8
+  },
+  "out_path": "exp_sept/hillstrom/conversion/lightgbm_reg/sample_frac_with_fixed_0.40_pilot_frac/sample_frac_050.pkl",
+  "pilot_frac": 0.4,
+  "reuse_seeds": null,
+  "reuse_seeds_from": null,
+  "sample_frac": 0.5,
+  "seed_sequence": 1088,
+  "seeds": [
+    559536,
+    688741,
+    527452,
+    509666,
+    352792
+  ],
+  "stz_path": "exp_sept/hillstrom/conversion/lightgbm_reg/sample_frac_with_fixed_0.40_pilot_frac/sample_frac_050_stz.pkl",
+  "target_col": "conversion",
+  "train_frac": 0.7,
+  "treatment_cost": 0.0,
+  "value_type_dams": "hybrid",
+  "value_type_dast": "hybrid"
+}
