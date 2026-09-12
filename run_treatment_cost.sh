@@ -15,8 +15,8 @@ SEED_SEQUENCE="${SEED_SEQUENCE:-1088}"
 N_SIM="${N_SIM:-50}"
 N_FOLDS_DAMS="${N_FOLDS_DAMS:-5}"
 
-# Space-separated cost grid: 0, 0.0005, ..., 0.002 (step 0.0005)
-COST_VALUES="${COST_VALUES:-0 0.0005 0.001 0.0015 0.002}"
+# Space-separated cost grid
+COST_VALUES="${COST_VALUES:-0.0025 0.0030 0.0035}"
 
 OUTDIR="${EXP_ROOT}/${DATASET}/${TARGET}/${MU_MODEL_TYPE}/treatment_cost_with_fixed_${SAMPLE_FRAC}_sample_frac_${PILOT_FRAC}_pilot_frac"
 mkdir -p "${OUTDIR}"

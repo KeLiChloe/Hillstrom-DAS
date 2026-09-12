@@ -298,9 +298,9 @@ class DASTree:
             best_a = _get_node_action(L)
 
         Step 2 — evaluate V̂(L) using value_type_dast:
-            hybrid : v̂_i = y_i        if D_i == best_a
-                           Gamma_{i,best_a}  otherwise
-            dr     : v̂_i = Gamma_{i,best_a}  (all customers)
+            hybrid : v̂_i = (y_i - c·𝟙[best_a≠ref])  if D_i == best_a
+                           Γ_{i,best_a} - c·𝟙[best_a≠ref]  otherwise
+            dr     : v̂_i = Γ_{i,best_a} - c·𝟙[best_a≠ref]  (all customers)
 
         V̂(L) = sum_{i∈L} v̂_i
         """
@@ -314,12 +314,16 @@ class DASTree:
         Gamma_L = self.gamma[indices, :]
 
         mask_a = (D_L == best_a)
+        ref = int(np.min(self.actions))
         gamma_best = gamma_with_action_cost(
             Gamma_L[:, best_a], best_a, self.treatment_cost,
-            reference_action=int(np.min(self.actions)),
+            reference_action=ref,
         )
         if self.value_type_dast == 'hybrid':
-            v = np.where(mask_a, y_L, gamma_best)
+            y_net = gamma_with_action_cost(
+                y_L, best_a, self.treatment_cost, reference_action=ref,
+            )
+            v = np.where(mask_a, y_net, gamma_best)
         else:  # 'dr'
             v = gamma_best
 

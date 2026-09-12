@@ -9,8 +9,11 @@ import matplotlib.colors as mcolors
 # ------------------------------------------------------------------
 DEFAULT_COLORS = {
     "kmeans-standard": "#FFD22FAF",
+    "kmeans-dams": "#C9A000AF",
     "gmm-standard": "#006135AF",
+    "gmm-dams": "#3D9B6AAF",
     "clr-standard": "#F59134AF",
+    "clr-dams": "#C45C1AAF",
     "mst": "#937860AF",
     "dast_old": "#C2C2C2AE",
     "t_learner": "#6BC735AF",
@@ -26,8 +29,11 @@ DEFAULT_COLORS = {
 # ------------------------------------------------------------------
 LABEL_MAP = {
     "kmeans-standard": "K-Means",
+    "kmeans-dams": "K-Means + DAMS",
     "gmm-standard": "GMM",
+    "gmm-dams": "GMM + DAMS",
     "clr-standard": "CLR",
+    "clr-dams": "CLR + DAMS",
     "mst": "MST",
     "dast_old": "DAST (old)",
     "t_learner": "T-Learner",
@@ -41,15 +47,21 @@ LABEL_MAP = {
 # Pickle / run_sims.py keys -> DEFAULT_COLORS keys
 BASELINE_KEY_ALIASES = {
     "kmeans": "kmeans-standard",
+    "kmeans_dams": "kmeans-dams",
     "gmm": "gmm-standard",
+    "gmm_dams": "gmm-dams",
     "clr": "clr-standard",
+    "clr_dams": "clr-dams",
 }
 
 EXTRA_LABEL_MAP = {
     "random": "Random",
     "kmeans": "K-Means",
+    "kmeans_dams": "K-Means + DAMS",
     "gmm": "GMM",
+    "gmm_dams": "GMM + DAMS",
     "clr": "CLR",
+    "clr_dams": "CLR + DAMS",
     "all_0": "All Action=0",
     "all_1": "All Action=1",
     "all_2": "All Action=2",
@@ -58,8 +70,11 @@ EXTRA_LABEL_MAP = {
 PREFERRED_ORDER = [
     "Random",
     "K-Means",
+    "K-Means + DAMS",
     "GMM",
+    "GMM + DAMS",
     "CLR",
+    "CLR + DAMS",
     "MST",
     "Causal Forest",
     "T-Learner",

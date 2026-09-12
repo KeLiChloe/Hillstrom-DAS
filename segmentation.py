@@ -864,7 +864,7 @@ def run_mst_dams(
             f"  M={M}: mean DAMS={score_M:.6f} "
             f"(folds={[f'{s:.6f}' for s in fold_scores]})"
         )
-        if score_M >= best_score:  # tie break by larger M
+        if score_M > best_score:  # tie break by smaller M
             best_score = score_M
             best_M = M
 

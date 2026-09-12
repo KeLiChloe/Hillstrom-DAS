@@ -93,16 +93,16 @@ OPE_NET_FILE_NAMES = {
 
 # Display names for figure titles (evaluation method).
 EVAL_METHOD_TITLE = {
-    "dual_dr": "mixed Y and μ",
-    "dr": "AIPW (μ + Y)",
-    "ipw": "IPW (Y)",
-    "dm": "Direct Method (μ only)",
-    "dual_dr_net": "mixed Y and μ (net)",
-    "dr_net": "AIPW (μ + Y, net)",
-    "ipw_net": "IPW (Y, net)",
-    "dm_net": "Direct Method (μ only, net)",
-    "stz": "Y only (STZ)",
-    "stz_vr": "Y only (STZ-VR)",
+    "dual_dr": "",
+    "dr": "AIPW",
+    "ipw": "IPW",
+    "dm": "Direct Method",
+    "dual_dr_net": "net",
+    "dr_net": "AIPW (net)",
+    "ipw_net": "IPW (net)",
+    "dm_net": "Direct Method (net)",
+    "stz": "STZ",
+    "stz_vr": "STZ-VR",
 }
 
 # STZ variants plotted under --metric advantage / both.
@@ -117,8 +117,11 @@ STZ_NET_VARIANTS = (
 
 REQUESTED_BASELINES = [
     "kmeans",
+    "kmeans_dams",
     "gmm",
+    "gmm_dams",
     "clr",
+    "clr_dams",
     "mst",
     "causal_forest",
     "t_learner",
@@ -161,7 +164,7 @@ class SweepConfig:
 
     @property
     def out_stem_prefix(self) -> str:
-        return f"trend_{self.kind}"
+        return self.kind
 
     def to_display_x(self, x_value: float) -> float:
         """Map stored sweep value → plotted x coordinate."""
@@ -1143,6 +1146,23 @@ def eval_method_title(eval_method: str) -> str:
     return str(eval_method).replace("_", " ")
 
 
+def _save_fig(fig, fig_dir: Path, out_stem: str) -> None:
+    """Save figure as PNG and vector PDF."""
+    fig_dir.mkdir(parents=True, exist_ok=True)
+    fig.tight_layout()
+    for ext in ("png", "pdf"):
+        out_path = fig_dir / f"{out_stem}.{ext}"
+        fig.savefig(out_path, dpi=300, bbox_inches="tight", facecolor="white")
+        print(f"[OK] Saved: {out_path}")
+    plt.close(fig)
+
+
+def _title_with_eval_suffix(base: str, eval_label: str) -> str:
+    """Append (eval_label) only when the label is non-empty."""
+    label = str(eval_label).strip()
+    return f"{base} ({label})" if label else base
+
+
 def assert_consistent_experiment_meta(
     experiments: list[dict], sweep_kind: SweepKind
 ) -> tuple[dict, SweepConfig]:
@@ -1254,7 +1274,7 @@ def plot_treatment_rate_trend(
     x_vals = sorted(stats_df["x_value"].unique())
     x_n = [sweep.to_display_x(x) for x in x_vals]
 
-    fig, ax = plt.subplots(figsize=(6.6, 4.0))
+    fig, ax = plt.subplots(figsize=(5.4, 4.0))
 
     for label in labels:
         sub = stats_df[stats_df["Algo_Label"] == label].sort_values("x_value")
@@ -1338,12 +1358,7 @@ def plot_treatment_rate_trend(
         markerscale=0.8,
     )
 
-    fig_dir.mkdir(parents=True, exist_ok=True)
-    fig.tight_layout()
-    out_path = fig_dir / f"{out_stem}.png"
-    fig.savefig(out_path, dpi=300, bbox_inches="tight", facecolor="white")
-    print(f"[OK] Saved: {out_path}")
-    plt.close(fig)
+    _save_fig(fig, fig_dir, out_stem)
 
 
 def plot_net_profit_trend(
@@ -1384,7 +1399,7 @@ def plot_trend(
     x_n = [sweep.to_display_x(x) for x in x_vals]
     eval_label = eval_method_title(eval_method)
 
-    fig, ax = plt.subplots(figsize=(6.6, 4.0))
+    fig, ax = plt.subplots(figsize=(5.4, 4.0))
 
     for label in labels:
         sub = stats_df[stats_df["Baseline_Label"] == label].sort_values("x_value")
@@ -1425,9 +1440,11 @@ def plot_trend(
     )
 
     ax.set_xlabel(sweep.x_label, fontweight="bold", labelpad=8)
-    ax.set_ylabel("DAS improvement ratio", fontweight="bold", labelpad=8)
+    ax.set_ylabel("DAS improvement ratio (%)", fontweight="bold", labelpad=8)
     ax.set_title(
-        f"DAS improvement ratio on {dataset_target} ({eval_label})",
+        _title_with_eval_suffix(
+            f"DAS improvement ratio on {dataset_target}", eval_label
+        ),
         fontweight="bold",
         fontsize=13,
         pad=20,
@@ -1471,12 +1488,7 @@ def plot_trend(
         markerscale=0.8,
     )
 
-    fig_dir.mkdir(parents=True, exist_ok=True)
-    fig.tight_layout()
-    out_path = fig_dir / f"{out_stem}.png"
-    fig.savefig(out_path, dpi=300, bbox_inches="tight", facecolor="white")
-    print(f"[OK] Saved: {out_path}")
-    plt.close(fig)
+    _save_fig(fig, fig_dir, out_stem)
 
 
 def plot_stz_trend(
@@ -1496,11 +1508,11 @@ def plot_stz_trend(
     x_vals = sorted(stats_df["x_value"].unique())
     x_n = [sweep.to_display_x(x) for x in x_vals]
     if ylabel is None:
-        ylabel = "DAS advantage ratio (% of comparator)"
+        ylabel = "%"
     if title_suffix is None:
         title_suffix = eval_method_title(eval_method)
 
-    fig, ax = plt.subplots(figsize=(6.6, 4.0))
+    fig, ax = plt.subplots(figsize=(5.4, 4.0))
 
     for label in labels:
         sub = stats_df[stats_df["Baseline_Label"] == label].sort_values("x_value")
@@ -1543,7 +1555,9 @@ def plot_stz_trend(
     ax.set_xlabel(sweep.x_label, fontweight="bold", labelpad=8)
     ax.set_ylabel(ylabel, fontweight="bold", labelpad=8)
     ax.set_title(
-        f"DAS improvement on {dataset_target} ({title_suffix})",
+        _title_with_eval_suffix(
+            f"DAS improvement on {dataset_target}", title_suffix
+        ),
         fontweight="bold",
         fontsize=13,
         pad=20,
@@ -1587,12 +1601,7 @@ def plot_stz_trend(
         markerscale=0.8,
     )
 
-    fig_dir.mkdir(parents=True, exist_ok=True)
-    fig.tight_layout()
-    out_path = fig_dir / f"{out_stem}.png"
-    fig.savefig(out_path, dpi=300, bbox_inches="tight", facecolor="white")
-    print(f"[OK] Saved: {out_path}")
-    plt.close(fig)
+    _save_fig(fig, fig_dir, out_stem)
 
 
 def parse_args() -> argparse.Namespace:
@@ -1822,9 +1831,10 @@ def _run_treatment_cost_plots(
     net_dir = fig_dir / "net"
 
     # Remove legacy root-level trend figures from older plot_trend versions.
-    for old in fig_dir.glob("trend_treatment_cost_*.png"):
-        old.unlink()
-        print(f"[INFO] Removed legacy figure: {old.name}")
+    for pattern in ("trend_treatment_cost_*.png", "trend_treatment_cost_*.pdf"):
+        for old in fig_dir.glob(pattern):
+            old.unlink()
+            print(f"[INFO] Removed legacy figure: {old.name}")
 
     print("=== gross/ (all treatment_cost points) ===")
     _run_improvement_plots(

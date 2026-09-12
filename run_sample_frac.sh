@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-EXP_ROOT="${EXP_ROOT:-exp_aug}"
+EXP_ROOT="${EXP_ROOT:-exp_sept}"
 DATASET="${DATASET:-hillstrom}"
 TARGET="${TARGET:-conversion}"
 PILOT_FRAC="${PILOT_FRAC:-0.40}"
@@ -15,15 +15,20 @@ SEED_SEQUENCE="${SEED_SEQUENCE:-1088}"
 N_SIM="${N_SIM:-50}"
 N_FOLDS_DAMS="${N_FOLDS_DAMS:-5}"
 
+# Sample size as percent of loader base (Hillstrom base N=64000 → 50%…100%).
+SAMPLE_PCT_START="${SAMPLE_PCT_START:-50}"
+SAMPLE_PCT_STEP="${SAMPLE_PCT_STEP:-5}"
+SAMPLE_PCT_END="${SAMPLE_PCT_END:-100}"
+
 OUTDIR="${EXP_ROOT}/${DATASET}/${TARGET}/${MU_MODEL_TYPE}/sample_frac_with_fixed_${PILOT_FRAC}_pilot_frac"
 mkdir -p "${OUTDIR}"
 echo "[INFO] outdir=${OUTDIR}"
+echo "[INFO] sample_pct=${SAMPLE_PCT_START}:${SAMPLE_PCT_STEP}:${SAMPLE_PCT_END}  pilot_frac=${PILOT_FRAC}  seed=${SEED_SEQUENCE}  N_sim=${N_SIM}"
 
-for sample_int in $(seq 2.5 2.5 25); do
-    # sample_int = percent of the loader base (Criteo: percent10 slice).
+for sample_int in $(seq "${SAMPLE_PCT_START}" "${SAMPLE_PCT_STEP}" "${SAMPLE_PCT_END}"); do
     # Half-percent steps need 3 decimals (2.5 → 0.025), not %.2f.
     sample_frac=$(awk -v i="${sample_int}" 'BEGIN { printf "%.3f", i / 100.0 }')
-    # Tag = percent: 10→010, 2.5→002.5 (keeps a decimal for half steps).
+    # Tag = percent: 50→050, 2.5→002.5 (keeps a decimal for half steps).
     sample_tag=$(awk -v i="${sample_int}" 'BEGIN {
         if (i == int(i)) printf "%03d", i
         else printf "%05.1f", i

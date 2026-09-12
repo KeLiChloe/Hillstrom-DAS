@@ -1226,6 +1226,8 @@ def run_multiple_experiments(
     *,
     min_leaf_size: int,
     treatment_cost: float = 0.0,
+    reuse_seeds: list[int] | None = None,
+    reuse_seeds_from: str | None = None,
 ):
     if meta_learner_mu_model_type is None:
         meta_learner_mu_model_type = META_LEARNER_MU_MODEL_TYPE
@@ -1235,6 +1237,15 @@ def run_multiple_experiments(
     max_attempts = int(N_sim) * 5
     out_path = normalize_main_pkl_path(out_path)
     stz_path = resolve_stz_pkl_path(out_path) if save_offline_data else None
+
+    fixed_seeds = None
+    if reuse_seeds is not None:
+        fixed_seeds = [int(s) for s in reuse_seeds]
+        if len(fixed_seeds) < int(N_sim):
+            raise ValueError(
+                f"reuse_seeds has {len(fixed_seeds)} entries but N_sim={N_sim}"
+            )
+        fixed_seeds = fixed_seeds[: int(N_sim)]
 
     expected_params = {
         "seed_sequence": seed_sequence,
@@ -1262,6 +1273,8 @@ def run_multiple_experiments(
         "ALGO_LIST": list(ALGO_LIST),
         "eval_methods": list(eval_methods),
         "M_candidates": list(M_candidates),
+        "reuse_seeds_from": reuse_seeds_from,
+        "reuse_seeds": list(fixed_seeds) if fixed_seeds is not None else None,
         "seeds": [],
         "attempts_used": 0,
     }
@@ -1473,6 +1486,17 @@ if __name__ == "__main__":
     )
 
     parser.add_argument(
+        "--algo_list",
+        nargs="+",
+        default=None,
+        help=(
+            "Algorithms to run (space-separated). "
+            "Default: module ALGO_LIST. Example: "
+            "--algo_list dast kmeans kmeans_dams gmm gmm_dams clr clr_dams"
+        ),
+    )
+
+    parser.add_argument(
         "--mu_hparams_json",
         type=str,
         default=None,
@@ -1486,6 +1510,10 @@ if __name__ == "__main__":
 
     if args.treatment_cost < 0:
         parser.error("--treatment_cost must be >= 0")
+
+    if args.algo_list is not None:
+        ALGO_LIST[:] = list(args.algo_list)
+        print(f"Using --algo_list: {ALGO_LIST}")
 
     pilot_frac = args.pilot_frac  # fraction of data for pilot
     train_frac = 0.7  # 70% pilot for training

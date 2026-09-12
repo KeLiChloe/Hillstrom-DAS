@@ -1,7 +1,7 @@
 import numpy as np
 from sklearn.metrics import silhouette_score
 
-from estimation import gamma_with_action_cost
+from estimation import _reference_action, gamma_with_action_cost
 
 
 def kmeans_silhouette_score(seg_model, X_pilot):
@@ -75,14 +75,19 @@ def dams_score(
 
     mask_match = (D_val == a_i)
     mask_mismatch = ~mask_match
+    ref = _reference_action(np.arange(Gamma_val.shape[1], dtype=int))
 
     if value_type_dams == "hybrid":
-        v_hat[mask_match] = y_val[mask_match]
+        y_net = gamma_with_action_cost(
+            y_val, a_i, treatment_cost, reference_action=ref,
+        )
+        v_hat[mask_match] = y_net[mask_match]
         idx_mismatch = np.where(mask_mismatch)[0]
         v_hat[idx_mismatch] = gamma_with_action_cost(
             Gamma_val[idx_mismatch, a_i[idx_mismatch]],
             a_i[idx_mismatch],
             treatment_cost,
+            reference_action=ref,
         )
     elif value_type_dams == "dr":
         N = X_val.shape[0]
@@ -90,6 +95,7 @@ def dams_score(
             Gamma_val[np.arange(N), a_i],
             a_i,
             treatment_cost,
+            reference_action=ref,
         )
     else:
         raise ValueError(
