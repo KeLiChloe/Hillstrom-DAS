@@ -3,6 +3,10 @@
 # Default: Criteo conversion, sample_frac=0.025 (~N=35k on percent10 base).
 set -euo pipefail
 
+# Always run from repo root (this file lives in scripts/).
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+cd "${ROOT}"
+
 EXP_ROOT="${EXP_ROOT:-exp_aug/ablation}"
 DATASET="${DATASET:-criteo}"
 TARGET="${TARGET:-conversion}"
@@ -31,7 +35,7 @@ ALGO_LIST=(
 OUTDIR="${EXP_ROOT}/${DATASET}/${TARGET}/${MU_MODEL_TYPE}"
 mkdir -p "${OUTDIR}"
 
-# Tag = percent of loader base: 0.05→005, 0.025→002.5 (same rule as run_sample_frac.sh).
+# Tag = percent of loader base: 0.05→005, 0.025→002.5 (same rule as scripts/run_sample_frac.sh).
 sample_tag=$(awk -v f="${SAMPLE_FRAC}" 'BEGIN {
     pct = f * 100.0
     if (pct == int(pct)) printf "%03d", pct

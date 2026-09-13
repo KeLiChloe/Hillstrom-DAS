@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# Always run from repo root (this file lives in scripts/).
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+cd "${ROOT}"
+
 EXP_ROOT="${EXP_ROOT:-exp_sept}"
 DATASET="${DATASET:-hillstrom}"
 TARGET="${TARGET:-conversion}"

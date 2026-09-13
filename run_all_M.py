@@ -1,14 +1,15 @@
 """
 Sweep DAST segment count M and compare OPE curves to meta-learner baselines.
 
-Pickle layout (consumed by analysis/plot_all_M.py):
+Pickle layout (same sidecar convention as run_sims.py):
   results[i]["dast"]["dual_dr"]["5"]  -> policy value at M=5
   results[i]["dast"]["stz"]["5"]["t_learner"]     -> STZ_basic advantage vs baseline at M=5
   results[i]["dast"]["stz_vr"]["5"]["t_learner"]  -> STZ_VR advantage vs baseline at M=5
   results[i]["dast"]["best_M"]        -> DAMS-selected M (same rule as run_sims)
   results[i]["t_learner"]["dual_dr"]  -> scalar baseline (no M axis)
 
-  STZ implementation actions live in {target}_stz.pkl sidecar (see conversion_stz.pkl).
+  STZ implementation actions live in {stem}_stz.pkl sidecar next to the main pkl.
+  Uses hparams/{dataset}/{target}.json (finetune_mu + finetune_leaf), like run_sims.
 """
 
 from __future__ import annotations
@@ -46,13 +47,15 @@ from dr_learner import (
 )
 from estimation import cost_adjusted_argmax_rows
 from evaluation import (
+    _build_mu_matrix,
     _get_propensity_per_action,
+    compute_dr_gamma_matrix,
     evaluate_policy_dr,
     evaluate_policy_dual_dr,
     evaluate_policy_dm,
     evaluate_policy_ipw,
 )
-from outcome_model import META_LEARNER_MU_MODEL_TYPE, tau_model_type_from_mu
+from outcome_model import tau_model_type_from_mu
 from exp_io import write_run_params_json
 from mu_hparams import resolve_hparams
 from s_learner import fit_s_learner, predict_mu_s_learner_matrix
@@ -71,8 +74,8 @@ eval_classes = {
     "dm": evaluate_policy_dm,
 }
 
-DEFAULT_M_CANDIDATES = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
-DEFAULT_EXP_ROOT = "exp_june"
+DEFAULT_M_CANDIDATES = [2, 3, 4, 5, 6, 7, 8, 9, 10]
+DEFAULT_EXP_ROOT = "exp_sept"
 TRAIN_FRAC = 0.7
 
 
@@ -83,7 +86,7 @@ def resolve_out_path(
     target_col: str,
     mu_model_type: str,
 ) -> Path:
-    """exp_june/{dataset}/{target}/{mu_model_type}/all_M/{target}.pkl"""
+    """{exp_root}/{dataset}/{target}/{mu_model_type}/all_M/{target}.pkl"""
     out_dir = Path(exp_root) / dataset / target_col / mu_model_type / "all_M"
     return (out_dir / f"{target_col}.pkl").resolve()
 
@@ -123,7 +126,11 @@ def _attach_sim_implementation(
     y_impl,
     D_cohort,
     y_cohort,
+    cohort_size,
+    gamma_impl=None,
+    mu_impl=None,
 ):
+    """Match run_sims.attach_sim_implementation sidecar fields."""
     verify_impl_customer_alignment(
         impl_customer_id,
         D_impl,
@@ -152,12 +159,34 @@ def _attach_sim_implementation(
             )
         actions[algo] = a[order].astype(np.int8)
 
+    gamma_out = None
+    if gamma_impl is not None:
+        gamma_arr = np.asarray(gamma_impl, dtype=np.float32)
+        if gamma_arr.shape[0] != n:
+            raise ValueError(
+                f"implementation alignment error for Gamma: "
+                f"rows={gamma_arr.shape[0]} != n_impl={n}"
+            )
+        gamma_out = gamma_arr[order]
+
+    mu_out = None
+    if mu_impl is not None:
+        mu_arr = np.asarray(mu_impl, dtype=np.float32)
+        if mu_arr.shape[0] != n:
+            raise ValueError(
+                f"implementation alignment error for mu_impl: "
+                f"rows={mu_arr.shape[0]} != n_impl={n}"
+            )
+        mu_out = mu_arr[order]
+
     sim_result["implementation"] = {
         "customer_id": customer_id,
         "D": D,
         "y": y,
+        "Gamma": gamma_out,
+        "mu_impl": mu_out,
         "actions": actions,
-        "cohort_size": int(len(D_cohort)),
+        "cohort_size": int(cohort_size),
         "n_impl": int(n),
     }
 
@@ -395,16 +424,18 @@ def run_single_all_M_experiment(
     action_method: str,
     M_candidates: list[int],
     seed: int,
-    meta_learner_mu_model_type: str | None = None,
+    meta_learner_mu_model_type: str,
     ope_mu_hparams=None,
     meta_mu_hparams=None,
     min_leaf_size: int,
     treatment_cost: float = 0.0,
+    n_folds_dams: int = 5,
 ) -> dict:
-    if meta_learner_mu_model_type is None:
-        meta_learner_mu_model_type = META_LEARNER_MU_MODEL_TYPE
+    if not meta_learner_mu_model_type:
+        raise ValueError("meta_learner_mu_model_type is required")
     min_leaf_size = int(min_leaf_size)
     treatment_cost = float(treatment_cost)
+    n_folds_dams = int(n_folds_dams)
     dataset_loaders = {
         "hillstrom": load_hillstrom,
         "criteo": load_criteo,
@@ -431,6 +462,17 @@ def run_single_all_M_experiment(
         return_impl_customer_id=True,
         mu_hparams=ope_mu_hparams,
     )
+    cohort_size = len(X)
+    gamma_impl = compute_dr_gamma_matrix(
+        X_impl,
+        D_impl,
+        y_impl,
+        mu_pilot_models,
+        propensities=None,
+    ).astype(np.float32)
+    mu_impl = _build_mu_matrix(
+        mu_pilot_models, X_impl, Gamma_pilot.shape[1]
+    ).astype(np.float32)
 
     action_K = Gamma_pilot.shape[1]
     impl_actions: dict[str, np.ndarray] = {}
@@ -468,7 +510,7 @@ def run_single_all_M_experiment(
         value_type_dast=value_type_dast,
         value_type_dams=value_type_dams,
         action_method=action_method,
-        n_folds=5,
+        n_folds=n_folds_dams,
         treatment_cost=treatment_cost,
     )
     sim_result["dast"]["best_M"] = int(best_M)
@@ -496,6 +538,9 @@ def run_single_all_M_experiment(
         y_impl=y_impl,
         D_cohort=D,
         y_cohort=y,
+        cohort_size=cohort_size,
+        gamma_impl=gamma_impl,
+        mu_impl=mu_impl,
     )
     _compute_dast_stz_scores(sim_result, M_candidates)
 
@@ -536,32 +581,51 @@ def _run_worker(payload: dict) -> dict:
             meta_mu_hparams=payload.get("meta_mu_hparams"),
             min_leaf_size=int(payload["min_leaf_size"]),
             treatment_cost=float(payload.get("treatment_cost", 0.0)),
+            n_folds_dams=int(payload.get("n_folds_dams", 5)),
         )
 
 
-def _plot_run_if_enabled(
+def _plot_all_M_at_end(
     experiment_data: dict,
     *,
-    run_index: int,
     fig_dir: Path | None,
     no_plot: bool,
 ) -> None:
+    """After all sims finish, plot every run × eval method via analysis/plot_all_M."""
     if no_plot or fig_dir is None:
         return
-    from analysis.plot_all_M import plot_experiment
+    results = experiment_data.get("results") or []
+    if not results:
+        print("[WARN] No results to plot.")
+        return
+    try:
+        from analysis.plot_all_M import plot_experiment
+    except ImportError:
+        print(
+            "[WARN] analysis/plot_all_M.py not available; skipping auto-plot."
+        )
+        return
 
-    plot_experiment(
-        experiment_data,
-        fig_dir=fig_dir,
-        run_index=run_index,
-        eval_method="dual_dr",
-    )
-    plot_experiment(
-        experiment_data,
-        fig_dir=fig_dir,
-        run_index=run_index,
-        eval_method="stz",
-    )
+    fig_dir = Path(fig_dir)
+    fig_dir.mkdir(parents=True, exist_ok=True)
+    eval_methods = ("dual_dr",)
+    print(f"\n[PLOT] Writing figures under {fig_dir} "
+          f"({len(results)} run(s) × {len(eval_methods)} methods)")
+    for run_index in range(len(results)):
+        for eval_method in eval_methods:
+            try:
+                plot_experiment(
+                    experiment_data,
+                    fig_dir=fig_dir,
+                    run_index=run_index,
+                    eval_method=eval_method,
+                )
+            except Exception as exc:
+                print(
+                    f"[WARN] plot failed run_index={run_index} "
+                    f"eval={eval_method}: {exc}"
+                )
+    print("[PLOT] Done.")
 
 
 def run_multiple_all_M_experiments(
@@ -580,7 +644,7 @@ def run_multiple_all_M_experiments(
     M_candidates: list[int],
     seed_sequence: int | None,
     n_jobs: int,
-    meta_learner_mu_model_type: str | None = None,
+    meta_learner_mu_model_type: str,
     fig_dir: Path | None = None,
     no_plot: bool = False,
     mu_hparams_json: str | None = None,
@@ -588,11 +652,13 @@ def run_multiple_all_M_experiments(
     meta_mu_hparams=None,
     min_leaf_size: int,
     treatment_cost: float = 0.0,
+    n_folds_dams: int = 5,
 ) -> dict:
-    if meta_learner_mu_model_type is None:
-        meta_learner_mu_model_type = META_LEARNER_MU_MODEL_TYPE
+    if not meta_learner_mu_model_type:
+        raise ValueError("meta_learner_mu_model_type is required")
     min_leaf_size = int(min_leaf_size)
     treatment_cost = float(treatment_cost)
+    n_folds_dams = int(n_folds_dams)
     inner_threads = 1
     n_jobs = int(n_jobs)
     max_attempts = int(N_sim) * 5
@@ -618,6 +684,7 @@ def run_multiple_all_M_experiments(
         "ope_mu_hparams": ope_mu_hparams,
         "meta_mu_hparams": meta_mu_hparams,
         "min_leaf_size": min_leaf_size,
+        "n_folds_dams": n_folds_dams,
         "out_path": out_path,
         "n_jobs": n_jobs,
         "inner_threads": inner_threads,
@@ -661,6 +728,7 @@ def run_multiple_all_M_experiments(
             "meta_mu_hparams": meta_mu_hparams,
             "min_leaf_size": min_leaf_size,
             "treatment_cost": treatment_cost,
+            "n_folds_dams": n_folds_dams,
         }
 
     if n_jobs <= 1:
@@ -695,18 +763,13 @@ def run_multiple_all_M_experiments(
                     meta_mu_hparams=meta_mu_hparams,
                     min_leaf_size=min_leaf_size,
                     treatment_cost=treatment_cost,
+                    n_folds_dams=n_folds_dams,
                 )
                 experiment_data["results"].append(res)
                 experiment_data["params"]["seeds"].append(int(seed))
                 _save_experiment_checkpoints(out_path, stz_path, experiment_data)
                 run_index = len(experiment_data["results"]) - 1
                 print(f'[SIM {run_index + 1}/{N_sim}] saved -> {out_path}')
-                _plot_run_if_enabled(
-                    experiment_data,
-                    run_index=run_index,
-                    fig_dir=fig_dir,
-                    no_plot=no_plot,
-                )
                 print("-" * 60)
             except Exception:
                 import traceback
@@ -768,18 +831,17 @@ def run_multiple_all_M_experiments(
                         end="",
                         flush=True,
                     )
-                    _plot_run_if_enabled(
-                        experiment_data,
-                        run_index=run_index,
-                        fig_dir=fig_dir,
-                        no_plot=no_plot,
-                    )
                     if completed < N_sim:
                         submit_one(ex)
         print("")
 
     print("\nALL SIMULATIONS DONE.")
     print(f"Results saved in '{out_path}'")
+    _plot_all_M_at_end(
+        experiment_data,
+        fig_dir=fig_dir,
+        no_plot=no_plot,
+    )
     return experiment_data
 
 
@@ -795,8 +857,9 @@ def _parse_M_candidates(raw: str | None) -> list[int]:
 def main() -> None:
     parser = argparse.ArgumentParser(
         description=(
-            "Sweep DAST segment count M vs meta-learner baselines; "
-            "auto-plots via analysis/plot_all_M.py unless --no-plot."
+            "Sweep DAST segment count M vs meta-learner baselines "
+            "(hparams from finetune JSON, same as run_sims). "
+            "After all sims, auto-runs analysis/plot_all_M.py (disable with --no-plot)."
         )
     )
     parser.add_argument(
@@ -816,8 +879,8 @@ def main() -> None:
     parser.add_argument(
         "--pilot_frac",
         type=float,
-        default=0.2,
-        help="Fraction of cohort used as pilot (default: 0.2)",
+        default=0.40,
+        help="Fraction of cohort used as pilot (default: 0.40)",
     )
     parser.add_argument(
         "--mu_model_type",
@@ -836,7 +899,7 @@ def main() -> None:
     parser.add_argument(
         "--meta_learner_mu_model_type",
         type=str,
-        default=META_LEARNER_MU_MODEL_TYPE,
+        required=True,
         choices=[
             "linear",
             "mlp_reg",
@@ -845,10 +908,7 @@ def main() -> None:
             "mlp_clf",
             "lightgbm_clf",
         ],
-        help=(
-            "μ head for t/s/x/dr_learner baselines "
-            f"(default: {META_LEARNER_MU_MODEL_TYPE})"
-        ),
+        help="μ head for t/s/x/dr_learner baselines; required",
     )
     parser.add_argument(
         "--value_type_dast",
@@ -897,6 +957,12 @@ def main() -> None:
         help="Parallel simulation workers (default: 1)",
     )
     parser.add_argument(
+        "--n_folds_dams",
+        type=int,
+        default=5,
+        help="K-fold DAMS folds for DAST M-selection (default: 5)",
+    )
+    parser.add_argument(
         "--fig-dir",
         "--fig_dir",
         default=None,
@@ -905,7 +971,7 @@ def main() -> None:
     parser.add_argument(
         "--no-plot",
         action="store_true",
-        help="Skip plotting after the experiment finishes",
+        help="Skip auto-plot via analysis/plot_all_M.py at the end",
     )
     parser.add_argument(
         "--treatment_cost",
@@ -926,6 +992,8 @@ def main() -> None:
 
     if args.treatment_cost < 0:
         parser.error("--treatment_cost must be >= 0")
+    if args.n_folds_dams < 1:
+        parser.error("--n_folds_dams must be >= 1")
 
     if args.seed_sequence is not None:
         random.seed(args.seed_sequence)
@@ -957,9 +1025,14 @@ def main() -> None:
         mu_model_type=args.mu_model_type,
     )
     print(f"Output path: {out_path}")
-    fig_dir = Path(args.fig_dir).expanduser().resolve() if args.fig_dir else (out_path.parent / "figures")
+    fig_dir = (
+        Path(args.fig_dir).expanduser().resolve()
+        if args.fig_dir
+        else (out_path.parent / "figures")
+    )
+    no_plot = bool(args.no_plot)
 
-    experiment_data = run_multiple_all_M_experiments(
+    run_multiple_all_M_experiments(
         N_sim=args.N_sim,
         sample_frac=args.sample_frac,
         pilot_frac=args.pilot_frac,
@@ -976,12 +1049,13 @@ def main() -> None:
         seed_sequence=args.seed_sequence,
         n_jobs=args.n_jobs,
         fig_dir=fig_dir,
-        no_plot=args.no_plot,
+        no_plot=no_plot,
         mu_hparams_json=mu_hparams_path,
         ope_mu_hparams=ope_mu_hparams,
         meta_mu_hparams=meta_mu_hparams,
         min_leaf_size=min_leaf_size,
         treatment_cost=args.treatment_cost,
+        n_folds_dams=args.n_folds_dams,
     )
 
 

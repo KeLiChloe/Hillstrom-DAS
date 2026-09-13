@@ -478,7 +478,7 @@ def select_dast_M_via_dams(
             f"(folds={[f'{s:.6f}' for s in fold_scores]}, "
             f"leaves={fold_leaves})"
         )
-        if score_M > best_score:  # tie break by smaller M
+        if score_M >= best_score:  # tie break by larger M
             best_score = score_M
             best_M = M
 
@@ -864,7 +864,7 @@ def run_mst_dams(
             f"  M={M}: mean DAMS={score_M:.6f} "
             f"(folds={[f'{s:.6f}' for s in fold_scores]})"
         )
-        if score_M > best_score:  # tie break by smaller M
+        if score_M >= best_score:  # tie break by larger M
             best_score = score_M
             best_M = M
 

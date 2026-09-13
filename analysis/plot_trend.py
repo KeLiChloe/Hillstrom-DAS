@@ -1508,7 +1508,7 @@ def plot_stz_trend(
     x_vals = sorted(stats_df["x_value"].unique())
     x_n = [sweep.to_display_x(x) for x in x_vals]
     if ylabel is None:
-        ylabel = "%"
+        ylabel = "DAS improvement ratio (%)"
     if title_suffix is None:
         title_suffix = eval_method_title(eval_method)
 

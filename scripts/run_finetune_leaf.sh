@@ -3,15 +3,19 @@
 # For each (dataset, target) × available μ type, writes one keyed dast entry.
 #
 # Usage:
-#   ./run_finetune_leaf.sh
+#   ./scripts/run_finetune_leaf.sh
 #       → all targets under all datasets × μ types present in each hparams JSON
-#   DATASET=hillstrom ./run_finetune_leaf.sh
-#   DATASET=hillstrom TARGET=conversion ./run_finetune_leaf.sh
-#   MU_MODEL_TYPE=lightgbm_reg ./run_finetune_leaf.sh
-#   MU_MODEL_TYPES="lightgbm_reg mlp_reg" ./run_finetune_leaf.sh
+#   DATASET=hillstrom ./scripts/run_finetune_leaf.sh
+#   DATASET=hillstrom TARGET=conversion ./scripts/run_finetune_leaf.sh
+#   MU_MODEL_TYPE=lightgbm_reg ./scripts/run_finetune_leaf.sh
+#   MU_MODEL_TYPES="lightgbm_reg mlp_reg" ./scripts/run_finetune_leaf.sh
 #
 # Optional: VALUE_TYPE_* ACTION_METHOD SAMPLE_FRAC SEED N_FOLDS_DAMS
 set -euo pipefail
+
+# Always run from repo root (this file lives in scripts/).
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+cd "${ROOT}"
 
 VALUE_TYPE_DAST="${VALUE_TYPE_DAST:-hybrid}"
 VALUE_TYPE_DAMS="${VALUE_TYPE_DAMS:-hybrid}"

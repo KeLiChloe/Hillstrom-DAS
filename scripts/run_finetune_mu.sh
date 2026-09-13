@@ -3,15 +3,19 @@
 # Writes/overwrites models in hparams/{dataset}/{target}.json (dast preserved).
 #
 # Usage:
-#   ./run_finetune_mu.sh
+#   ./scripts/run_finetune_mu.sh
 #       → all targets under all datasets
-#   DATASET=hillstrom ./run_finetune_mu.sh
+#   DATASET=hillstrom ./scripts/run_finetune_mu.sh
 #       → all targets for that dataset
-#   DATASET=hillstrom TARGET=conversion ./run_finetune_mu.sh
+#   DATASET=hillstrom TARGET=conversion ./scripts/run_finetune_mu.sh
 #       → single pair
 #
 # Optional: SAMPLE_FRAC SEED
 set -euo pipefail
+
+# Always run from repo root (this file lives in scripts/).
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+cd "${ROOT}"
 
 SAMPLE_FRAC="${SAMPLE_FRAC:-1}"
 SEED="${SEED:-42}"

@@ -26,7 +26,7 @@ import time
 import random
 
 from exp_io import write_run_params_json
-from outcome_model import META_LEARNER_MU_MODEL_TYPE, tau_model_type_from_mu
+from outcome_model import tau_model_type_from_mu
 from mu_hparams import resolve_hparams
 
 
@@ -342,7 +342,7 @@ def run_single_experiment(
     value_type_dams,
     seed,
     action_method,
-    meta_learner_mu_model_type=None,
+    meta_learner_mu_model_type,
     save_offline_data=True,
     n_folds_dams=5,
     ope_mu_hparams=None,
@@ -351,8 +351,8 @@ def run_single_experiment(
     min_leaf_size: int,
     treatment_cost: float = 0.0,
 ):
-    if meta_learner_mu_model_type is None:
-        meta_learner_mu_model_type = META_LEARNER_MU_MODEL_TYPE
+    if not meta_learner_mu_model_type:
+        raise ValueError("meta_learner_mu_model_type is required")
     min_leaf_size = int(min_leaf_size)
     treatment_cost = float(treatment_cost)
     if treatment_cost > 0:
@@ -1217,7 +1217,7 @@ def run_multiple_experiments(
     value_type_dams,
     seed_sequence,
     action_method,
-    meta_learner_mu_model_type=None,
+    meta_learner_mu_model_type,
     save_offline_data=True,
     n_folds_dams=5,
     mu_hparams_json=None,
@@ -1229,8 +1229,8 @@ def run_multiple_experiments(
     reuse_seeds: list[int] | None = None,
     reuse_seeds_from: str | None = None,
 ):
-    if meta_learner_mu_model_type is None:
-        meta_learner_mu_model_type = META_LEARNER_MU_MODEL_TYPE
+    if not meta_learner_mu_model_type:
+        raise ValueError("meta_learner_mu_model_type is required")
     min_leaf_size = int(min_leaf_size)
     treatment_cost = float(treatment_cost)
     _set_thread_env(1)
@@ -1420,7 +1420,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--meta_learner_mu_model_type",
         type=str,
-        default=META_LEARNER_MU_MODEL_TYPE,
+        required=True,
         choices=[
             "linear",
             "mlp_reg",
@@ -1429,12 +1429,9 @@ if __name__ == "__main__":
             "mlp_clf",
             "lightgbm_clf",
         ],
-        help=(
-            "μ head for t/s/x/dr_learner baselines "
-            f"(default: {META_LEARNER_MU_MODEL_TYPE})"
-        ),
+        help="μ model type for meta-learners (t/s/x/dr_learner); required",
     )
-    
+
     parser.add_argument(
         "--value_type_dast",
         type=str,

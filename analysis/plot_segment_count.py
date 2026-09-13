@@ -38,7 +38,7 @@ from plot_style import (  # noqa: E402
 )
 
 DAST_ALGO = "dast"
-DAST_COLOR = "#EF660A99"
+DAST_COLOR = "#000000"
 
 # Segment-count display order / labels for DAMS ablation variants.
 _SEGMENT_LABEL = {
