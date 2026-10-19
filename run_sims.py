@@ -61,6 +61,7 @@ def _set_thread_env(n: int = 1):
 
 
 from data_utils import (
+    HILLSTROM_ACTION_ORDER,
     load_criteo,
     load_hillstrom,
     prepare_pilot_impl,
@@ -100,7 +101,9 @@ from segmentation import (
 )
 from policytree import run_policytree_individual
 
-POLICYTREE_DEPTH = 2
+POLICYTREE_DEPTH = 3
+# None → exact policy_tree(depth). Default 2 with DEPTH=3 → hybrid_policy_tree.
+POLICYTREE_SEARCH_DEPTH = 2
 
 ALGO_LIST = ["dast", "causal_forest", "mst", "clr", "kmeans", "gmm", "t_learner", "s_learner", "x_learner", "dr_learner"] #
 # ALGO_LIST = ["kmeans", "kmeans_dams", "gmm", "gmm_dams", "clr", "clr_dams", "dast"]
@@ -115,6 +118,13 @@ eval_classes = {
 }
 
 M_candidates = [2, 3, 4, 5, 6, 7, 8, 9, 10]
+
+
+def _treatment_action_order_for_dataset(dataset: str) -> list | None:
+    """Canonical integer↔label order used by the current data loaders."""
+    if dataset == "hillstrom":
+        return list(HILLSTROM_ACTION_ORDER)
+    return None
 
 
 def _impl_actions_from_segments(seg_labels_impl, action_per_segment):
@@ -318,6 +328,23 @@ def _attach_sim_implementation(
         y_cohort,
         context="attach_sim_implementation(sorted)",
     )
+
+    # Guard: stored actions must reproduce that algo's IPW OPE on the same (D, y).
+    # Catches treatment-label encoding bugs before they poison *_stz.pkl.
+    from action_encoding import actions_match_ipw, ipw_value
+
+    for algo, a in actions.items():
+        block = sim_result.get(algo)
+        if not isinstance(block, dict) or "ipw" not in block:
+            continue
+        target = float(block["ipw"])
+        if not actions_match_ipw(D, y, a, target):
+            got = ipw_value(D, y, a)
+            raise RuntimeError(
+                f"implementation action/IPW mismatch for {algo}: "
+                f"IPW(D,y,actions)={got:.10g} vs stored OPE ipw={target:.10g}. "
+                f"Likely a treatment-label encoding bug."
+            )
 
     sim_result["implementation"] = {
         "customer_id": customer_id,
@@ -1062,9 +1089,12 @@ def run_single_experiment(
             X_impl,
             depth=POLICYTREE_DEPTH,
             treatment_cost=treatment_cost,
+            search_depth=POLICYTREE_SEARCH_DEPTH,
+            seed=int(seed),
         )
 
         sim_result["policytree"]["depth"] = POLICYTREE_DEPTH
+        sim_result["policytree"]["search_depth"] = POLICYTREE_SEARCH_DEPTH
 
         # Treat each impl customer as their own "segment" for OPE reuse
         seg_labels_individual = np.arange(len(X_impl))
@@ -1087,8 +1117,13 @@ def run_single_experiment(
             _record_impl_action(impl_actions, "policytree", action_impl_policytree)
 
         n_treated = int((action_impl_policytree > 0).sum())
+        mode = (
+            f"hybrid(search.depth={POLICYTREE_SEARCH_DEPTH})"
+            if POLICYTREE_SEARCH_DEPTH is not None
+            else "exact"
+        )
         print(
-            f"PolicyTree (depth={POLICYTREE_DEPTH}) - "
+            f"PolicyTree (depth={POLICYTREE_DEPTH}, {mode}) - "
             f"Treated: {n_treated}/{len(action_impl_policytree)}, "
             f"Time: {t1 - t0:.2f} seconds"
         )
@@ -1273,6 +1308,7 @@ def run_multiple_experiments(
         "ALGO_LIST": list(ALGO_LIST),
         "eval_methods": list(eval_methods),
         "M_candidates": list(M_candidates),
+        "treatment_action_order": _treatment_action_order_for_dataset(dataset),
         "reuse_seeds_from": reuse_seeds_from,
         "reuse_seeds": list(fixed_seeds) if fixed_seeds is not None else None,
         "seeds": [],

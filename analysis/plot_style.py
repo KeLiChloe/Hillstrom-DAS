@@ -20,7 +20,7 @@ DEFAULT_COLORS = {
     "s_learner": "#1F5BFFAF",
     "x_learner": "#FF5832AD",
     "dr_learner": "#7A5CFFAF",
-    "policy_tree": "#333333AF",
+    "policy_tree": "#9E9E9E",
     "causal_forest": "#0097A7AF",
 }
 
@@ -52,6 +52,7 @@ BASELINE_KEY_ALIASES = {
     "gmm_dams": "gmm-dams",
     "clr": "clr-standard",
     "clr_dams": "clr-dams",
+    "policytree": "policy_tree",
 }
 
 EXTRA_LABEL_MAP = {

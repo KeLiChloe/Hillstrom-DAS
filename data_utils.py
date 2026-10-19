@@ -170,6 +170,8 @@ def split_seg_train_test(X_pilot, D_pilot, y_pilot, Gamma_pilot, test_frac):
 
 
 HILLSTROM_CONTROL = "No E-Mail"
+# Canonical integer codes for Hillstrom. DO NOT reorder — older pickles may use a
+# different labeling (alphabetical Mens=0); backfill must remap via action_encoding.
 HILLSTROM_ACTION_ORDER = (
     HILLSTROM_CONTROL,   # 0 = holdout (no cost / regression reference)
     "Mens E-Mail",       # 1

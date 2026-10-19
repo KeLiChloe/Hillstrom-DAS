@@ -5,7 +5,7 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "${ROOT}"
 
-EXP_ROOT="${EXP_ROOT:-exp_aug}"
+EXP_ROOT="${EXP_ROOT:-exp_aug_larger_M}"
 DATASET="${DATASET:-criteo}"
 TARGET="${TARGET:-conversion}"
 SAMPLE_FRAC="${SAMPLE_FRAC:-0.1}"
@@ -20,7 +20,7 @@ N_SIM="${N_SIM:-50}"
 N_FOLDS_DAMS="${N_FOLDS_DAMS:-5}"
 
 # Space-separated cost grid
-COST_VALUES="${COST_VALUES:-0.0025 0.0030 0.0035}"
+COST_VALUES="${COST_VALUES:-0.0035 0.004}"
 
 OUTDIR="${EXP_ROOT}/${DATASET}/${TARGET}/${MU_MODEL_TYPE}/treatment_cost_with_fixed_${SAMPLE_FRAC}_sample_frac_${PILOT_FRAC}_pilot_frac"
 mkdir -p "${OUTDIR}"

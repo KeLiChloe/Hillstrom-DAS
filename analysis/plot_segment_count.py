@@ -21,8 +21,8 @@ import warnings
 from pathlib import Path
 
 import matplotlib.pyplot as plt
+import matplotlib.ticker as ticker
 import numpy as np
-import seaborn as sns
 from scipy import stats
 
 _ANALYSIS_DIR = Path(__file__).resolve().parent
@@ -39,10 +39,17 @@ from plot_style import (  # noqa: E402
 
 DAST_ALGO = "dast"
 DAST_COLOR = "#000000"
+M_MIN_DEFAULT = 2
+M_MAX_DEFAULT = 10
+
+_DATASET_BASE_N = {
+    "hillstrom": 64_000,
+    "criteo": 1_397_960,
+}
 
 # Segment-count display order / labels for DAMS ablation variants.
 _SEGMENT_LABEL = {
-    "dast": "DAST",
+    "dast": "DAS",
     "kmeans": "K-Means",
     "kmeans_dams": "K-Means + DAMS",
     "gmm": "GMM",
@@ -53,7 +60,7 @@ _SEGMENT_LABEL = {
 }
 
 _SEGMENT_ORDER = [
-    "DAST",
+    "DAS",
     "K-Means",
     "K-Means + DAMS",
     "GMM",
@@ -61,6 +68,18 @@ _SEGMENT_ORDER = [
     "CLR",
     "CLR + DAMS",
     "MST",
+]
+
+# Legend left→right ≈ top→bottom on the segment-count plot.
+_LEGEND_ORDER = [
+    "GMM",
+    "GMM + DAMS",
+    "K-Means",
+    "K-Means + DAMS",
+    "DAS",
+    "MST",
+    "CLR",
+    "CLR + DAMS",
 ]
 
 
@@ -81,16 +100,42 @@ def algo_label(algo: str) -> str:
     if algo in _SEGMENT_LABEL:
         return _SEGMENT_LABEL[algo]
     if algo == DAST_ALGO:
-        return "DAST"
+        return "DAS"
     return baseline_label(algo)
 
 
 def algo_color(algo: str):
     if algo == DAST_ALGO:
         return to_rgba(DAST_COLOR)
-    # DAMS variants: same hue as the base method
     base = algo.replace("_dams", "") if algo.endswith("_dams") else algo
     return to_rgba(baseline_color(base))
+
+
+def configure_plot_style() -> None:
+    plt.rcParams.update(
+        {
+            "font.family": "serif",
+            "font.serif": [
+                "Times New Roman",
+                "Times",
+                "Liberation Serif",
+                "STIXGeneral",
+                "DejaVu Serif",
+            ],
+            "mathtext.fontset": "stix",
+            "axes.labelweight": "bold",
+            "axes.labelsize": 12,
+            "axes.titlesize": 13,
+            "axes.titleweight": "bold",
+            "xtick.labelsize": 11,
+            "ytick.labelsize": 11,
+            "legend.fontsize": 9,
+            "pdf.fonttype": 42,
+            "ps.fonttype": 42,
+            "figure.dpi": 300,
+            "axes.linewidth": 0.8,
+        }
+    )
 
 
 def discover_pkls(exp_dir: Path) -> list[Path]:
@@ -123,23 +168,38 @@ def infer_x_value(path: Path, params: dict) -> float | None:
     return None
 
 
-def infer_x_label(params_list: list[dict], paths: list[Path]) -> str:
+def infer_sweep_kind(params_list: list[dict], paths: list[Path]) -> str:
     for params in params_list:
-        for key, label in (
-            ("sample_frac", "sample_frac"),
-            ("pilot_frac", "pilot_frac"),
-            ("treatment_cost", "treatment_cost"),
-        ):
+        for key in ("sample_frac", "pilot_frac", "treatment_cost"):
             if key in params:
-                return label
+                return key
     names = " ".join(p.name for p in paths)
-    if "treatment_cost" in names:
-        return "treatment_cost"
-    if "pilot_frac" in names:
-        return "pilot_frac"
-    if "sample_frac" in names:
-        return "sample_frac"
+    for key in ("treatment_cost", "pilot_frac", "sample_frac"):
+        if key in names:
+            return key
     return "x"
+
+
+def display_x_and_label(
+    sweep_kind: str,
+    x_value: float,
+    *,
+    dataset: str | None,
+) -> tuple[float, str]:
+    """Map stored sweep value to plotted x and axis label."""
+    if sweep_kind == "treatment_cost":
+        return float(x_value) * 1000.0, r"Treatment cost $c$ ($\times 10^{-3}$)"
+    if sweep_kind in ("sample_frac", "pilot_frac"):
+        base = _DATASET_BASE_N.get(str(dataset or "").lower())
+        if base is not None:
+            n_k = (base * float(x_value)) / 1000.0
+            if sweep_kind == "pilot_frac":
+                return n_k, r"Pilot size $N$ ($\times 10^{3}$)"
+            return n_k, r"Sample size $N$ ($\times 10^{3}$)"
+        pct = 100.0 * float(x_value)
+        label = "Pilot fraction (%)" if sweep_kind == "pilot_frac" else "Sample fraction (%)"
+        return pct, label
+    return float(x_value), sweep_kind
 
 
 def collect_best_m(
@@ -235,7 +295,9 @@ def summarize(rows: list[dict], algos: list[str]) -> list[dict]:
         buckets[(r["x"], r["algo"])].append(r["best_M"])
 
     out = []
-    for (x, algo), vals in sorted(buckets.items(), key=lambda t: (t[0][0] is None, t[0][0], t[0][1])):
+    for (x, algo), vals in sorted(
+        buckets.items(), key=lambda t: (t[0][0] is None, t[0][0], t[0][1])
+    ):
         if algo not in algos:
             continue
         mean, lo, hi = _mean_ci(np.asarray(vals))
@@ -253,10 +315,15 @@ def summarize(rows: list[dict], algos: list[str]) -> list[dict]:
     return out
 
 
+def _subtitle(params: dict, n_sims: int | None) -> str | None:
+    if n_sims is not None and n_sims > 0:
+        return f"Mean ± 95% CI ({n_sims} runs)"
+    return None
+
+
 def plot_bars(summary: list[dict], *, title: str, out_stem: Path) -> None:
     """Single-point (or pooled) bar chart of mean best_M."""
-    # If multiple x, pool is wrong — caller should use lines. Here assume one x
-    # or caller passed already-filtered summary with unique algos.
+    configure_plot_style()
     by_algo: dict[str, dict] = {}
     for row in summary:
         by_algo[row["algo"]] = row
@@ -273,34 +340,59 @@ def plot_bars(summary: list[dict], *, title: str, out_stem: Path) -> None:
         ]
     )
 
-    sns.set_theme(style="whitegrid", context="paper")
     fig, ax = plt.subplots(figsize=(max(6.0, 0.7 * len(algos) + 2), 4.2))
     x_pos = np.arange(len(algos))
-    ax.bar(x_pos, means, color=colors, edgecolor="white", linewidth=0.6, yerr=yerr, capsize=3)
+    ax.bar(
+        x_pos,
+        means,
+        color=colors,
+        edgecolor="white",
+        linewidth=0.6,
+        yerr=yerr,
+        capsize=3,
+    )
     ax.set_xticks(x_pos)
     ax.set_xticklabels(labels, rotation=25, ha="right")
-    ax.set_ylabel("Mean # segments (best_M)")
+    ax.set_ylabel(r"Mean number of segments ($M$)")
     ax.set_xlabel("")
     ax.set_title(title)
-    ax.set_ylim(bottom=0)
+    ax.set_ylim(1.0, M_MAX_DEFAULT + 0.5)
+    ax.yaxis.set_major_locator(ticker.MultipleLocator(2))
+    ax.axhline(M_MAX_DEFAULT, color="#bbbbbb", linestyle="--", linewidth=1.0, zorder=0)
+    ax.grid(axis="y", linestyle="-", linewidth=0.5, alpha=0.25)
+    ax.set_axisbelow(True)
     fig.tight_layout()
     for ext in ("png", "pdf"):
         out = out_stem.with_suffix(f".{ext}")
-        fig.savefig(out, dpi=200, bbox_inches="tight")
+        fig.savefig(out, dpi=300, bbox_inches="tight", facecolor="white")
         print(f"Wrote {out}")
     plt.close(fig)
+
+
+def _format_x_tick(value: float, _pos=None) -> str:
+    """Tick labels matching each sweep point (integers when exact)."""
+    if abs(value - round(value)) < 1e-6:
+        return f"{int(round(value))}"
+    return f"{value:.1f}"
 
 
 def plot_lines(
     summary: list[dict],
     algos: list[str],
     *,
-    x_label: str,
+    sweep_kind: str,
+    dataset: str | None,
     title: str,
+    subtitle: str | None,
     out_stem: Path,
+    m_min: float = M_MIN_DEFAULT,
+    m_max: float = M_MAX_DEFAULT,
 ) -> None:
-    sns.set_theme(style="whitegrid", context="paper")
-    fig, ax = plt.subplots(figsize=(7.2, 4.4))
+    configure_plot_style()
+    fig, ax = plt.subplots(figsize=(6.8, 4.8))
+
+    x_label = ""
+    x_tick_vals: list[float] = []
     for algo in algos:
         rows = sorted(
             (r for r in summary if r["algo"] == algo and r["x"] is not None),
@@ -308,13 +400,28 @@ def plot_lines(
         )
         if not rows:
             continue
-        xs = np.asarray([r["x"] for r in rows], dtype=float)
+        xs_disp = []
+        for r in rows:
+            xd, x_label = display_x_and_label(
+                sweep_kind, float(r["x"]), dataset=dataset
+            )
+            xs_disp.append(xd)
+        xs = np.asarray(xs_disp, dtype=float)
+        if not x_tick_vals:
+            x_tick_vals = list(xs)
         ys = np.asarray([r["mean"] for r in rows], dtype=float)
         lo = np.asarray([r["lo"] for r in rows], dtype=float)
         hi = np.asarray([r["hi"] for r in rows], dtype=float)
+
         color = algo_color(algo)
-        ls = "--" if algo.endswith("_dams") else "-"
-        marker = "s" if algo.endswith("_dams") else "o"
+        is_dast = algo == DAST_ALGO
+        ls, marker = "-", "s" if algo.endswith("_dams") else "o"
+
+        lw = 2.2 if is_dast else 1.8
+        ms = 5.5 if is_dast else 5.0
+        alpha_line = 1.0 if is_dast else 0.95
+        z = 5 if is_dast else 3
+
         ax.plot(
             xs,
             ys,
@@ -322,19 +429,88 @@ def plot_lines(
             color=color,
             linestyle=ls,
             marker=marker,
-            markersize=5,
-            linewidth=1.8,
+            markersize=ms,
+            linewidth=lw,
+            alpha=alpha_line,
+            zorder=z,
         )
-        ax.fill_between(xs, lo, hi, color=color, alpha=0.15, linewidth=0)
+        # CI band for every method (GMM/CLR often collapse to a line).
+        ax.fill_between(
+            xs,
+            lo,
+            hi,
+            color=color,
+            alpha=0.12 if is_dast else 0.10,
+            linewidth=0,
+            zorder=1,
+        )
+
+    ax.axhline(
+        m_min,
+        color="#bbbbbb",
+        linestyle=":",
+        linewidth=1.0,
+        zorder=0,
+    )
+    ax.axhline(
+        m_max,
+        color="#bbbbbb",
+        linestyle="--",
+        linewidth=1.0,
+        zorder=0,
+    )
     ax.set_xlabel(x_label)
-    ax.set_ylabel("Mean # segments (best_M)")
-    ax.set_title(title)
-    ax.set_ylim(bottom=0)
-    ax.legend(frameon=True, fontsize=8, loc="best")
-    fig.tight_layout()
+    ax.set_ylabel(r"Mean number of segments ($M$)")
+    if x_tick_vals:
+        ax.set_xticks(x_tick_vals)
+        ax.xaxis.set_major_formatter(ticker.FuncFormatter(_format_x_tick))
+        plt.setp(
+            ax.get_xticklabels(),
+            rotation=40,
+            ha="right",
+            rotation_mode="anchor",
+        )
+    ax.set_ylim(1.0, m_max + 0.5)
+    ax.yaxis.set_major_locator(ticker.MultipleLocator(2))
+    ax.grid(axis="y", linestyle="-", linewidth=0.5, alpha=0.22)
+    ax.set_axisbelow(True)
+
+    # Compact header just above the axes (all centered on the plot box).
+    fig.subplots_adjust(top=0.78, bottom=0.16, left=0.14, right=0.95)
+    ax.set_title(title, fontsize=15, fontweight="bold", pad=36)
+    if subtitle:
+        ax.text(
+            0.5,
+            1.08,
+            subtitle,
+            transform=ax.transAxes,
+            ha="center",
+            va="bottom",
+            fontsize=11,
+            color="#444444",
+        )
+    handles, labels = ax.get_legend_handles_labels()
+    by_label = dict(zip(labels, handles))
+    ordered_labels = [lab for lab in _LEGEND_ORDER if lab in by_label]
+    ordered_labels += [lab for lab in labels if lab not in ordered_labels]
+    ordered_handles = [by_label[lab] for lab in ordered_labels]
+    ax.legend(
+        ordered_handles,
+        ordered_labels,
+        frameon=False,
+        fontsize=10,
+        loc="lower center",
+        bbox_to_anchor=(0.5, 1.0),
+        ncol=len(ordered_labels) if ordered_labels else 5,
+        columnspacing=1.1,
+        handlelength=1.6,
+        handletextpad=0.35,
+        borderaxespad=0.0,
+    )
     for ext in ("png", "pdf"):
         out = out_stem.with_suffix(f".{ext}")
-        fig.savefig(out, dpi=200, bbox_inches="tight")
+        # Keep reserved header space (do not use bbox_inches="tight").
+        fig.savefig(out, dpi=300, facecolor="white")
         print(f"Wrote {out}")
     plt.close(fig)
 
@@ -392,9 +568,7 @@ def main() -> None:
         raise SystemExit(f"error: not a directory: {exp_dir}")
 
     out_dir = (
-        Path(args.out_dir).expanduser().resolve()
-        if args.out_dir
-        else exp_dir
+        Path(args.out_dir).expanduser().resolve() if args.out_dir else exp_dir
     )
     out_dir.mkdir(parents=True, exist_ok=True)
 
@@ -405,11 +579,15 @@ def main() -> None:
     )
     summary = summarize(rows, algos)
     x_vals = {r["x"] for r in summary}
-    x_label = infer_x_label([r["params"] for r in rows], pkls)
-
-    dataset = rows[0]["params"].get("dataset", "")
-    target = rows[0]["params"].get("target_col", "")
-    title = f"Mean # segments — {dataset} / {target}".strip(" —/")
+    sweep_kind = infer_sweep_kind([r["params"] for r in rows], pkls)
+    dataset = str(rows[0]["params"].get("dataset", "") or "")
+    n_sims = int(rows[0]["params"].get("N_sim") or 0) or None
+    # Prefer actual per-point n when constant.
+    ns = {r["n"] for r in summary}
+    if len(ns) == 1:
+        n_sims = next(iter(ns))
+    title = "Mean Number of Segments Selected"
+    subtitle = _subtitle(rows[0]["params"], n_sims)
 
     print(
         f"Loaded {len(pkls)} pickle(s), {len(rows)} (sim,algo) best_M values; "
@@ -422,10 +600,17 @@ def main() -> None:
         )
 
     out_stem = out_dir / args.prefix
+    m_candidates = rows[0]["params"].get("M_candidates")
+    if m_candidates:
+        m_min = float(min(m_candidates))
+        m_max = float(max(m_candidates))
+    else:
+        m_min = float(M_MIN_DEFAULT)
+        m_max = float(M_MAX_DEFAULT)
+
     if len(x_vals) == 1 or (None in x_vals and len(x_vals) == 1):
         plot_bars(summary, title=title, out_stem=out_stem)
     elif None in x_vals:
-        # Mixed / unknown x: bar of pooled means per algo
         warnings.warn("Some pickles lack a sweep x; plotting pooled bar chart.")
         pooled = []
         from collections import defaultdict
@@ -451,9 +636,13 @@ def main() -> None:
         plot_lines(
             summary,
             algos,
-            x_label=x_label,
+            sweep_kind=sweep_kind,
+            dataset=dataset,
             title=title,
+            subtitle=subtitle,
             out_stem=out_stem,
+            m_min=m_min,
+            m_max=m_max,
         )
 
 

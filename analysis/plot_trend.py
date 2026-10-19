@@ -42,6 +42,7 @@ from evaluation import (
     evaluate_ipw_net_from_impl,
 )
 
+import matplotlib.colors as mcolors
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -101,8 +102,8 @@ EVAL_METHOD_TITLE = {
     "dr_net": "AIPW (net)",
     "ipw_net": "IPW (net)",
     "dm_net": "Direct Method (net)",
-    "stz": "STZ",
-    "stz_vr": "STZ-VR",
+    "stz": "Matched-Action",
+    "stz_vr": "Matched-Action-VR",
 }
 
 # STZ variants plotted under --metric advantage / both.
@@ -128,6 +129,7 @@ REQUESTED_BASELINES = [
     "s_learner",
     "x_learner",
     "dr_learner",
+    "policytree",
 ]
 
 COMPARATOR_COLORS = comparator_colors_by_label()
@@ -240,10 +242,15 @@ def configure_plot_style() -> None:
 
 
 def safe_get_value(run: dict, algo: str, ev: str) -> float:
-    """Same accessor as CI_plot.py."""
-    x = run[algo]
+    """Missing algo/metric → NaN (partial backfills must not crash)."""
+    x = run.get(algo)
+    if not isinstance(x, dict):
+        return float("nan")
     v = x.get(ev, np.nan)
-    return float(v)
+    try:
+        return float(v)
+    except (TypeError, ValueError):
+        return float("nan")
 
 
 def das_improvement_ratio(vt: float, vb: float) -> float:
@@ -1157,6 +1164,12 @@ def _save_fig(fig, fig_dir: Path, out_stem: str) -> None:
     plt.close(fig)
 
 
+def _expand_ylim_top(ax, dy_data: float = 5.0) -> None:
+    """Pad the top of the y-axis by ``dy_data`` (data units) for legend room."""
+    y0, y1 = ax.get_ylim()
+    ax.set_ylim(y0, float(y1) + float(dy_data))
+
+
 def _title_with_eval_suffix(base: str, eval_label: str) -> str:
     """Append (eval_label) only when the label is non-empty."""
     label = str(eval_label).strip()
@@ -1253,6 +1266,47 @@ def _x_tick_formatter(sweep: SweepConfig):
     return _format_n_tick
 
 
+def _plot_mean_with_ci_band(
+    ax,
+    x,
+    y,
+    yerr,
+    *,
+    color,
+    label: str,
+    linewidth: float = 1.4,
+    zorder: int = 3,
+    markersize: float = 3.5,
+) -> None:
+    """Mean line with a shaded ±CI band (symmetric half-width)."""
+    y = np.asarray(y, dtype=float)
+    yerr = np.asarray(yerr, dtype=float)
+    # Drop embedded alpha so the band stays visible (line colors are #RRGGBBAA).
+    band = mcolors.to_rgb(color)
+    ax.fill_between(
+        x,
+        y - yerr,
+        y + yerr,
+        color=band,
+        alpha=0.10,
+        linewidth=0,
+        zorder=max(zorder - 1, 1),
+    )
+    ax.plot(
+        x,
+        y,
+        "-o",
+        color=color,
+        markersize=markersize,
+        markerfacecolor=color,
+        markeredgecolor=color,
+        markeredgewidth=0.6,
+        linewidth=linewidth,
+        label=label,
+        zorder=zorder,
+    )
+
+
 def plot_treatment_rate_trend(
     stats_df: pd.DataFrame,
     *,
@@ -1291,23 +1345,14 @@ def plot_treatment_rate_trend(
         x = np.array([sweep.to_display_x(v) for v in sub["x_value"].values])
         y = sub["Mean"].values
         yerr = sub["CI"].values
-
-        ax.errorbar(
+        _plot_mean_with_ci_band(
+            ax,
             x,
             y,
-            yerr=yerr,
-            fmt="-o",
+            yerr,
             color=color,
-            ecolor=color,
-            elinewidth=1.0,
-            capsize=2.5,
-            capthick=0.9,
-            markersize=3.5,
-            markerfacecolor=color,
-            markeredgecolor=color,
-            markeredgewidth=0.6,
-            linewidth=linewidth,
             label=label,
+            linewidth=linewidth,
             zorder=zorder,
         )
 
@@ -1410,24 +1455,8 @@ def plot_trend(
         x = np.array([sweep.to_display_x(v) for v in sub["x_value"].values])
         y = sub["Mean"].values
         yerr = sub["CI"].values
-
-        ax.errorbar(
-            x,
-            y,
-            yerr=yerr,
-            fmt="-o",
-            color=color,
-            ecolor=color,
-            elinewidth=1.0,
-            capsize=2.5,
-            capthick=0.9,
-            markersize=3.5,
-            markerfacecolor=color,
-            markeredgecolor=color,
-            markeredgewidth=0.6,
-            linewidth=1.4,
-            label=label,
-            zorder=3,
+        _plot_mean_with_ci_band(
+            ax, x, y, yerr, color=color, label=label
         )
 
     ax.axhline(
@@ -1469,6 +1498,7 @@ def plot_trend(
     ax.grid(True, axis="both", linestyle=":", linewidth=0.5, alpha=0.55)
     sns.despine(ax=ax, top=True, right=True)
 
+    _expand_ylim_top(ax, dy_data=5.0)
     ax.legend(
         loc="upper right",
         bbox_to_anchor=(0.98, 0.98),
@@ -1523,24 +1553,8 @@ def plot_stz_trend(
         x = np.array([sweep.to_display_x(v) for v in sub["x_value"].values])
         y = sub["Mean"].values
         yerr = sub["CI"].values
-
-        ax.errorbar(
-            x,
-            y,
-            yerr=yerr,
-            fmt="-o",
-            color=color,
-            ecolor=color,
-            elinewidth=1.0,
-            capsize=2.5,
-            capthick=0.9,
-            markersize=3.5,
-            markerfacecolor=color,
-            markeredgecolor=color,
-            markeredgewidth=0.6,
-            linewidth=1.4,
-            label=label,
-            zorder=3,
+        _plot_mean_with_ci_band(
+            ax, x, y, yerr, color=color, label=label
         )
 
     ax.axhline(
@@ -1582,9 +1596,11 @@ def plot_stz_trend(
     ax.grid(True, axis="both", linestyle=":", linewidth=0.5, alpha=0.55)
     sns.despine(ax=ax, top=True, right=True)
 
+    _expand_ylim_top(ax, dy_data=5.0)
     ax.legend(
         loc="upper right",
-        bbox_to_anchor=(0.98, 0.98),
+        # Gap under Policy Tree / above the mid cluster (after top pad).
+        bbox_to_anchor=(0.98, 0.97),
         ncol=3,
         frameon=True,
         framealpha=0.92,
@@ -2024,7 +2040,9 @@ def main() -> None:
 
     params0, sweep = assert_consistent_experiment_meta(experiments, sweep_kind)
 
-    baselines = discover_baselines(experiments[0]["results"])
+    base_sets = [set(discover_baselines(exp["results"])) for exp in experiments]
+    common = set.intersection(*base_sets) if base_sets else set()
+    baselines = [b for b in REQUESTED_BASELINES if b in common]
     if not baselines:
         raise RuntimeError("No comparators found in experiment results.")
 

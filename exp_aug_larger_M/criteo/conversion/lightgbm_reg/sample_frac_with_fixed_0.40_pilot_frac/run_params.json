@@ -9,7 +9,8 @@
     "t_learner",
     "s_learner",
     "x_learner",
-    "dr_learner"
+    "dr_learner",
+    "policytree"
   ],
   "M_candidates": [
     2,
@@ -23,8 +24,10 @@
     10
   ],
   "N_sim": 50,
+  "POLICYTREE_DEPTH": 3,
+  "POLICYTREE_SEARCH_DEPTH": 2,
   "action_method": "diff_in_means",
-  "attempts_used": 34,
+  "attempts_used": 50,
   "dataset": "criteo",
   "eval_methods": [
     "dr",
@@ -53,8 +56,10 @@
     "n_estimators": 100,
     "num_leaves": 8
   },
-  "out_path": "exp_aug/criteo/conversion/lightgbm_reg/sample_frac_with_fixed_0.40_pilot_frac/sample_frac_015.pkl",
+  "out_path": "exp_aug_larger_M/criteo/conversion/lightgbm_reg/sample_frac_with_fixed_0.40_pilot_frac/sample_frac_015.pkl",
   "pilot_frac": 0.4,
+  "reuse_seeds": null,
+  "reuse_seeds_from": null,
   "sample_frac": 0.15,
   "seed_sequence": 1088,
   "seeds": [
@@ -91,11 +96,28 @@
     400779,
     192770,
     458768,
-    496517
+    496517,
+    516897,
+    543240,
+    933700,
+    538771,
+    96879,
+    765180,
+    157045,
+    944293,
+    869762,
+    880284,
+    297243,
+    297368,
+    805178,
+    114294,
+    399101,
+    35511
   ],
-  "stz_path": "exp_aug/criteo/conversion/lightgbm_reg/sample_frac_with_fixed_0.40_pilot_frac/sample_frac_015_stz.pkl",
+  "stz_path": "exp_aug_larger_M/criteo/conversion/lightgbm_reg/sample_frac_with_fixed_0.40_pilot_frac/sample_frac_015_stz.pkl",
   "target_col": "conversion",
   "train_frac": 0.7,
+  "treatment_cost": 0.0,
   "value_type_dams": "hybrid",
   "value_type_dast": "hybrid"
 }

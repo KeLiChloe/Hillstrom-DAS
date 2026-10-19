@@ -9,7 +9,8 @@
     "t_learner",
     "s_learner",
     "x_learner",
-    "dr_learner"
+    "dr_learner",
+    "policytree"
   ],
   "M_candidates": [
     2,
@@ -23,6 +24,8 @@
     10
   ],
   "N_sim": 50,
+  "POLICYTREE_DEPTH": 3,
+  "POLICYTREE_SEARCH_DEPTH": 2,
   "action_method": "diff_in_means",
   "attempts_used": 50,
   "dataset": "hillstrom",
