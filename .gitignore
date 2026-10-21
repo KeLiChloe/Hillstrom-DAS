@@ -2,6 +2,7 @@ __pycache__
 archived
 *.png
 logs/*
+.DS_Store
 
 # STZ offline payloads (large; keep local only)
 *_stz.pkl
