@@ -225,21 +225,17 @@ def _family_gap_stats(
     runs: list[dict],
     pairs: list[tuple[str, str]],
     eval_method: str,
-) -> tuple[list[str], np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
-    """Return families, gap_vs_base, gap_vs_dams, closed, and CI half-widths on total gap."""
+) -> tuple[list[str], np.ndarray, np.ndarray, np.ndarray]:
+    """Return families, gap_vs_base, remaining, closed (means only; no CI)."""
     families: list[str] = []
     base_means: list[float] = []
     dams_means: list[float] = []
-    base_err_lo: list[float] = []
-    base_err_hi: list[float] = []
     for base, dams in pairs:
-        bm, blo, bhi, _ = mean_ci(lifts_vs(runs, base, eval_method))
+        bm, _, _, _ = mean_ci(lifts_vs(runs, base, eval_method))
         dm, _, _, _ = mean_ci(lifts_vs(runs, dams, eval_method))
         families.append(pair_family(base))
         base_means.append(bm)
         dams_means.append(dm)
-        base_err_lo.append(bm - blo)
-        base_err_hi.append(bhi - bm)
     gap_base = np.asarray(base_means, dtype=float)
     gap_dams = np.asarray(dams_means, dtype=float)
     # Stack always sums to gap_vs_standard: bottom=closed by DAMS, top=remaining.
@@ -248,8 +244,7 @@ def _family_gap_stats(
     worse = closed < 0  # DAMS widens the gap (rare): show full bar as remaining
     closed = np.where(worse, 0.0, closed)
     remaining = np.where(worse, gap_base, remaining)
-    err = np.vstack([base_err_lo, base_err_hi])
-    return families, gap_base, remaining, closed, err
+    return families, gap_base, remaining, closed
 
 
 def plot_das_improvement_stacked(
@@ -261,7 +256,7 @@ def plot_das_improvement_stacked(
     n_sims: int,
 ) -> None:
     """Stacked bars: total = gap vs standard; bottom = closed by DAMS; top = remaining."""
-    families, gap_base, remaining, closed, err = _family_gap_stats(
+    families, gap_base, remaining, closed = _family_gap_stats(
         runs, pairs, eval_method
     )
     x = np.arange(len(pairs), dtype=float)
@@ -290,17 +285,6 @@ def plot_das_improvement_stacked(
         edgecolor="white",
         linewidth=0.6,
     )
-    ax.errorbar(
-        x,
-        gap_base,
-        yerr=err,
-        fmt="none",
-        ecolor="#333333",
-        elinewidth=1.0,
-        capsize=3,
-        capthick=1.0,
-        zorder=5,
-    )
     ax.axhline(0.0, color="#C1121F", linestyle="--", linewidth=1.2, alpha=0.85)
     ax.set_xticks(x)
     ax.set_xticklabels(families, fontweight="bold", fontsize=11)
@@ -316,7 +300,7 @@ def plot_das_improvement_stacked(
     ax.text(
         0.5,
         1.015,
-        f"Error bars indicate 95% confidence intervals across {n_sims} runs",
+        f"Mean across {n_sims} runs",
         transform=ax.transAxes,
         ha="center",
         va="bottom",
@@ -325,7 +309,8 @@ def plot_das_improvement_stacked(
     )
 
     # Percent-of-gap closed labels on the bottom segment when it is tall enough.
-    ymax = float(np.nanmax(gap_base + err[1])) if len(gap_base) else 1.0
+    ymax = float(np.nanmax(gap_base)) if len(gap_base) else 1.0
+    ax.set_ylim(0.0, max(20.0, ymax * 1.05 if np.isfinite(ymax) else 20.0))
     for xi, c, g in zip(x, closed, gap_base):
         if not np.isfinite(c) or not np.isfinite(g) or g <= 1e-9 or c <= 0:
             continue
@@ -396,14 +381,12 @@ def plot_das_improvement_side_by_side(
     x = np.arange(len(pairs))
     width = 0.36
 
-    base_means, base_err, dams_means, dams_err = [], [], [], []
+    base_means, dams_means = [], []
     for base, dams in pairs:
-        bm, blo, bhi, _ = mean_ci(lifts_vs(runs, base, eval_method))
-        dm, dlo, dhi, _ = mean_ci(lifts_vs(runs, dams, eval_method))
+        bm, _, _, _ = mean_ci(lifts_vs(runs, base, eval_method))
+        dm, _, _, _ = mean_ci(lifts_vs(runs, dams, eval_method))
         base_means.append(bm)
         dams_means.append(dm)
-        base_err.append((bm - blo, bhi - bm))
-        dams_err.append((dm - dlo, dhi - dm))
 
     configure_plot_style()
     fig, ax = plt.subplots(figsize=(5.6, 4.0))
@@ -411,22 +394,18 @@ def plot_das_improvement_side_by_side(
         x - width / 2,
         base_means,
         width,
-        yerr=np.asarray(base_err).T,
         color=[to_rgba(baseline_color(b)) for b, _ in pairs],
         edgecolor="white",
         linewidth=0.6,
-        capsize=3,
     )
     ax.bar(
         x + width / 2,
         dams_means,
         width,
-        yerr=np.asarray(dams_err).T,
         color=[to_rgba(baseline_color(d)) for _, d in pairs],
         edgecolor="white",
         linewidth=0.6,
         hatch="//",
-        capsize=3,
     )
     ax.axhline(0.0, color="#C1121F", linestyle="--", linewidth=1.2, alpha=0.85)
     ax.set_xticks(x)
@@ -436,7 +415,7 @@ def plot_das_improvement_side_by_side(
         "Ablation study: The incremental value of DAMS", eval_method
     )
     subtitle = (
-        f"Each bar: mean ± 95% CI ({n_sims} runs);\n"
+        f"Mean across {n_sims} runs;\n"
         "higher = DAS better than comparator"
     )
     ax.set_title(title, fontweight="bold", fontsize=13, pad=34)
