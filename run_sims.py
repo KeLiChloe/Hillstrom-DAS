@@ -1043,7 +1043,6 @@ def run_single_experiment(
             min_leaf_size=min_leaf_size,
             value_type_dams=value_type_dams,
             action_method=action_method,
-            n_folds=1,  # heldout
             treatment_cost=treatment_cost,
         )
         action_mst = estimate_segment_policy(

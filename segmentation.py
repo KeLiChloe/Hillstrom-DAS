@@ -757,7 +757,7 @@ def run_mst_dams(
     min_leaf_size,
     value_type_dams,
     action_method,
-    n_folds: int,
+    n_folds: int = 1,
     cv_random_state: int = 0,
     treatment_cost: float = 0.0,
 ):
