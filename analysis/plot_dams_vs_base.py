@@ -221,6 +221,77 @@ def lifts_vs(runs: list[dict], comparator: str, eval_method: str) -> np.ndarray:
     return np.asarray(out, dtype=float)
 
 
+def paired_lifts_vs(
+    runs: list[dict],
+    base: str,
+    dams: str,
+    eval_method: str,
+) -> tuple[np.ndarray, np.ndarray]:
+    """Return finite base/DAMS lifts from the same simulation runs."""
+    stz_fn = STZ_EVAL_METHODS.get(eval_method)
+    base_lifts, dams_lifts = [], []
+    for run in runs:
+        if stz_fn is not None:
+            base_lift = stz_fn(run, DAST_ALGO, base)
+            dams_lift = stz_fn(run, DAST_ALGO, dams)
+        else:
+            if (
+                eval_method not in run.get(DAST_ALGO, {})
+                or eval_method not in run.get(base, {})
+                or eval_method not in run.get(dams, {})
+            ):
+                continue
+            base_lift = das_improvement_ratio(
+                run[DAST_ALGO][eval_method], run[base][eval_method]
+            )
+            dams_lift = das_improvement_ratio(
+                run[DAST_ALGO][eval_method], run[dams][eval_method]
+            )
+        if np.isfinite(base_lift) and np.isfinite(dams_lift):
+            base_lifts.append(base_lift)
+            dams_lifts.append(dams_lift)
+    return np.asarray(base_lifts), np.asarray(dams_lifts)
+
+
+def closed_proportion_ci(
+    runs: list[dict],
+    base: str,
+    dams: str,
+    eval_method: str,
+    *,
+    n_bootstrap: int = 10_000,
+) -> tuple[float, float, float, int]:
+    """Estimate percent of the base gap closed, with paired bootstrap 90% CI."""
+    base_lifts, dams_lifts = paired_lifts_vs(runs, base, dams, eval_method)
+    n = len(base_lifts)
+    if n == 0:
+        return np.nan, np.nan, np.nan, 0
+
+    base_mean = float(base_lifts.mean())
+    if abs(base_mean) < 1e-12:
+        return np.nan, np.nan, np.nan, n
+    estimate = 100.0 * (base_mean - float(dams_lifts.mean())) / base_mean
+    if n == 1:
+        return estimate, np.nan, np.nan, n
+
+    rng = np.random.default_rng(20261112)
+    sample_idx = rng.integers(0, n, size=(n_bootstrap, n))
+    base_means = base_lifts[sample_idx].mean(axis=1)
+    dams_means = dams_lifts[sample_idx].mean(axis=1)
+    valid = np.abs(base_means) >= 1e-12
+    bootstrap_estimates = 100.0 * (
+        base_means[valid] - dams_means[valid]
+    ) / base_means[valid]
+    if len(bootstrap_estimates) == 0:
+        return estimate, np.nan, np.nan, n
+    lower, upper = np.percentile(bootstrap_estimates, [5, 95])
+    return estimate, float(lower), float(upper), n
+
+
+def format_pct(value: float) -> str:
+    return f"{value:.0f}"
+
+
 def _family_gap_stats(
     runs: list[dict],
     pairs: list[tuple[str, str]],
@@ -264,7 +335,9 @@ def plot_das_improvement_stacked(
 
     configure_plot_style()
     fig, ax = plt.subplots(figsize=(4.6, 4.0))
-    closed_colors = [to_rgba(baseline_color(d)) for _, d in pairs]
+    closed_colors = [
+        (*to_rgba(baseline_color(d))[:3], 0.52) for _, d in pairs
+    ]
     remain_colors = [to_rgba(baseline_color(b)) for b, _ in pairs]
 
     ax.bar(
@@ -311,19 +384,22 @@ def plot_das_improvement_stacked(
     # Percent-of-gap closed labels on the bottom segment when it is tall enough.
     ymax = float(np.nanmax(gap_base)) if len(gap_base) else 1.0
     ax.set_ylim(0.0, max(20.0, ymax * 1.05 if np.isfinite(ymax) else 20.0))
-    for xi, c, g in zip(x, closed, gap_base):
+    for xi, c, g, (base, dams) in zip(x, closed, gap_base, pairs):
         if not np.isfinite(c) or not np.isfinite(g) or g <= 1e-9 or c <= 0:
             continue
-        pct = 100.0 * c / g
+        pct, pct_lo, pct_hi, _ = closed_proportion_ci(
+            runs, base, dams, eval_method
+        )
         if c < 0.08 * max(ymax, 1.0):
             continue
         ax.text(
             xi,
             c / 2.0,
-            f"{pct:.0f}%\nclosed",
+            f"{format_pct(pct)}% closed\n"
+            f"[{format_pct(pct_lo)}, {format_pct(pct_hi)}]%",
             ha="center",
             va="center",
-            fontsize=10.5,
+            fontsize=8.5,
             color="#1a1a1a",
             fontweight="bold",
             linespacing=1.05,
@@ -503,11 +579,15 @@ def print_summary(runs: list[dict], pairs: list[tuple[str, str]], methods: list[
             bm, blo, bhi, _ = mean_ci(lifts_vs(runs, base, method))
             dm, dlo, dhi, _ = mean_ci(lifts_vs(runs, dams, method))
             closed = bm - dm
-            pct = 100.0 * closed / bm if np.isfinite(bm) and abs(bm) > 1e-12 else float("nan")
+            pct, pct_lo, pct_hi, paired_n = closed_proportion_ci(
+                runs, base, dams, method
+            )
             print(
                 f"  {method:8s}  vs base={bm:+6.2f}% [{blo:+.2f},{bhi:+.2f}]  "
                 f"vs DAMS={dm:+6.2f}% [{dlo:+.2f},{dhi:+.2f}]  "
-                f"closed={closed:+.2f}pp ({pct:.0f}% of gap)"
+                f"closed={closed:+.2f}pp ({format_pct(pct)}% of gap, "
+                f"90% CI [{format_pct(pct_lo)}, {format_pct(pct_hi)}]%, "
+                f"n={paired_n})"
             )
 
 
