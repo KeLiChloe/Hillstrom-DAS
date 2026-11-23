@@ -4,6 +4,9 @@ from outcome_model import fit_mu_models, predict_mu_values
 import numpy as np
 import pandas as pd
 from sklearn.preprocessing import StandardScaler
+from functools import lru_cache
+from pathlib import Path
+import gzip
 
 def split_pilot_impl(X, D, y, pilot_frac, random_state=0, return_indices=False):
     """
@@ -255,16 +258,82 @@ def load_hillstrom(sample_frac, seed, target_col):
 
     return X_np, y_np, D_np
 
-def load_criteo(sample_frac, seed, target_col):
+@lru_cache(maxsize=1)
+def _read_local_criteo_10pct(csv_path, file_size, modified_ns, subset_seed):
+    """Read an exact, fixed 10% subset; retain original file row order.
+
+    The file signature invalidates the in-process cache when the file changes.
+    Numeric Criteo CSV records occupy one line each. Read in chunks so the
+    complete 14M-row table never has to fit in memory.
+    """
+    opener = gzip.open if str(csv_path).endswith(".gz") else open
+    with opener(csv_path, "rb") as stream:
+        header = stream.readline()
+        if not header:
+            raise ValueError(f"Empty Criteo CSV: {csv_path}")
+        n_rows = 0
+        last = b""
+        while chunk := stream.read(8 * 1024 * 1024):
+            n_rows += chunk.count(b"\n")
+            last = chunk[-1:]
+        if last and last != b"\n":
+            n_rows += 1
+    n_subset = n_rows // 10
+    if not n_subset:
+        raise ValueError("Criteo CSV must contain at least 10 data rows")
+    # Independent RNG: this choice must not consume the simulation's RNG state.
+    indices = np.random.RandomState(subset_seed).choice(n_rows, n_subset, replace=False)
+    indices.sort()
+    required = [f"f{i}" for i in range(12)] + ["treatment", "conversion", "visit", "exposure"]
+    binary_dtypes = {name: "Int8" for name in ("treatment", "conversion", "visit", "exposure")}
+    parts = []
+    offset = 0
+    for frame in pd.read_csv(csv_path, chunksize=200_000, dtype=binary_dtypes):
+        if not set(required).issubset(frame.columns):
+            raise ValueError(f"Criteo CSV missing columns: {sorted(set(required) - set(frame.columns))}")
+        end = offset + len(frame)
+        lo, hi = np.searchsorted(indices, [offset, end])
+        if hi > lo:
+            parts.append(frame.iloc[indices[lo:hi] - offset].copy())
+        offset = end
+    if offset != n_rows:
+        raise ValueError("Criteo CSV row count changed or contains nonstandard CSV records")
+    subset = pd.concat(parts, ignore_index=True)
+    assert len(subset) == n_subset
+    print(f"Local Criteo: {n_rows} rows -> fixed 10% = {n_subset} rows (seed={subset_seed})")
+    return subset
+
+
+def read_criteo_data(target_col, *, source="sklift", csv_path=None, subset_seed=42):
+    """Load either sklift's original 10% file or a fixed 10% of a local full CSV."""
+    if source == "sklift":
+        return fetch_criteo(
+            target_col=target_col, treatment_col="treatment",
+            percent10=True, return_X_y_t=True,
+        )
+    if source != "local":
+        raise ValueError(f"Unknown Criteo source: {source!r}; use 'sklift' or 'local'")
+    if target_col not in ("conversion", "visit"):
+        raise ValueError("Criteo target_col must be 'conversion' or 'visit'")
+    path = Path(csv_path) if csv_path is not None else Path(__file__).resolve().parent / "data" / "criteo-research-uplift-v2.1.csv.gz"
+    path = path.expanduser().resolve()
+    info = path.stat()
+    data = _read_local_criteo_10pct(str(path), info.st_size, info.st_mtime_ns, int(subset_seed))
+    X = data[[f"f{i}" for i in range(12)]]
+    return X, data[target_col], data["treatment"]
+
+
+def load_criteo(sample_frac, seed, target_col, *, criteo_source="sklift",
+                criteo_csv_path=None, criteo_subset_seed=42):
     np.random.seed(seed)
     print("Loading Criteo uplift dataset ...")
     print("(Using random seed =", seed, ")")
     
-    X, y, D = fetch_criteo(
+    X, y, D = read_criteo_data(
         target_col=target_col,
-        treatment_col="treatment",
-        percent10=True,
-        return_X_y_t=True,
+        source=criteo_source,
+        csv_path=criteo_csv_path,
+        subset_seed=criteo_subset_seed,
     )
     
 
