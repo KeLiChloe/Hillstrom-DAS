@@ -1178,7 +1178,6 @@ def _load_experiment_checkpoint(out_path: str, expected_params: dict) -> tuple[d
     # Pre-CLI checkpoints omitted these keys; treat missing as historical hardcodes.
     _legacy_fold_defaults = {
         "n_folds_dams": 5,
-        "n_folds_mst": 1,
         "n_folds_dr": 3,
         "treatment_cost": 0.0,
     }
@@ -1297,7 +1296,6 @@ def run_multiple_experiments(
         "action_method": action_method,
         "treatment_cost": float(treatment_cost),
         "n_folds_dams": int(n_folds_dams),
-        "n_folds_mst": 1,
         "n_folds_dr": 3,
         "mu_hparams_json": mu_hparams_json,
         "ope_mu_hparams": ope_mu_hparams,
@@ -1470,13 +1468,15 @@ if __name__ == "__main__":
     parser.add_argument(
         "--value_type_dast",
         type=str,
-        help="Value type for DAST splitting ('dr' or 'hybrid')",
+        default="hybrid",
+        help="Value type for DAST splitting ('dr' or 'hybrid'; default: hybrid)",
     )
     
     parser.add_argument(
         "--value_type_dams",
         type=str,
-        help="Value type for DAMS criterion ('dr' or 'hybrid')",
+        default="hybrid",
+        help="Value type for DAMS criterion ('dr' or 'hybrid'; default: hybrid)",
     )
     
     # add seed_sequence if needed
@@ -1490,8 +1490,8 @@ if __name__ == "__main__":
         "--action_method",
         type=str,
         choices=["diff_in_means", "gamma", "logistic"],
-        required=True,
-        help="Method to estimate segment-level action.",
+        default="diff_in_means",
+        help="Method to estimate segment-level action (default: diff_in_means).",
     )
 
     parser.add_argument(
