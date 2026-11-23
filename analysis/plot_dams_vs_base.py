@@ -336,7 +336,7 @@ def plot_das_improvement_stacked(
     configure_plot_style()
     fig, ax = plt.subplots(figsize=(4.6, 4.0))
     closed_colors = [
-        (*to_rgba(baseline_color(d))[:3], 0.52) for _, d in pairs
+        (*to_rgba(baseline_color(d))[:3], 0.40) for _, d in pairs
     ]
     remain_colors = [to_rgba(baseline_color(b)) for b, _ in pairs]
 
@@ -347,7 +347,7 @@ def plot_das_improvement_stacked(
         color=closed_colors,
         edgecolor="white",
         linewidth=0.6,
-        hatch="//",
+        hatch="///",
     )
     ax.bar(
         x,
@@ -399,17 +399,18 @@ def plot_das_improvement_stacked(
             f"[{format_pct(pct_lo)}, {format_pct(pct_hi)}]%",
             ha="center",
             va="center",
-            fontsize=8.5,
+            fontsize=9.8,
             color="#1a1a1a",
             fontweight="bold",
             linespacing=1.05,
+            bbox=dict(facecolor="white", edgecolor="none", alpha=0.75, pad=1.3),
         )
 
     legend_handles = [
         Patch(
             facecolor=_LEGEND_GRAY,
             edgecolor="white",
-            hatch="//",
+            hatch="///",
             label="Gap closed by DAMS",
         ),
         Patch(
@@ -426,18 +427,18 @@ def plot_das_improvement_stacked(
         framealpha=0.92,
         edgecolor="#D0D0D0",
         fancybox=False,
-        fontsize=8.5,
+        fontsize=10.0,
         title=None,
         borderpad=0.4,
         labelspacing=0.55,
         handletextpad=0.5,
-        handlelength=1.8,
+        handlelength=2.3,
     )
     ax.set_axisbelow(True)
     ax.grid(True, axis="y", linestyle=":", linewidth=0.5, alpha=0.55)
     sns.despine(ax=ax, top=True, right=True)
     fig.tight_layout()
-    for ext in ("png", "pdf"):
+    for ext in ("pdf",):
         out = Path(f"{out_stem}.{ext}")
         fig.savefig(out, dpi=300, bbox_inches="tight", facecolor="white")
         print(f"Wrote {out}")
@@ -539,7 +540,7 @@ def plot_das_improvement_side_by_side(
     ax.grid(True, axis="y", linestyle=":", linewidth=0.5, alpha=0.55)
     sns.despine(ax=ax, top=True, right=True)
     fig.tight_layout()
-    for ext in ("png", "pdf"):
+    for ext in ("pdf",):
         out = Path(f"{out_stem}.{ext}")
         fig.savefig(out, dpi=300, bbox_inches="tight", facecolor="white")
         print(f"Wrote {out}")
