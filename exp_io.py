@@ -32,29 +32,12 @@ def write_run_params_json(out_path: str | os.PathLike, params: dict) -> str:
     """
     Write experiment params to <outdir>/run_params.json next to the pkl.
 
-    Omit detailed model settings and retry limits from this JSON summary.
-    The original params remain intact for pickle storage and checks.
-
     Returns the JSON path written.
     """
     out_dir = Path(out_path).expanduser().resolve().parent
     out_dir.mkdir(parents=True, exist_ok=True)
     json_path = out_dir / "run_params.json"
-    json_params = {
-        key: value
-        for key, value in params.items()
-        if key not in (
-            "value_type_dast",
-            "value_type_dams",
-            "action_method",
-            "max_attempts",
-            "meta_learner_mu_model_type",
-            "meta_mu_hparams",
-            "ope_mu_hparams",
-            "n_folds_dr",
-        )
-    }
     with open(json_path, "w", encoding="utf-8") as f:
-        json.dump(json_safe(json_params), f, indent=2, sort_keys=True)
+        json.dump(json_safe(params), f, indent=2, sort_keys=True)
         f.write("\n")
     return str(json_path)

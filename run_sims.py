@@ -679,7 +679,7 @@ def run_single_experiment(
             y_pilot,
             D_pilot,
             action_levels=np.arange(action_K),   # 确保列顺序与 0..K-1 对齐
-            num_trees=10,
+            num_trees=100,
             seed=int(seed),
         )
         a_hat_cf, mu_hat_cf = predict_best_action_multiarm(cf_model, X_impl)
@@ -1178,7 +1178,6 @@ def _load_experiment_checkpoint(out_path: str, expected_params: dict) -> tuple[d
     # Pre-CLI checkpoints omitted these keys; treat missing as historical hardcodes.
     _legacy_fold_defaults = {
         "n_folds_dams": 5,
-        "n_folds_dr": 3,
         "treatment_cost": 0.0,
     }
 
@@ -1286,20 +1285,12 @@ def run_multiple_experiments(
         "pilot_frac": pilot_frac,
         "train_frac": train_frac,
         "N_sim": int(N_sim),
-        "max_attempts": max_attempts,
         "dataset": dataset,
         "target_col": target_col,
-        "value_type_dast": value_type_dast,
-        "value_type_dams": value_type_dams,
         "mu_model_type": mu_model_type,
-        "meta_learner_mu_model_type": meta_learner_mu_model_type,
-        "action_method": action_method,
         "treatment_cost": float(treatment_cost),
         "n_folds_dams": int(n_folds_dams),
-        "n_folds_dr": 3,
         "mu_hparams_json": mu_hparams_json,
-        "ope_mu_hparams": ope_mu_hparams,
-        "meta_mu_hparams": meta_mu_hparams,
         "min_leaf_size": min_leaf_size,
         "out_path": out_path,
         "ALGO_LIST": list(ALGO_LIST),
