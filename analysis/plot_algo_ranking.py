@@ -9,12 +9,13 @@ Two figures:
   (A) mean_rank_sample_frac — average ranks over sample sizes; x = eval methods
   (B) mean_rank_by_sample_size — average ranks over eval methods; x = sample size
 
-Saves PNG + PDF for each.
+Saves PDF for each, plus one shared rank_data.csv.
 """
 
 from __future__ import annotations
 
 import argparse
+import csv
 import gzip
 import pickle
 import sys
@@ -362,7 +363,7 @@ def _draw_rank_heatmap(
     fig.tight_layout()
     out_stem.parent.mkdir(parents=True, exist_ok=True)
     saved: list[Path] = []
-    for ext in ("png", "pdf"):
+    for ext in ("pdf",):
         out = out_stem.with_suffix(f".{ext}")
         fig.savefig(out, bbox_inches="tight", facecolor="white")
         print(f"[OK] Saved: {out}")
@@ -436,6 +437,35 @@ def plot_mean_ranks_by_sample_size(
     )
 
 
+def save_rank_data(algos, mean_rank, x_values, mean_by_algo, *, dataset, out_a, out_b):
+    """Store both heatmaps' exact cell values in one readable CSV."""
+    rows = []
+    order_a = _order_algos_by_ref(algos, mean_rank[next(iter(mean_rank))])
+    order_b = _order_algos_by_ref(algos, {a: mean_by_algo[a][-1] for a in algos})
+    for method, values in mean_rank.items():
+        for i, algo in enumerate(order_a):
+            rows.append(dict(figure_stem=out_a.name, algorithm=algo,
+                             algorithm_label=algo_display(algo), row_order=i + 1,
+                             evaluation_method=method, sample_frac="", sample_size="",
+                             mean_rank=values[algo]))
+    for j, fraction in enumerate(x_values):
+        for i, algo in enumerate(order_b):
+            size = (int(round(display_sample_size_k(fraction, dataset) * 1000))
+                    if dataset in _DATASET_BASE_N else "")
+            rows.append(dict(figure_stem=out_b.name, algorithm=algo,
+                             algorithm_label=algo_display(algo), row_order=i + 1,
+                             evaluation_method="average_over_methods",
+                             sample_frac=round(fraction, 12), sample_size=size,
+                             mean_rank=mean_by_algo[algo][j]))
+    path = out_a.parent / "rank_data.csv"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("w", newline="") as stream:
+        writer = csv.DictWriter(stream, fieldnames=list(rows[0]))
+        writer.writeheader()
+        writer.writerows(rows)
+    print(f"[OK] Saved: {path}")
+
+
 def parse_args() -> argparse.Namespace:
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument(
@@ -493,6 +523,9 @@ def main() -> None:
         else exp_dir / "mean_rank_sample_frac"
     )
     out_b = out_a.with_name(out_a.name + "_by_sample_size")
+
+    save_rank_data(algos, mean_rank, x_values, mean_by_algo,
+                   dataset=dataset, out_a=out_a, out_b=out_b)
 
     plot_mean_ranks_by_method(
         algos,

@@ -1,5 +1,6 @@
 """
-Trend plot across experiment pickles.
+Trend plot across experiment pickles. Outputs PDFs + one combined plot_data.csv per figure directory.
+Summary CSVs can be replotted without pickles using analysis/plot_from_csv.py.
 
 Metrics (--metric):
   improvement   DAS_improvement_ratio from OPE scalars (dual_dr, ipw, dm).
@@ -1153,21 +1154,99 @@ def eval_method_title(eval_method: str) -> str:
     return str(eval_method).replace("_", " ")
 
 
+_CSV_NAMES = {
+    "metric": "evaluation_method",
+    "Baseline": "comparator", "Baseline_Label": "comparator_label",
+    "Algo": "algorithm", "Algo_Label": "algorithm_label",
+    "Mean": "mean_pct", "CI": "ci_half_width_pct",
+    "CI_low": "ci_lower_pct", "CI_high": "ci_upper_pct",
+    "N": "n_simulations", "sweep_kind": "sweep_parameter",
+}
+
+
+def read_plot_csv(path):
+    """Read both the readable archive schema and legacy plot CSVs."""
+    frame = pd.read_csv(path, float_precision="round_trip")
+    if "evaluation_method" not in frame:
+        return frame
+    frame = frame.rename(columns={v: k for k, v in _CSV_NAMES.items()})
+    kind = str(frame["sweep_kind"].iloc[0])
+    frame["x_value"] = frame[kind]
+    if kind == "treatment_cost":
+        frame["x_display"] = frame[kind] * 1000.0
+    else:
+        size_column = "sample_size" if kind == "sample_frac" else "pilot_size"
+        frame["x_display"] = frame[size_column] / 1000.0
+    frame["n_sims_requested"] = frame.groupby("figure_stem")["N"].transform("max")
+    return frame
+
+
+def _readable_plot_data(frame):
+    """Use explicit names and actual customer counts instead of axis scaling."""
+    kind = str(frame["sweep_kind"].iloc[0])
+    output = frame.rename(columns=_CSV_NAMES).copy()
+    output[kind] = frame["x_value"].round(12)
+    dimensions = [kind]
+    if kind != "treatment_cost":
+        size_column = "sample_size" if kind == "sample_frac" else "pilot_size"
+        output[size_column] = (frame["x_display"] * 1000).round().astype(int)
+        dimensions.append(size_column)
+    output["fixed_pilot_frac"] = frame["fixed_pilot_frac"].round(12)
+    algorithm_columns = [name for name in
+                         ("comparator", "comparator_label", "algorithm", "algorithm_label")
+                         if name in output]
+    columns = (["evaluation_method"] + algorithm_columns + dimensions
+               + ["mean_pct", "ci_half_width_pct", "ci_lower_pct", "ci_upper_pct",
+                  "n_simulations", "sweep_parameter", "fixed_pilot_frac", "dataset",
+                  "plot_title", "figure_stem"])
+    return output[columns]
+
+
+def _save_plot_csv(stats_df, fig_dir, out_stem, sweep, title, n_sims, metric):
+    """Keep all figures' readable plotted summaries in one CSV per directory."""
+    fig_dir.mkdir(parents=True, exist_ok=True)
+    summary = stats_df.copy()
+    summary["CI_low"] = summary["Mean"] - summary["CI"]
+    summary["CI_high"] = summary["Mean"] + summary["CI"]
+    summary["figure_stem"] = out_stem
+    summary["x_display"] = summary["x_value"].map(sweep.to_display_x)
+    summary["sweep_kind"] = sweep.kind
+    summary["fixed_pilot_frac"] = sweep.fixed_pilot_frac
+    summary["dataset"] = sweep.dataset
+    summary["plot_title"] = title
+    summary["metric"] = metric
+    path = fig_dir / "plot_data.csv"
+    if path.exists():
+        previous = read_plot_csv(path)
+        previous = previous.loc[previous["figure_stem"] != out_stem]
+        summary = pd.concat([previous, summary], ignore_index=True)
+    summary = _readable_plot_data(summary)
+    temporary = path.with_suffix(".csv.tmp")
+    # Python's shortest float representation preserves precision without padded tails.
+    summary.to_csv(temporary, index=False, float_format=lambda value: str(value))
+    temporary.replace(path)
+    print(f"[OK] Updated: {path} ({out_stem})")
+
+
 def _save_fig(fig, fig_dir: Path, out_stem: str) -> None:
-    """Save figure as PNG and vector PDF."""
+    """Save a vector PDF only."""
     fig_dir.mkdir(parents=True, exist_ok=True)
     fig.tight_layout()
-    for ext in ("png", "pdf"):
-        out_path = fig_dir / f"{out_stem}.{ext}"
-        fig.savefig(out_path, dpi=300, bbox_inches="tight", facecolor="white")
-        print(f"[OK] Saved: {out_path}")
+    out_path = fig_dir / f"{out_stem}.pdf"
+    fig.savefig(out_path, dpi=300, bbox_inches="tight", facecolor="white")
+    print(f"[OK] Saved: {out_path}")
     plt.close(fig)
 
 
-def _expand_ylim_top(ax, dy_data: float = 5.0) -> None:
-    """Pad the top of the y-axis by ``dy_data`` (data units) for legend room."""
-    y0, y1 = ax.get_ylim()
-    ax.set_ylim(y0, float(y1) + float(dy_data))
+def _set_improvement_ylim(ax, zero_gap: float = 0.12) -> None:
+    """Put zero 12% above the bottom across metrics, retaining all CI bands."""
+    _, upper = ax.get_ylim()
+    upper = max(float(upper) + 5.0, 1.0)
+    data_lower = min(float(ax.dataLim.ymin), 0.0)
+    # Expand both bounds if needed, rather than clipping a negative CI band.
+    lower_with_padding = data_lower - 0.02 * (upper - data_lower)
+    upper = max(upper, -lower_with_padding * (1.0 - zero_gap) / zero_gap)
+    ax.set_ylim(-upper * zero_gap / (1.0 - zero_gap), upper)
 
 
 def _title_with_eval_suffix(base: str, eval_label: str) -> str:
@@ -1403,6 +1482,7 @@ def plot_treatment_rate_trend(
         markerscale=0.8,
     )
 
+    _save_plot_csv(stats_df, fig_dir, out_stem, sweep, dataset_target, n_sims, "treatment_rate")
     _save_fig(fig, fig_dir, out_stem)
 
 
@@ -1498,7 +1578,7 @@ def plot_trend(
     ax.grid(True, axis="both", linestyle=":", linewidth=0.5, alpha=0.55)
     sns.despine(ax=ax, top=True, right=True)
 
-    _expand_ylim_top(ax, dy_data=5.0)
+    _set_improvement_ylim(ax)
     ax.legend(
         loc="upper right",
         bbox_to_anchor=(0.98, 0.98),
@@ -1518,6 +1598,7 @@ def plot_trend(
         markerscale=0.8,
     )
 
+    _save_plot_csv(stats_df, fig_dir, out_stem, sweep, dataset_target, n_sims, eval_method)
     _save_fig(fig, fig_dir, out_stem)
 
 
@@ -1596,7 +1677,7 @@ def plot_stz_trend(
     ax.grid(True, axis="both", linestyle=":", linewidth=0.5, alpha=0.55)
     sns.despine(ax=ax, top=True, right=True)
 
-    _expand_ylim_top(ax, dy_data=5.0)
+    _set_improvement_ylim(ax)
     ax.legend(
         loc="upper right",
         # Gap under Policy Tree / above the mid cluster (after top pad).
@@ -1617,6 +1698,7 @@ def plot_stz_trend(
         markerscale=0.8,
     )
 
+    _save_plot_csv(stats_df, fig_dir, out_stem, sweep, dataset_target, n_sims, eval_method)
     _save_fig(fig, fig_dir, out_stem)
 
 
@@ -2041,8 +2123,9 @@ def main() -> None:
     params0, sweep = assert_consistent_experiment_meta(experiments, sweep_kind)
 
     base_sets = [set(discover_baselines(exp["results"])) for exp in experiments]
-    common = set.intersection(*base_sets) if base_sets else set()
-    baselines = [b for b in REQUESTED_BASELINES if b in common]
+    # Partially backfilled sweeps still include each comparator where available.
+    available = set.union(*base_sets) if base_sets else set()
+    baselines = [b for b in REQUESTED_BASELINES if b in available]
     if not baselines:
         raise RuntimeError("No comparators found in experiment results.")
 
