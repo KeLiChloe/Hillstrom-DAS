@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Rerun the Hillstrom conversion sample_frac=1 experiment for runtime analysis.
-# DAST uses N_FOLDS_DAMS; MST is configured independently in run_sims.py.
+# Resume the historical fold5 timing experiment:
+# DAST 5 folds, MST independently fixed at 5 folds, Causal Forest 1000 trees.
 # Each algorithm records its total fit/selection/prediction/OPE time in "time".
 # Usage (after activating the Python environment):
 #   bash scripts/run_computational_time.sh
@@ -11,7 +12,7 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "${ROOT}"
 
 N_SIM="${N_SIM:-50}"
-N_FOLDS_DAMS="${N_FOLDS_DAMS:-1}"
+N_FOLDS_DAMS="${N_FOLDS_DAMS:-5}"
 OUTDIR="${OUTDIR:-exp_aug_larger_M/computational_time}"
 OUTPATH="${OUTDIR}/n_fold_dams_${N_FOLDS_DAMS}.pkl"
 
@@ -22,9 +23,9 @@ ALGO_LIST=(
     t_learner s_learner x_learner dr_learner policytree
 )
 
-if [[ -f "${OUTPATH}" ]]; then
-    echo "[SKIP] ${OUTPATH} already exists; use a different OUTDIR for a new run."
-    exit 0
+if [[ "${N_FOLDS_DAMS}" != "5" ]]; then
+    echo "[ERROR] This script is configured to resume the historical fold5 experiment." >&2
+    exit 1
 fi
 
 # Activated Conda environments usually provide python; macOS may only provide
@@ -48,14 +49,14 @@ mkdir -p "${OUTDIR}"
 echo "[PYTHON] $(command -v "${PYTHON_BIN}")"
 echo "[RUN] Hillstrom/conversion, sample_frac=1, pilot_frac=0.40, N_sim=${N_SIM}"
 echo "[OUT] ${OUTPATH}"
-if [[ "${N_FOLDS_DAMS}" == "1" ]]; then
-    echo "[DAST] Single 70%/30% pilot holdout for DAMS (n_folds_dams=${N_FOLDS_DAMS})."
-else
-    echo "[DAST] ${N_FOLDS_DAMS}-fold CV for DAMS (n_folds_dams=${N_FOLDS_DAMS})."
+echo "[DAST] ${N_FOLDS_DAMS}-fold CV for DAMS (n_folds_dams=${N_FOLDS_DAMS})."
+echo "[PROFILE] MST 5 folds; Causal Forest 1000 trees."
+if [[ -f "${OUTPATH}" ]]; then
+    echo "[RESUME] Keeping saved results; continuing to ${N_SIM} successful simulations."
 fi
 echo "[TIME] Saving total runtime per algorithm in time (seconds)."
 
-"${PYTHON_BIN}" -u run_sims.py \
+"${PYTHON_BIN}" -u - \
     --dataset hillstrom \
     --target conversion \
     --sample_frac 1.0 \
@@ -67,4 +68,27 @@ echo "[TIME] Saving total runtime per algorithm in time (seconds)."
     --N_sim "${N_SIM}" \
     --n_folds_dams "${N_FOLDS_DAMS}" \
     --algo_list "${ALGO_LIST[@]}" \
-    --outpath "${OUTPATH}"
+    --outpath "${OUTPATH}" <<'PY'
+# These overrides exist only in this Python process. Normal experiment scripts
+# continue using the defaults in run_sims.py and segmentation.py.
+import runpy
+import sys
+import causal_forest
+import segmentation
+
+fit_cf = causal_forest.fit_multiarm_causal_forest
+fit_mst = segmentation.run_mst_dams
+
+def historical_cf(*args, **kwargs):
+    kwargs["num_trees"] = 1000
+    return fit_cf(*args, **kwargs)
+
+def historical_mst(*args, **kwargs):
+    kwargs["n_folds"] = 5
+    return fit_mst(*args, **kwargs)
+
+causal_forest.fit_multiarm_causal_forest = historical_cf
+segmentation.run_mst_dams = historical_mst
+sys.argv[0] = "run_sims.py"
+runpy.run_path("run_sims.py", run_name="__main__")
+PY
