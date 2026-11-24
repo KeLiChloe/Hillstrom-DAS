@@ -379,7 +379,6 @@ def run_single_experiment(
     treatment_cost: float = 0.0,
     criteo_source: str = "sklift",
     criteo_csv_path: str | None = None,
-    criteo_subset_seed: int = 42,
 ):
     if not meta_learner_mu_model_type:
         raise ValueError("meta_learner_mu_model_type is required")
@@ -403,8 +402,7 @@ def run_single_experiment(
     loader = dataset_loaders[dataset]
     loader_options = {}
     if dataset == "criteo":
-        loader_options = dict(criteo_source=criteo_source, criteo_csv_path=criteo_csv_path,
-                              criteo_subset_seed=criteo_subset_seed)
+        loader_options = dict(criteo_source=criteo_source, criteo_csv_path=criteo_csv_path)
     X, y, D = loader(sample_frac=sample_frac, seed=seed, target_col=target_col, **loader_options)
 
     # --------------------------------------------------
@@ -1271,7 +1269,6 @@ def run_multiple_experiments(
     reuse_seeds_from: str | None = None,
     criteo_source: str = "sklift",
     criteo_csv_path: str | None = None,
-    criteo_subset_seed: int = 42,
 ):
     if not meta_learner_mu_model_type:
         raise ValueError("meta_learner_mu_model_type is required")
@@ -1283,7 +1280,7 @@ def run_multiple_experiments(
     stz_path = resolve_stz_pkl_path(out_path) if save_offline_data else None
     if dataset == "criteo" and criteo_source == "local":
         criteo_csv_path = os.path.abspath(os.path.expanduser(criteo_csv_path or
-            os.path.join(os.path.dirname(__file__), "data", "criteo-research-uplift-v2.1.csv.gz")))
+            os.path.join(os.path.dirname(__file__), "data", "criteo10.csv.gz")))
 
     fixed_seeds = None
     if reuse_seeds is not None:
@@ -1321,7 +1318,6 @@ def run_multiple_experiments(
         expected_params["criteo_source"] = criteo_source
         if criteo_source == "local":
             expected_params["criteo_csv_path"] = criteo_csv_path
-            expected_params["criteo_subset_seed"] = int(criteo_subset_seed)
     # 成功完成的 simulation 所用 seed 顺序写入 params["seeds"]（失败会重试新 seed，直到满 N_sim 条结果）
     experiment_data, already_complete = _load_experiment_checkpoint(
         out_path, expected_params
@@ -1388,7 +1384,6 @@ def run_multiple_experiments(
                 treatment_cost=treatment_cost,
                 criteo_source=criteo_source,
                 criteo_csv_path=criteo_csv_path,
-                criteo_subset_seed=criteo_subset_seed,
             )
             experiment_data["results"].append(res)
             experiment_data["params"]["seeds"].append(int(seed))
@@ -1555,10 +1550,8 @@ if __name__ == "__main__":
     )
 
     parser.add_argument("--criteo_source", choices=["sklift", "local"], default="sklift",
-                        help="Criteo: original sklift 10%% file or fixed 10%% of a local full CSV")
-    parser.add_argument("--criteo_csv_path", default=None, help="Full Criteo CSV(.gz) for local mode")
-    parser.add_argument("--criteo_subset_seed", type=int, default=42,
-                        help="Seed defining the fixed local 10%% base subset")
+                        help="Criteo: original 10%% data through sklift or a local CSV")
+    parser.add_argument("--criteo_csv_path", default=None, help="Existing Criteo 10%% CSV(.gz) for local mode")
 
     args = parser.parse_args()
 
@@ -1615,5 +1608,4 @@ if __name__ == "__main__":
         treatment_cost=args.treatment_cost,
         criteo_source=args.criteo_source,
         criteo_csv_path=args.criteo_csv_path,
-        criteo_subset_seed=args.criteo_subset_seed,
     )

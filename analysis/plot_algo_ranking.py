@@ -241,7 +241,9 @@ def average_ranks_over_methods(
     return x_values, mean_by_algo
 
 
-def display_sample_size_k(sample_frac: float, dataset: str | None) -> float:
+def display_sample_size_k(sample_frac: float, dataset: str | None, sample_sizes=None) -> float:
+    if sample_sizes and sample_frac in sample_sizes:
+        return sample_sizes[sample_frac] / 1000.0
     base = _DATASET_BASE_N.get(str(dataset or "").lower())
     if base is not None:
         return (base * float(sample_frac)) / 1000.0
@@ -407,6 +409,7 @@ def plot_mean_ranks_by_sample_size(
     dataset: str | None,
     out_stem: Path,
     title: str,
+    sample_sizes=None,
 ) -> list[Path]:
     """Figure B: x = sample size; ranks averaged over evaluation methods."""
     # Order by mean rank at the largest sample size (problematic regime).
@@ -418,7 +421,7 @@ def plot_mean_ranks_by_sample_size(
         [[mean_by_algo[a][j] for j in range(len(x_values))] for a in order],
         dtype=float,
     )
-    xs_disp = [display_sample_size_k(x, dataset) for x in x_values]
+    xs_disp = [display_sample_size_k(x, dataset, sample_sizes) for x in x_values]
     col_labels = [_format_n_tick(v) for v in xs_disp]
     xlabel = (
         r"Sample size $N$ ($\times 10^{3}$)"
@@ -437,7 +440,7 @@ def plot_mean_ranks_by_sample_size(
     )
 
 
-def save_rank_data(algos, mean_rank, x_values, mean_by_algo, *, dataset, out_a, out_b):
+def save_rank_data(algos, mean_rank, x_values, mean_by_algo, *, dataset, out_a, out_b, sample_sizes=None):
     """Store both heatmaps' exact cell values in one readable CSV."""
     rows = []
     order_a = _order_algos_by_ref(algos, mean_rank[next(iter(mean_rank))])
@@ -450,7 +453,7 @@ def save_rank_data(algos, mean_rank, x_values, mean_by_algo, *, dataset, out_a, 
                              mean_rank=values[algo]))
     for j, fraction in enumerate(x_values):
         for i, algo in enumerate(order_b):
-            size = (int(round(display_sample_size_k(fraction, dataset) * 1000))
+            size = (int(round(display_sample_size_k(fraction, dataset, sample_sizes) * 1000))
                     if dataset in _DATASET_BASE_N else "")
             rows.append(dict(figure_stem=out_b.name, algorithm=algo,
                              algorithm_label=algo_display(algo), row_order=i + 1,
@@ -497,6 +500,14 @@ def main() -> None:
     mean_rank = average_ranks_over_sample_sizes(point_ranks, algos, methods)
     x_values, mean_by_algo = average_ranks_over_methods(point_ranks, algos, methods)
     dataset = experiments[0]["params"].get("dataset")
+    sample_sizes = {}
+    for exp in experiments:
+        sizes = {r["implementation"]["cohort_size"] for r in exp["results"]
+                 if r.get("implementation", {}).get("cohort_size") is not None}
+        if len(sizes) > 1:
+            raise ValueError(f"Inconsistent cohort sizes in {exp['path']}")
+        if sizes:
+            sample_sizes[exp["x_value"]] = sizes.pop()
 
     print(f"[INFO] {len(experiments)} sample_frac points, {len(algos)} algorithms")
     print("[INFO] Figure A — mean rank over sample sizes (by eval method):")
@@ -511,7 +522,7 @@ def main() -> None:
     for j, x in enumerate(x_values):
         scores = {a: mean_by_algo[a][j] for a in algos}
         ordered = sorted(algos, key=lambda a: scores.get(a, 1e9))
-        n_k = display_sample_size_k(x, dataset)
+        n_k = display_sample_size_k(x, dataset, sample_sizes)
         summary = ", ".join(
             f"{algo_display(a)}={scores[a]:.2f}" for a in ordered[:5]
         )
@@ -525,7 +536,7 @@ def main() -> None:
     out_b = out_a.with_name(out_a.name + "_by_sample_size")
 
     save_rank_data(algos, mean_rank, x_values, mean_by_algo,
-                   dataset=dataset, out_a=out_a, out_b=out_b)
+                   dataset=dataset, out_a=out_a, out_b=out_b, sample_sizes=sample_sizes)
 
     plot_mean_ranks_by_method(
         algos,
@@ -541,6 +552,7 @@ def main() -> None:
         dataset=str(dataset) if dataset is not None else None,
         out_stem=out_b,
         title="Mean Algorithm Rank across Evaluation Methods (lower is better)",
+        sample_sizes=sample_sizes,
     )
 
 
