@@ -1,0 +1,661 @@
+evaluation_method,comparator,comparator_label,sample_frac,sample_size,mean_pct,ci_half_width_pct,ci_lower_pct,ci_upper_pct,n_simulations,sweep_parameter,fixed_pilot_frac,dataset,plot_title,figure_stem
+dual_dr,kmeans,K-Means,0.5,32000,12.326798833605705,2.114877763118078,10.211921070487627,14.441676596723784,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dual_dr
+dual_dr,gmm,GMM,0.5,32000,12.51087734580928,2.311729516441363,10.199147829367917,14.822606862250645,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dual_dr
+dual_dr,clr,CLR,0.5,32000,19.18262396573354,5.520369956947568,13.662254008785972,24.70299392268111,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dual_dr
+dual_dr,mst,MST,0.5,32000,7.048642859641141,1.6820604065473521,5.3665824530937885,8.730703266188492,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dual_dr
+dual_dr,causal_forest,Causal Forest,0.5,32000,3.6800051044291795,1.119936230799013,2.5600688736301667,4.799941335228192,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dual_dr
+dual_dr,t_learner,T-Learner,0.5,32000,26.795589745735427,3.7034387297249287,23.092151016010497,30.499028475460356,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dual_dr
+dual_dr,s_learner,S-Learner,0.5,32000,23.72976253591839,2.5124264327975587,21.217336103120832,26.242188968715947,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dual_dr
+dual_dr,x_learner,X-Learner,0.5,32000,19.753892876342125,1.898687833732951,17.855205042609175,21.652580710075075,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dual_dr
+dual_dr,dr_learner,DR-Learner,0.5,32000,29.214688121041526,2.54668978352662,26.667998337514906,31.761377904568146,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dual_dr
+dual_dr,policytree,Policy Tree,0.5,32000,4.023684229615548,1.0472363582330377,2.9764478713825104,5.070920587848586,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dual_dr
+dual_dr,kmeans,K-Means,0.55,35200,8.855793191194346,1.3706691986316424,7.485123992562704,10.226462389825988,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dual_dr
+dual_dr,gmm,GMM,0.55,35200,10.887741679412123,1.8280514523124378,9.059690227099685,12.715793131724562,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dual_dr
+dual_dr,clr,CLR,0.55,35200,14.395813547599436,4.94230849136736,9.453505056232077,19.338122038966794,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dual_dr
+dual_dr,mst,MST,0.55,35200,5.035954607688276,1.269056589314627,3.7668980183736487,6.305011197002903,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dual_dr
+dual_dr,causal_forest,Causal Forest,0.55,35200,3.7882976348737487,1.0703395999694592,2.7179580349042896,4.858637234843208,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dual_dr
+dual_dr,t_learner,T-Learner,0.55,35200,22.925931877360377,2.394019148166435,20.53191272919394,25.319951025526812,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dual_dr
+dual_dr,s_learner,S-Learner,0.55,35200,22.527393848327762,2.3028043723550202,20.224589475972742,24.83019822068278,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dual_dr
+dual_dr,x_learner,X-Learner,0.55,35200,18.869273980129055,1.7316490190741571,17.137624961054897,20.600922999203213,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dual_dr
+dual_dr,dr_learner,DR-Learner,0.55,35200,27.276676243945236,2.222051230189612,25.054625013755626,29.498727474134846,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dual_dr
+dual_dr,policytree,Policy Tree,0.55,35200,3.5582248401722505,1.0233270419110245,2.534897798261226,4.581551882083275,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dual_dr
+dual_dr,kmeans,K-Means,0.6,38400,9.026496572768846,1.6519020175537527,7.374594555215093,10.678398590322598,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dual_dr
+dual_dr,gmm,GMM,0.6,38400,9.36687224522074,1.757792848660151,7.609079396560589,11.12466509388089,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dual_dr
+dual_dr,clr,CLR,0.6,38400,11.884468816623812,4.0681662868955595,7.816302529728253,15.952635103519372,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dual_dr
+dual_dr,mst,MST,0.6,38400,5.563390311592377,1.5650535864636286,3.9983367251287483,7.128443898056005,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dual_dr
+dual_dr,causal_forest,Causal Forest,0.6,38400,4.366128840058171,0.868258469370624,3.497870370687547,5.234387309428795,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dual_dr
+dual_dr,t_learner,T-Learner,0.6,38400,22.86264378375899,2.9346927766024886,19.9279510071565,25.79733656036148,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dual_dr
+dual_dr,s_learner,S-Learner,0.6,38400,21.065976247541993,1.9211800725177266,19.14479617502427,22.987156320059718,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dual_dr
+dual_dr,x_learner,X-Learner,0.6,38400,17.85247261266614,1.5897053361397528,16.26276727652639,19.44217794880589,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dual_dr
+dual_dr,dr_learner,DR-Learner,0.6,38400,28.081578656834672,2.737109040178096,25.344469616656575,30.81868769701277,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dual_dr
+dual_dr,policytree,Policy Tree,0.6,38400,2.5869660115675783,0.9229788435581886,1.6639871680093896,3.509944855125767,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dual_dr
+dual_dr,kmeans,K-Means,0.65,41600,8.781627160918562,1.4176410941609727,7.363986066757589,10.199268255079534,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dual_dr
+dual_dr,gmm,GMM,0.65,41600,10.101864380932927,1.6055173386449968,8.49634704228793,11.707381719577924,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dual_dr
+dual_dr,clr,CLR,0.65,41600,10.356672357127932,3.9390078981508063,6.417664458977126,14.29568025527874,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dual_dr
+dual_dr,mst,MST,0.65,41600,4.38559552642275,1.1078478653826516,3.277747661040099,5.4934433918054015,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dual_dr
+dual_dr,causal_forest,Causal Forest,0.65,41600,4.81885015899335,0.982618475575347,3.8362316834180032,5.801468634568697,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dual_dr
+dual_dr,t_learner,T-Learner,0.65,41600,23.49980391823362,2.356882316176899,21.14292160205672,25.85668623441052,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dual_dr
+dual_dr,s_learner,S-Learner,0.65,41600,20.298323955681255,1.8044077935860927,18.49391616209516,22.10273174926735,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dual_dr
+dual_dr,x_learner,X-Learner,0.65,41600,18.647085012005494,1.6628512383571628,16.98423377364833,20.309936250362657,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dual_dr
+dual_dr,dr_learner,DR-Learner,0.65,41600,26.119596166710153,1.9793860657308364,24.140210100979317,28.09898223244099,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dual_dr
+dual_dr,policytree,Policy Tree,0.65,41600,3.5386501914370245,1.0442717251126536,2.494378466324371,4.582921916549678,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dual_dr
+dual_dr,kmeans,K-Means,0.7,44800,8.197439878847627,1.266048952340866,6.931390926506761,9.463488831188492,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dual_dr
+dual_dr,gmm,GMM,0.7,44800,9.126513239235004,1.261238557715873,7.865274681519131,10.387751796950877,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dual_dr
+dual_dr,clr,CLR,0.7,44800,11.697534950579495,4.210747959814728,7.4867869907647675,15.908282910394224,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dual_dr
+dual_dr,mst,MST,0.7,44800,4.694310538935909,1.1751727999849524,3.5191377389509566,5.869483338920862,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dual_dr
+dual_dr,causal_forest,Causal Forest,0.7,44800,5.553992856925089,0.9264510871048949,4.627541769820194,6.480443944029984,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dual_dr
+dual_dr,t_learner,T-Learner,0.7,44800,23.52354388292287,2.695847489487991,20.827696393434877,26.21939137241086,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dual_dr
+dual_dr,s_learner,S-Learner,0.7,44800,20.24306883917905,2.1911409628173844,18.051927876361663,22.434209801996435,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dual_dr
+dual_dr,x_learner,X-Learner,0.7,44800,18.490545516951173,1.794284578634439,16.696260938316733,20.284830095585612,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dual_dr
+dual_dr,dr_learner,DR-Learner,0.7,44800,25.82573663141709,1.8897293876466967,23.936007243770394,27.715466019063786,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dual_dr
+dual_dr,policytree,Policy Tree,0.7,44800,3.029872921472923,1.095916142875642,1.9339567785972809,4.125789064348565,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dual_dr
+dual_dr,kmeans,K-Means,0.75,48000,7.661845294617547,1.054134606895492,6.607710687722054,8.71597990151304,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dual_dr
+dual_dr,gmm,GMM,0.75,48000,9.262211778773231,1.4637450772227092,7.798466701550522,10.72595685599594,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dual_dr
+dual_dr,clr,CLR,0.75,48000,10.268612858929725,4.1738969570849855,6.094715901844739,14.44250981601471,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dual_dr
+dual_dr,mst,MST,0.75,48000,4.280249690795118,0.9420352420963357,3.338214448698783,5.222284932891454,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dual_dr
+dual_dr,causal_forest,Causal Forest,0.75,48000,6.883478061818455,0.868019836805724,6.015458225012731,7.751497898624178,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dual_dr
+dual_dr,t_learner,T-Learner,0.75,48000,24.92976874666757,3.570805248279884,21.358963498387684,28.500573994947455,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dual_dr
+dual_dr,s_learner,S-Learner,0.75,48000,19.589211335143794,1.6959101689404952,17.893301166203297,21.28512150408429,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dual_dr
+dual_dr,x_learner,X-Learner,0.75,48000,18.769689988055305,1.237889127867924,17.53180086018738,20.007579115923228,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dual_dr
+dual_dr,dr_learner,DR-Learner,0.75,48000,24.764534770178393,2.1609521315203732,22.60358263865802,26.92548690169877,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dual_dr
+dual_dr,policytree,Policy Tree,0.75,48000,3.5250295709485435,1.0215501349467682,2.5034794360017756,4.5465797058953115,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dual_dr
+dual_dr,kmeans,K-Means,0.8,51200,6.6345143122685295,1.3722264335929788,5.262287878675551,8.006740745861508,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dual_dr
+dual_dr,gmm,GMM,0.8,51200,7.473134362902199,1.2898545756150266,6.183279787287172,8.762988938517225,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dual_dr
+dual_dr,clr,CLR,0.8,51200,10.16939217727193,4.352252955378948,5.817139221892982,14.521645132650878,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dual_dr
+dual_dr,mst,MST,0.8,51200,4.22505927888048,1.068149756440742,3.1569095224397383,5.2932090353212224,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dual_dr
+dual_dr,causal_forest,Causal Forest,0.8,51200,6.114577659427701,0.9177472895679772,5.196830369859724,7.032324948995678,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dual_dr
+dual_dr,t_learner,T-Learner,0.8,51200,22.976234074246445,1.9460435885191079,21.03019048572734,24.922277662765552,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dual_dr
+dual_dr,s_learner,S-Learner,0.8,51200,19.301813742689838,2.0685263935677405,17.233287349122097,21.370340136257578,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dual_dr
+dual_dr,x_learner,X-Learner,0.8,51200,17.37660100109347,1.2955360458799265,16.08106495521354,18.672137046973397,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dual_dr
+dual_dr,dr_learner,DR-Learner,0.8,51200,24.43326421301247,1.7290411194280868,22.704223093584385,26.162305332440557,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dual_dr
+dual_dr,policytree,Policy Tree,0.8,51200,2.212534509393302,0.8638045601703082,1.3487299492229938,3.07633906956361,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dual_dr
+dual_dr,kmeans,K-Means,0.85,54400,7.053578672327012,1.0344220645452842,6.019156607781728,8.088000736872296,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dual_dr
+dual_dr,gmm,GMM,0.85,54400,7.395087534589263,1.091720560807332,6.303366973781931,8.486808095396595,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dual_dr
+dual_dr,clr,CLR,0.85,54400,7.270207678016248,3.11632023544943,4.153887442566818,10.386527913465677,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dual_dr
+dual_dr,mst,MST,0.85,54400,3.025588511555723,0.9368611236923978,2.088727387863325,3.962449635248121,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dual_dr
+dual_dr,causal_forest,Causal Forest,0.85,54400,6.282413347066597,0.8325013093820236,5.449912037684573,7.1149146564486205,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dual_dr
+dual_dr,t_learner,T-Learner,0.85,54400,21.370489050292555,2.04796655830927,19.322522491983285,23.418455608601825,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dual_dr
+dual_dr,s_learner,S-Learner,0.85,54400,19.653924080082444,1.9866775092500182,17.667246570832425,21.640601589332462,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dual_dr
+dual_dr,x_learner,X-Learner,0.85,54400,16.268110071416967,1.5758543793561492,14.692255692060817,17.843964450773115,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dual_dr
+dual_dr,dr_learner,DR-Learner,0.85,54400,23.02379804334409,1.7117714873230272,21.312026556021063,24.735569530667117,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dual_dr
+dual_dr,policytree,Policy Tree,0.85,54400,2.941423547012919,1.0340493480083766,1.9073741990045423,3.975472895021295,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dual_dr
+dual_dr,kmeans,K-Means,0.9,57600,6.544829918908441,1.0974297068736834,5.447400212034758,7.642259625782124,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dual_dr
+dual_dr,gmm,GMM,0.9,57600,6.851586913181397,1.3258131031833391,5.525773809998058,8.177400016364736,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dual_dr
+dual_dr,clr,CLR,0.9,57600,7.067782857599947,3.434637629491887,3.63314522810806,10.502420487091834,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dual_dr
+dual_dr,mst,MST,0.9,57600,3.7103220897026903,0.8088825701103132,2.901439519592377,4.519204659813004,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dual_dr
+dual_dr,causal_forest,Causal Forest,0.9,57600,7.219154049666697,0.7412234056863262,6.477930643980371,7.960377455353023,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dual_dr
+dual_dr,t_learner,T-Learner,0.9,57600,24.01175780895051,2.3014093763383987,21.71034843261211,26.313167185288908,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dual_dr
+dual_dr,s_learner,S-Learner,0.9,57600,18.674941256920516,1.8087918091522601,16.866149447768255,20.483733066072777,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dual_dr
+dual_dr,x_learner,X-Learner,0.9,57600,18.010151921468186,1.227742733244298,16.782409188223887,19.237894654712484,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dual_dr
+dual_dr,dr_learner,DR-Learner,0.9,57600,24.414919668348848,1.6219754798923323,22.792944188456516,26.03689514824118,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dual_dr
+dual_dr,policytree,Policy Tree,0.9,57600,2.6864456391760525,0.9013113100313201,1.7851343291447324,3.587756949207373,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dual_dr
+dual_dr,kmeans,K-Means,0.95,60800,5.928017509659932,1.0227977716987855,4.905219737961146,6.950815281358717,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dual_dr
+dual_dr,gmm,GMM,0.95,60800,7.360997531668357,1.1577285393476278,6.203268992320729,8.518726071015985,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dual_dr
+dual_dr,clr,CLR,0.95,60800,6.435375199111588,3.3001784815142226,3.1351967175973656,9.735553680625811,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dual_dr
+dual_dr,mst,MST,0.95,60800,3.4129990006832465,1.183056312023722,2.2299426886595244,4.5960553127069685,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dual_dr
+dual_dr,causal_forest,Causal Forest,0.95,60800,6.874205725448442,0.769939096181527,6.104266629266915,7.644144821629968,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dual_dr
+dual_dr,t_learner,T-Learner,0.95,60800,21.65876493136591,1.9462309680434557,19.712533963322453,23.604995899409364,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dual_dr
+dual_dr,s_learner,S-Learner,0.95,60800,17.670885783930785,1.9909599060842025,15.679925877846582,19.66184569001499,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dual_dr
+dual_dr,x_learner,X-Learner,0.95,60800,16.93659679815515,1.4639591158222307,15.47263768233292,18.40055591397738,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dual_dr
+dual_dr,dr_learner,DR-Learner,0.95,60800,22.025414028770815,1.6907195268230801,20.334694501947734,23.716133555593895,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dual_dr
+dual_dr,policytree,Policy Tree,0.95,60800,2.9200151847832445,0.831828160254952,2.0881870245282927,3.7518433450381963,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dual_dr
+dual_dr,kmeans,K-Means,1.0,64000,5.376332076512431,1.1204181551804577,4.255913921331973,6.4967502316928885,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dual_dr
+dual_dr,gmm,GMM,1.0,64000,5.480166227744627,0.9570197704931327,4.523146457251494,6.43718599823776,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dual_dr
+dual_dr,clr,CLR,1.0,64000,5.3268090243088615,2.806476723101663,2.5203323012071985,8.133285747410525,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dual_dr
+dual_dr,mst,MST,1.0,64000,3.0813310400239913,1.0738692761075428,2.0074617639164485,4.155200316131534,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dual_dr
+dual_dr,causal_forest,Causal Forest,1.0,64000,7.248412772227523,0.7530105415646392,6.495402230662884,8.001423313792163,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dual_dr
+dual_dr,t_learner,T-Learner,1.0,64000,21.060908561547897,1.8421862010445162,19.21872236050338,22.903094762592414,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dual_dr
+dual_dr,s_learner,S-Learner,1.0,64000,17.885719917886163,2.1060651638058925,15.779654754080271,19.991785081692058,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dual_dr
+dual_dr,x_learner,X-Learner,1.0,64000,16.813704307614174,1.426272641813582,15.387431665800591,18.239976949427756,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dual_dr
+dual_dr,dr_learner,DR-Learner,1.0,64000,21.34475778429471,1.7651559203377651,19.579601863956945,23.109913704632476,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dual_dr
+dual_dr,policytree,Policy Tree,1.0,64000,2.7689770491778956,0.8908181348662563,1.8781589143116393,3.659795184044152,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dual_dr
+dr,kmeans,K-Means,0.5,32000,7.50556647759045,3.468531373542353,4.037035104048097,10.974097851132804,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dr
+dr,gmm,GMM,0.5,32000,8.790320314986957,3.5653333177104005,5.224986997276556,12.355653632697358,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dr
+dr,clr,CLR,0.5,32000,6.036747367929606,4.749371861392006,1.2873755065376002,10.786119229321612,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dr
+dr,mst,MST,0.5,32000,4.969714252367996,3.73271144794575,1.2370028044222456,8.702425700313746,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dr
+dr,causal_forest,Causal Forest,0.5,32000,13.677866003327683,2.9199959728793115,10.757870030448371,16.597861976206993,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dr
+dr,t_learner,T-Learner,0.5,32000,26.96162056367721,5.4464286345346125,21.5151919291426,32.40804919821183,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dr
+dr,s_learner,S-Learner,0.5,32000,21.737144981733564,4.828735508003879,16.908409473729684,26.565880489737445,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dr
+dr,x_learner,X-Learner,0.5,32000,22.798694389667794,4.673281444782326,18.12541294488547,27.47197583445012,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dr
+dr,dr_learner,DR-Learner,0.5,32000,26.848487037870814,4.74055456651247,22.107932471358346,31.589041604383283,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dr
+dr,policytree,Policy Tree,0.5,32000,5.265272091417518,3.0755924463631206,2.189679645054398,8.34086453778064,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dr
+dr,kmeans,K-Means,0.55,35200,4.229948291054038,2.9071690846251843,1.3227792064288537,7.137117375679223,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dr
+dr,gmm,GMM,0.55,35200,6.6172814634303725,3.1829727090159716,3.434308754414401,9.800254172446344,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dr
+dr,clr,CLR,0.55,35200,2.256910748537587,4.3477029109222505,-2.0907921623846635,6.6046136594598375,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dr
+dr,mst,MST,0.55,35200,2.572447399510886,2.9871922421183332,-0.41474484260744715,5.55963964162922,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dr
+dr,causal_forest,Causal Forest,0.55,35200,12.176246960770875,3.2516388514088646,8.92460810936201,15.42788581217974,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dr
+dr,t_learner,T-Learner,0.55,35200,22.953542224599996,3.9171931086666136,19.036349115933383,26.87073533326661,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dr
+dr,s_learner,S-Learner,0.55,35200,21.476973773222166,4.745402062159339,16.731571711062827,26.222375835381506,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dr
+dr,x_learner,X-Learner,0.55,35200,22.336379725631602,4.066580986145211,18.26979873948639,26.402960711776814,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dr
+dr,dr_learner,DR-Learner,0.55,35200,25.91375443543426,3.9404278406405333,21.973326594793726,29.854182276074795,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dr
+dr,policytree,Policy Tree,0.55,35200,6.010008128884036,2.794075850897516,3.21593227798652,8.804083979781552,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dr
+dr,kmeans,K-Means,0.6,38400,5.825836842450965,2.8070584511203664,3.0187783913305983,8.63289529357133,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dr
+dr,gmm,GMM,0.6,38400,5.369451338492227,2.53195657656082,2.837494761931407,7.901407915053047,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dr
+dr,clr,CLR,0.6,38400,2.7482029001079535,3.672256867105965,-0.9240539669980117,6.420459767213918,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dr
+dr,mst,MST,0.6,38400,5.138343589010982,3.3989555096261603,1.7393880793848218,8.537299098637142,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dr
+dr,causal_forest,Causal Forest,0.6,38400,13.22732578939072,2.936816171825734,10.290509617564986,16.164141961216455,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dr
+dr,t_learner,T-Learner,0.6,38400,19.970189011666786,3.6908271148389558,16.27936189682783,23.661016126505743,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dr
+dr,s_learner,S-Learner,0.6,38400,18.929749765738862,3.556856121233123,15.372893644505739,22.486605886971986,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dr
+dr,x_learner,X-Learner,0.6,38400,19.450775942459785,3.969800927410948,15.480975015048838,23.420576869870732,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dr
+dr,dr_learner,DR-Learner,0.6,38400,26.191394555810984,4.900894124465223,21.290500431345762,31.092288680276205,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dr
+dr,policytree,Policy Tree,0.6,38400,4.6989825271268275,3.1938988998523716,1.5050836272744559,7.8928814269792,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dr
+dr,kmeans,K-Means,0.65,41600,5.099360275640375,2.6303936366981473,2.468966638942228,7.729753912338523,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dr
+dr,gmm,GMM,0.65,41600,6.720494301942804,2.826982431672687,3.8935118702701166,9.54747673361549,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dr
+dr,clr,CLR,0.65,41600,2.206989827711421,4.160292694306768,-1.953302866595347,6.367282522018188,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dr
+dr,mst,MST,0.65,41600,2.3048140957735335,2.7202855695101515,-0.4154714737366181,5.025099665283685,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dr
+dr,causal_forest,Causal Forest,0.65,41600,14.532663805967095,3.812782017782715,10.71988178818438,18.34544582374981,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dr
+dr,t_learner,T-Learner,0.65,41600,24.70863101420922,4.436218378971539,20.272412635237682,29.14484939318076,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dr
+dr,s_learner,S-Learner,0.65,41600,21.99143323472056,4.28133342192261,17.71009981279795,26.27276665664317,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dr
+dr,x_learner,X-Learner,0.65,41600,22.24503657992633,4.373441647247873,17.87159493267846,26.618478227174204,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dr
+dr,dr_learner,DR-Learner,0.65,41600,26.514011018445856,4.398916823659831,22.115094194786025,30.912927842105688,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dr
+dr,policytree,Policy Tree,0.65,41600,5.071408605726056,2.79988160484671,2.271527000879346,7.8712902105727665,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dr
+dr,kmeans,K-Means,0.7,44800,5.553339155230682,2.600415677900502,2.95292347733018,8.153754833131185,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dr
+dr,gmm,GMM,0.7,44800,6.2134119568982165,2.586872932794163,3.6265390241040536,8.80028488969238,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dr
+dr,clr,CLR,0.7,44800,3.4313431544720574,3.8895098015145972,-0.45816664704253984,7.320852955986655,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dr
+dr,mst,MST,0.7,44800,2.2352747752835165,2.472993338491451,-0.2377185632079346,4.708268113774968,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dr
+dr,causal_forest,Causal Forest,0.7,44800,13.328265021287569,2.473761604274607,10.854503417012962,15.802026625562176,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dr
+dr,t_learner,T-Learner,0.7,44800,22.683504235897328,4.178181944535963,18.505322291361367,26.86168618043329,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dr
+dr,s_learner,S-Learner,0.7,44800,20.519338855384284,4.301241599921301,16.218097255462983,24.820580455305585,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dr
+dr,x_learner,X-Learner,0.7,44800,19.78628942200518,4.13537387111538,15.650915550889799,23.92166329312056,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dr
+dr,dr_learner,DR-Learner,0.7,44800,22.805411600567194,3.1936019362668113,19.61180966430038,25.999013536834006,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dr
+dr,policytree,Policy Tree,0.7,44800,4.317617982259137,2.7783326425091874,1.53928533974995,7.095950624768324,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dr
+dr,kmeans,K-Means,0.75,48000,3.969738461620112,2.2417051584253676,1.7280333031947444,6.211443620045479,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dr
+dr,gmm,GMM,0.75,48000,6.299264833553739,2.8415388337363234,3.4577259998174155,9.140803667290061,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dr
+dr,clr,CLR,0.75,48000,1.2944283604670903,3.484178880854147,-2.1897505203870566,4.778607241321238,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dr
+dr,mst,MST,0.75,48000,1.6700796612661406,2.8852241566812946,-1.215144495415154,4.555303817947435,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dr
+dr,causal_forest,Causal Forest,0.75,48000,16.453084404775883,3.3044328637421967,13.148651541033686,19.75751726851808,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dr
+dr,t_learner,T-Learner,0.75,48000,23.797062360544746,4.76428085086738,19.032781509677367,28.561343211412126,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dr
+dr,s_learner,S-Learner,0.75,48000,18.96075521194254,3.903683110037859,15.057072101904682,22.8644383219804,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dr
+dr,x_learner,X-Learner,0.75,48000,21.62354981849066,3.6287602620884902,17.994789556402168,25.25231008057915,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dr
+dr,dr_learner,DR-Learner,0.75,48000,23.212782375511498,3.893008172965805,19.319774202545695,27.1057905484773,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dr
+dr,policytree,Policy Tree,0.75,48000,5.316761799171921,2.6139834071098065,2.7027783920621147,7.930745206281728,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dr
+dr,kmeans,K-Means,0.8,51200,3.3249640287633953,2.9069536674174206,0.4180103613459747,6.231917696180815,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dr
+dr,gmm,GMM,0.8,51200,3.9703079499319727,2.4538551292951603,1.5164528206368124,6.424163079227133,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dr
+dr,clr,CLR,0.8,51200,2.7456238084236633,4.281133823556631,-1.5355100151329681,7.026757631980295,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dr
+dr,mst,MST,0.8,51200,1.3368810063206653,2.324017203652567,-0.9871361973319015,3.660898209973232,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dr
+dr,causal_forest,Causal Forest,0.8,51200,14.003478291790657,2.686384217167849,11.317094074622808,16.689862508958505,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dr
+dr,t_learner,T-Learner,0.8,51200,21.887785397623794,3.0407392264967306,18.847046171127065,24.928524624120524,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dr
+dr,s_learner,S-Learner,0.8,51200,19.40971799686306,3.6159562037909048,15.793761793072154,23.025674200653963,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dr
+dr,x_learner,X-Learner,0.8,51200,18.17996619913471,3.0937408684598284,15.086225330674882,21.27370706759454,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dr
+dr,dr_learner,DR-Learner,0.8,51200,23.61979969888375,3.7408916026074555,19.878908096276295,27.360691301491205,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dr
+dr,policytree,Policy Tree,0.8,51200,3.7978855483068714,2.7673828841673713,1.0305026641395,6.565268432474243,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dr
+dr,kmeans,K-Means,0.85,54400,4.615201357098735,2.3621885653366976,2.2530127917620377,6.977389922435433,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dr
+dr,gmm,GMM,0.85,54400,4.293993047933208,2.5923371045487484,1.7016559433844596,6.886330152481957,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dr
+dr,clr,CLR,0.85,54400,0.7818128423960254,2.9259248762187746,-2.1441120338227493,3.7077377186148,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dr
+dr,mst,MST,0.85,54400,0.1786980820624276,2.131407110658761,-1.9527090285963336,2.310105192721189,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dr
+dr,causal_forest,Causal Forest,0.85,54400,13.129758330581826,2.640202050586859,10.489556279994966,15.769960381168685,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dr
+dr,t_learner,T-Learner,0.85,54400,20.84107607433704,3.969731601613878,16.87134447272316,24.81080767595092,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dr
+dr,s_learner,S-Learner,0.85,54400,20.97955010685976,3.717521632010015,17.262028474849746,24.697071738869777,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dr
+dr,x_learner,X-Learner,0.85,54400,18.00074841430049,3.5753162574506354,14.425432156849853,21.576064671751123,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dr
+dr,dr_learner,DR-Learner,0.85,54400,22.24390689110404,3.5975878178448797,18.64631907325916,25.841494708948918,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dr
+dr,policytree,Policy Tree,0.85,54400,3.9913137752254992,2.2508097255380606,1.7405040496874387,6.24212350076356,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dr
+dr,kmeans,K-Means,0.9,57600,4.354105347722323,2.1740889657677327,2.18001638195459,6.528194313490055,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dr
+dr,gmm,GMM,0.9,57600,4.176560564535491,2.178518349996831,1.9980422145386596,6.355078914532322,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dr
+dr,clr,CLR,0.9,57600,0.05430825816092906,2.7908392269021527,-2.736530968741224,2.8451474850630816,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dr
+dr,mst,MST,0.9,57600,1.1365307059208025,1.9680818791075931,-0.8315511731867906,3.104612585028396,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dr
+dr,causal_forest,Causal Forest,0.9,57600,14.90113865362468,2.561082496608086,12.340056157016594,17.462221150232764,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dr
+dr,t_learner,T-Learner,0.9,57600,23.496789240347766,3.6694454019730185,19.82734383837475,27.166234642320784,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dr
+dr,s_learner,S-Learner,0.9,57600,18.58039852679333,2.9969630109849805,15.58343551580835,21.577361537778312,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dr
+dr,x_learner,X-Learner,0.9,57600,20.566307504334382,3.0975630526441553,17.468744451690227,23.663870556978537,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dr
+dr,dr_learner,DR-Learner,0.9,57600,24.633472858179093,3.416353090299143,21.21711976787995,28.049825948478237,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dr
+dr,policytree,Policy Tree,0.9,57600,4.228684588673363,2.114353970306805,2.114330618366558,6.343038558980168,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dr
+dr,kmeans,K-Means,0.95,60800,2.854225363251129,2.176161327261178,0.678064035989951,5.030386690512307,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dr
+dr,gmm,GMM,0.95,60800,4.78485367105419,2.2968231718319405,2.4880304992222495,7.0816768428861305,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dr
+dr,clr,CLR,0.95,60800,0.6439742013155738,3.170756428372512,-2.5267822270569384,3.8147306296880856,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dr
+dr,mst,MST,0.95,60800,1.489325645094409,2.3672134946871104,-0.8778878495927014,3.8565391397815194,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dr
+dr,causal_forest,Causal Forest,0.95,60800,13.266191379520274,2.089087849926493,11.177103529593781,15.355279229446767,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dr
+dr,t_learner,T-Learner,0.95,60800,21.172623098047065,2.997419109478554,18.175203988568512,24.17004220752562,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dr
+dr,s_learner,S-Learner,0.95,60800,17.841919633986944,3.004010874291837,14.837908759695107,20.84593050827878,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dr
+dr,x_learner,X-Learner,0.95,60800,18.67730460540307,2.821641527841689,15.855663077561381,21.498946133244758,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dr
+dr,dr_learner,DR-Learner,0.95,60800,20.313612095431054,2.53676630348382,17.776845791947235,22.850378398914874,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dr
+dr,policytree,Policy Tree,0.95,60800,4.530181540619063,1.8167066647110321,2.713474875908031,6.346888205330095,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dr
+dr,kmeans,K-Means,1.0,64000,2.4395754837126864,1.9856226251072924,0.453952858605394,4.425198108819979,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dr
+dr,gmm,GMM,1.0,64000,1.8174751304574277,2.0339371827986135,-0.21646205234118576,3.8514123132560414,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dr
+dr,clr,CLR,1.0,64000,-1.936488093747164,2.1486227835232006,-4.085110877270365,0.21213468977603656,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dr
+dr,mst,MST,1.0,64000,0.3865778402665407,2.135883547963563,-1.7493057076970224,2.522461388230104,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dr
+dr,causal_forest,Causal Forest,1.0,64000,13.295823399435312,2.3308630035222393,10.964960395913073,15.626686402957551,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dr
+dr,t_learner,T-Learner,1.0,64000,19.898750825564587,3.5343591666459595,16.364391658918628,23.433109992210547,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dr
+dr,s_learner,S-Learner,1.0,64000,17.338943524102433,3.075866917566299,14.263076606536135,20.41481044166873,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dr
+dr,x_learner,X-Learner,1.0,64000,18.50373822680405,3.0565600124837133,15.447178214320337,21.560298239287764,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dr
+dr,dr_learner,DR-Learner,1.0,64000,20.535556855136306,3.185471591992359,17.350085263143946,23.721028447128667,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dr
+dr,policytree,Policy Tree,1.0,64000,3.8531913423116104,2.0666799580637885,1.786511384247822,5.919871300375399,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dr
+ipw,kmeans,K-Means,0.5,32000,7.233654604300835,3.583213127811933,3.650441476488902,10.816867732112767,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_ipw
+ipw,gmm,GMM,0.5,32000,8.492914278179482,3.529649457114916,4.963264821064566,12.022563735294398,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_ipw
+ipw,clr,CLR,0.5,32000,5.743929144329723,4.7564180238916345,0.9875111204380884,10.500347168221356,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_ipw
+ipw,mst,MST,0.5,32000,4.493482650040027,3.6601694182179365,0.8333132318220908,8.153652068257964,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_ipw
+ipw,causal_forest,Causal Forest,0.5,32000,13.296189321357785,2.889681536364081,10.406507784993703,16.185870857721866,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_ipw
+ipw,t_learner,T-Learner,0.5,32000,26.611350944925086,5.300763275680757,21.310587669244327,31.912114220605844,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_ipw
+ipw,s_learner,S-Learner,0.5,32000,20.984847268694175,4.739676299674951,16.245170969019224,25.724523568369126,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_ipw
+ipw,x_learner,X-Learner,0.5,32000,22.765674624227973,4.789946976565161,17.97572764766281,27.555621600793135,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_ipw
+ipw,dr_learner,DR-Learner,0.5,32000,26.97992674963577,4.965198971218376,22.014727778417395,31.945125720854143,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_ipw
+ipw,policytree,Policy Tree,0.5,32000,5.03778983027053,3.1420367394055324,1.8957530908649973,8.179826569676063,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_ipw
+ipw,kmeans,K-Means,0.55,35200,3.9808259880490415,2.902390383681466,1.0784356043675754,6.883216371730508,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_ipw
+ipw,gmm,GMM,0.55,35200,6.466394708651719,3.325158781439404,3.141235927212315,9.791553490091122,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_ipw
+ipw,clr,CLR,0.55,35200,2.045880129075887,4.398459550073666,-2.352579420997779,6.444339679149552,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_ipw
+ipw,mst,MST,0.55,35200,2.503577363169254,2.938240636696599,-0.4346632735273448,5.441817999865853,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_ipw
+ipw,causal_forest,Causal Forest,0.55,35200,12.157309729633702,3.352677894830077,8.804631834803626,15.509987624463779,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_ipw
+ipw,t_learner,T-Learner,0.55,35200,22.81860057324955,4.1024726888561185,18.716127884393433,26.92107326210567,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_ipw
+ipw,s_learner,S-Learner,0.55,35200,21.356426794238217,4.791823348207777,16.56460344603044,26.148250142445995,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_ipw
+ipw,x_learner,X-Learner,0.55,35200,22.0378738337517,4.167737452962058,17.870136380789642,26.205611286713758,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_ipw
+ipw,dr_learner,DR-Learner,0.55,35200,25.64461671786367,3.9692615448411837,21.675355173022485,29.613878262704855,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_ipw
+ipw,policytree,Policy Tree,0.55,35200,6.149531718807088,2.863910993953173,3.2856207248539153,9.013442712760261,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_ipw
+ipw,kmeans,K-Means,0.6,38400,5.669727360093617,2.8299193709627892,2.839807989130828,8.499646731056407,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_ipw
+ipw,gmm,GMM,0.6,38400,5.2722646824876485,2.5473799656151948,2.7248847168724537,7.819644648102843,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_ipw
+ipw,clr,CLR,0.6,38400,2.5691270535097974,3.6898042862945015,-1.120677232784704,6.258931339804299,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_ipw
+ipw,mst,MST,0.6,38400,4.8316541648831555,3.392266073391457,1.4393880914916983,8.223920238274612,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_ipw
+ipw,causal_forest,Causal Forest,0.6,38400,13.129396888084411,2.9368585940724983,10.192538294011912,16.066255482156908,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_ipw
+ipw,t_learner,T-Learner,0.6,38400,19.905724408461,3.5394943744005882,16.366230034060415,23.445218782861588,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_ipw
+ipw,s_learner,S-Learner,0.6,38400,18.76912524303478,3.5718841848284777,15.197241058206302,22.341009427863256,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_ipw
+ipw,x_learner,X-Learner,0.6,38400,19.379665001320564,3.8646403368251496,15.515024664495414,23.244305338145715,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_ipw
+ipw,dr_learner,DR-Learner,0.6,38400,26.35233894692689,4.866953494183653,21.485385452743238,31.21929244111054,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_ipw
+ipw,policytree,Policy Tree,0.6,38400,4.510022489432918,3.1416309793584904,1.368391510074428,7.651653468791409,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_ipw
+ipw,kmeans,K-Means,0.65,41600,4.7268005913725695,2.6207420463890183,2.106058544983551,7.347542637761588,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_ipw
+ipw,gmm,GMM,0.65,41600,6.593685595419378,2.845341154689291,3.7483444407300865,9.439026750108669,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_ipw
+ipw,clr,CLR,0.65,41600,1.9342494905412615,4.083329140101508,-2.149079649560247,6.017578630642769,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_ipw
+ipw,mst,MST,0.65,41600,2.1206596486548652,2.764782585923112,-0.6441229372682469,4.885442234577978,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_ipw
+ipw,causal_forest,Causal Forest,0.65,41600,14.192979878712137,3.763176839245342,10.429803039466794,17.95615671795748,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_ipw
+ipw,t_learner,T-Learner,0.65,41600,24.72533613459559,4.541636607784829,20.183699526810763,29.266972742380418,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_ipw
+ipw,s_learner,S-Learner,0.65,41600,21.946102087795534,4.182161850246355,17.76394023754918,26.12826393804189,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_ipw
+ipw,x_learner,X-Learner,0.65,41600,22.36537455948763,4.573489956501149,17.79188460298648,26.93886451598878,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_ipw
+ipw,dr_learner,DR-Learner,0.65,41600,26.373122088587102,4.449468500340804,21.9236535882463,30.822590588927905,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_ipw
+ipw,policytree,Policy Tree,0.65,41600,4.758898629381837,2.8290102372949186,1.929888392086918,7.587908866676756,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_ipw
+ipw,kmeans,K-Means,0.7,44800,5.4190147782735565,2.638230195309698,2.7807845829638587,8.057244973583254,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_ipw
+ipw,gmm,GMM,0.7,44800,6.13224645527556,2.6128981522090613,3.5193483030664985,8.74514460748462,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_ipw
+ipw,clr,CLR,0.7,44800,3.350887553926596,3.9590380135454777,-0.6081504596188818,7.309925567472074,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_ipw
+ipw,mst,MST,0.7,44800,2.244724473915815,2.4897157246494723,-0.24499125073365713,4.734440198565288,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_ipw
+ipw,causal_forest,Causal Forest,0.7,44800,13.279784097360356,2.394391105360811,10.885392991999545,15.674175202721166,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_ipw
+ipw,t_learner,T-Learner,0.7,44800,22.608050844644186,4.226509991520736,18.38154085312345,26.834560836164922,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_ipw
+ipw,s_learner,S-Learner,0.7,44800,20.484782407686858,4.286497398988598,16.19828500869826,24.771279806675455,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_ipw
+ipw,x_learner,X-Learner,0.7,44800,19.62484736211011,4.182577928285916,15.442269433824194,23.807425290396026,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_ipw
+ipw,dr_learner,DR-Learner,0.7,44800,22.64250664948579,3.2118123335165607,19.430694315969227,25.85431898300235,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_ipw
+ipw,policytree,Policy Tree,0.7,44800,4.163432917504747,2.722667599489612,1.440765318015135,6.886100516994359,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_ipw
+ipw,kmeans,K-Means,0.75,48000,3.954804372408684,2.3086703832791455,1.6461339891295386,6.263474755687829,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_ipw
+ipw,gmm,GMM,0.75,48000,6.2165590609522425,2.8674790207442435,3.349080040207999,9.084038081696486,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_ipw
+ipw,clr,CLR,0.75,48000,1.237039628989296,3.592796060057132,-2.355756431067836,4.829835689046428,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_ipw
+ipw,mst,MST,0.75,48000,1.7108060574007797,2.9510443931546932,-1.2402383357539135,4.661850450555473,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_ipw
+ipw,causal_forest,Causal Forest,0.75,48000,16.306957523948295,3.293812940346056,13.013144583602239,19.60077046429435,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_ipw
+ipw,t_learner,T-Learner,0.75,48000,23.72597824161021,4.859258260005563,18.866719981604646,28.585236501615775,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_ipw
+ipw,s_learner,S-Learner,0.75,48000,18.801162922451255,3.91963075958096,14.881532162870295,22.720793682032216,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_ipw
+ipw,x_learner,X-Learner,0.75,48000,21.517472171669542,3.6379098719903533,17.87956229967919,25.155382043659895,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_ipw
+ipw,dr_learner,DR-Learner,0.75,48000,23.362243314866333,3.931977335773537,19.430265979092795,27.294220650639872,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_ipw
+ipw,policytree,Policy Tree,0.75,48000,5.152834343427204,2.561432403419242,2.5914019400079624,7.714266746846446,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_ipw
+ipw,kmeans,K-Means,0.8,51200,3.2441374716016322,2.941982729651549,0.3021547419500834,6.186120201253181,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_ipw
+ipw,gmm,GMM,0.8,51200,3.8841364477264513,2.531036635553897,1.3530998121725544,6.415173083280348,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_ipw
+ipw,clr,CLR,0.8,51200,2.5359788567889754,4.328784363875322,-1.7928055070863462,6.8647632206642974,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_ipw
+ipw,mst,MST,0.8,51200,1.1199178178456106,2.328358064373382,-1.2084402465277713,3.4482758822189927,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_ipw
+ipw,causal_forest,Causal Forest,0.8,51200,13.838511741865872,2.6492910257441764,11.189220716121696,16.48780276761005,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_ipw
+ipw,t_learner,T-Learner,0.8,51200,21.553280519070604,3.085616685486727,18.467663833583877,24.63889720455733,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_ipw
+ipw,s_learner,S-Learner,0.8,51200,19.1492600861517,3.6269971734960693,15.52226291265563,22.776257259647767,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_ipw
+ipw,x_learner,X-Learner,0.8,51200,18.155083739896625,3.158328891797122,14.996754848099503,21.313412631693748,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_ipw
+ipw,dr_learner,DR-Learner,0.8,51200,23.71722674513628,3.7406356103588827,19.976591134777397,27.457862355495163,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_ipw
+ipw,policytree,Policy Tree,0.8,51200,3.5247335359841743,2.7696909460053813,0.7550425899787929,6.294424481989555,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_ipw
+ipw,kmeans,K-Means,0.85,54400,4.472427175331642,2.3385624079900267,2.1338647673416156,6.810989583321669,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_ipw
+ipw,gmm,GMM,0.85,54400,4.140486115597295,2.5684140580163293,1.5720720575809661,6.708900173613625,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_ipw
+ipw,clr,CLR,0.85,54400,0.7734911409481683,3.0534236830246737,-2.2799325420765055,3.826914823972842,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_ipw
+ipw,mst,MST,0.85,54400,0.15005321548081363,2.0597016313090837,-1.90964841582827,2.209754846789897,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_ipw
+ipw,causal_forest,Causal Forest,0.85,54400,13.068101574030994,2.6322456199035535,10.43585595412744,15.700347193934547,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_ipw
+ipw,t_learner,T-Learner,0.85,54400,20.78093011359584,3.897083454304448,16.883846659291393,24.678013567900287,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_ipw
+ipw,s_learner,S-Learner,0.85,54400,20.70330425807449,3.7206807353404496,16.982623522734038,24.42398499341494,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_ipw
+ipw,x_learner,X-Learner,0.85,54400,17.94263801497314,3.465961167392705,14.476676847580435,21.408599182365847,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_ipw
+ipw,dr_learner,DR-Learner,0.85,54400,22.041362180578716,3.4615648611639203,18.579797319414794,25.502927041742637,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_ipw
+ipw,policytree,Policy Tree,0.85,54400,3.8284618462594686,2.251762905278212,1.5766989409812564,6.080224751537681,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_ipw
+ipw,kmeans,K-Means,0.9,57600,4.160622961495238,2.20402111962962,1.9566018418656181,6.364644081124858,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_ipw
+ipw,gmm,GMM,0.9,57600,4.162341271590429,2.1166939677908974,2.0456473037995315,6.279035239381326,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_ipw
+ipw,clr,CLR,0.9,57600,0.03852633335509024,2.91765344740722,-2.87912711405213,2.9561797807623105,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_ipw
+ipw,mst,MST,0.9,57600,0.9938611128424494,1.9175132971154822,-0.9236521842730329,2.9113744099579315,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_ipw
+ipw,causal_forest,Causal Forest,0.9,57600,14.5138717866543,2.4889029915167717,12.024968795137529,17.002774778171073,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_ipw
+ipw,t_learner,T-Learner,0.9,57600,23.455732689406233,3.768399628983597,19.687333060422635,27.22413231838983,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_ipw
+ipw,s_learner,S-Learner,0.9,57600,18.37455027587263,3.0355124590174554,15.339037816855173,21.410062734890083,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_ipw
+ipw,x_learner,X-Learner,0.9,57600,20.502406148295496,3.09876331541801,17.403642832877487,23.601169463713504,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_ipw
+ipw,dr_learner,DR-Learner,0.9,57600,24.689230531478014,3.3653712662767306,21.323859265201282,28.054601797754746,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_ipw
+ipw,policytree,Policy Tree,0.9,57600,4.0928456331737975,2.089781147013636,2.0030644861601616,6.182626780187434,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_ipw
+ipw,kmeans,K-Means,0.95,60800,2.58053212849799,2.1951713633368772,0.3853607651611126,4.775703491834867,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_ipw
+ipw,gmm,GMM,0.95,60800,4.724035963727451,2.3505084249151063,2.373527538812345,7.074544388642558,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_ipw
+ipw,clr,CLR,0.95,60800,0.591913137008045,3.1692952870358475,-2.5773821500278027,3.7612084240438923,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_ipw
+ipw,mst,MST,0.95,60800,1.301194319286485,2.284967126538863,-0.9837728072523779,3.586161445825348,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_ipw
+ipw,causal_forest,Causal Forest,0.95,60800,13.179671985173448,2.0773433792986506,11.102328605874797,15.257015364472098,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_ipw
+ipw,t_learner,T-Learner,0.95,60800,21.045124861377985,3.0278271723379886,18.017297689039996,24.072952033715975,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_ipw
+ipw,s_learner,S-Learner,0.95,60800,17.697682652730233,3.095048821254153,14.60263383147608,20.792731473984386,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_ipw
+ipw,x_learner,X-Learner,0.95,60800,18.51385165072112,2.7986757589495825,15.715175891771537,21.3125274096707,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_ipw
+ipw,dr_learner,DR-Learner,0.95,60800,20.273580580798853,2.565599778125391,17.70798080267346,22.839180358924246,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_ipw
+ipw,policytree,Policy Tree,0.95,60800,4.346498394808801,1.761567541924164,2.584930852884637,6.108065936732965,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_ipw
+ipw,kmeans,K-Means,1.0,64000,2.238089734475671,2.0039586543997605,0.23413108007591044,4.242048388875432,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_ipw
+ipw,gmm,GMM,1.0,64000,1.7780804026225252,2.061847932422934,-0.283767529800409,3.8399283350454594,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_ipw
+ipw,clr,CLR,1.0,64000,-2.04018669146664,2.1430519858791404,-4.183238677345781,0.10286529441250059,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_ipw
+ipw,mst,MST,1.0,64000,0.2414523598429728,2.0996620688627594,-1.8582097090197867,2.3411144287057324,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_ipw
+ipw,causal_forest,Causal Forest,1.0,64000,13.044800371074473,2.286553413258303,10.75824695781617,15.331353784332777,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_ipw
+ipw,t_learner,T-Learner,1.0,64000,19.8095404457592,3.463116307576612,16.346424138182588,23.272656753335813,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_ipw
+ipw,s_learner,S-Learner,1.0,64000,16.99531782917767,3.109088830050658,13.886228999127011,20.104406659228328,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_ipw
+ipw,x_learner,X-Learner,1.0,64000,18.57037360362673,2.9118954930993035,15.658478110527428,21.482269096726036,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_ipw
+ipw,dr_learner,DR-Learner,1.0,64000,20.681065168372896,3.1399579411925633,17.541107227180333,23.82102310956546,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_ipw
+ipw,policytree,Policy Tree,1.0,64000,3.761304705736759,2.03175030009318,1.729554405643579,5.793055005829938,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_ipw
+dm,kmeans,K-Means,0.5,32000,14.663603188349192,2.396912024964888,12.266691163384305,17.06051521331408,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dm
+dm,gmm,GMM,0.5,32000,14.357818941102801,2.565975484721529,11.791843456381272,16.92379442582433,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dm
+dm,clr,CLR,0.5,32000,26.49882446500023,7.221636998972886,19.277187466027343,33.720461463973116,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dm
+dm,mst,MST,0.5,32000,8.280194293573254,1.571232955598284,6.70896133797497,9.851427249171538,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dm
+dm,causal_forest,Causal Forest,0.5,32000,0.0392940499676446,1.1388721175476855,-1.0995780675800408,1.17816616751533,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dm
+dm,t_learner,T-Learner,0.5,32000,27.080803624971345,3.8794183532444286,23.201385271726917,30.960221978215774,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dm
+dm,s_learner,S-Learner,0.5,32000,24.75675342142238,2.6042523888157776,22.152501032606605,27.361005810238158,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dm
+dm,x_learner,X-Learner,0.5,32000,18.909720628927438,1.6880971425038378,17.2216234864236,20.597817771431277,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dm
+dm,dr_learner,DR-Learner,0.5,32000,30.847163905162024,3.047537075780184,27.79962682938184,33.894700980942204,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dm
+dm,policytree,Policy Tree,0.5,32000,3.6410338812361913,0.975350051759523,2.6656838294766683,4.616383932995714,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dm
+dm,kmeans,K-Means,0.55,35200,11.103004404255604,1.6941399521988412,9.408864452056763,12.797144356454444,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dm
+dm,gmm,GMM,0.55,35200,12.926368616279804,2.0521189790984637,10.87424963718134,14.978487595378269,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dm
+dm,clr,CLR,0.55,35200,20.967631770986813,6.199655728868053,14.767976042118761,27.167287499854865,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dm
+dm,mst,MST,0.55,35200,6.378092148716596,1.2041798875520202,5.173912261164576,7.582272036268616,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dm
+dm,causal_forest,Causal Forest,0.55,35200,0.8073911437592721,0.9514433177128893,-0.14405217395361714,1.7588344614721614,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dm
+dm,t_learner,T-Learner,0.55,35200,23.21527182228759,2.718059595293669,20.497212226993923,25.933331417581257,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dm
+dm,s_learner,S-Learner,0.55,35200,23.349428802833128,2.1141361382118697,21.23529266462126,25.463564941044996,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dm
+dm,x_learner,X-Learner,0.55,35200,17.73687880848049,1.69216519126733,16.044713617213162,19.42904399974782,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dm
+dm,dr_learner,DR-Learner,0.55,35200,28.31475137393383,2.6369644022643746,25.677786971669455,30.951715776198206,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dm
+dm,policytree,Policy Tree,0.55,35200,2.760234270285396,0.9149786613843781,1.845255608901018,3.675212931669774,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dm
+dm,kmeans,K-Means,0.6,38400,10.552626119201271,1.6247776838963266,8.927848435304945,12.177403803097597,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dm
+dm,gmm,GMM,0.6,38400,11.255198647432465,1.8965194823063425,9.358679165126123,13.151718129738807,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dm
+dm,clr,CLR,0.6,38400,16.546424314587163,4.928084343867764,11.6183399707194,21.474508658454926,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dm
+dm,mst,MST,0.6,38400,5.946371112377493,1.5299630652095917,4.416408047167901,7.476334177587085,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dm
+dm,causal_forest,Causal Forest,0.6,38400,1.1682711401444899,0.9903385219234131,0.17793261822107675,2.158609662067903,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dm
+dm,t_learner,T-Learner,0.6,38400,24.584380769813382,3.906425541753647,20.677955228059737,28.490806311567027,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dm
+dm,s_learner,S-Learner,0.6,38400,22.143425391629943,2.023006496259921,20.120418895370022,24.166431887889864,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dm
+dm,x_learner,X-Learner,0.6,38400,17.53763258116127,1.6391596358318505,15.898472945329418,19.17679221699312,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dm
+dm,dr_learner,DR-Learner,0.6,38400,29.276568334686026,2.733425986340348,26.54314234834568,32.009994321026376,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dm
+dm,policytree,Policy Tree,0.6,38400,1.9102133046285643,0.888231201621651,1.0219821030069132,2.7984445062502155,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dm
+dm,kmeans,K-Means,0.65,41600,10.567618877011713,1.745837293965663,8.82178158304605,12.313456170977375,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dm
+dm,gmm,GMM,0.65,41600,11.660790143100739,1.8018225950135733,9.858967548087165,13.462612738114313,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dm
+dm,clr,CLR,0.65,41600,14.649315841588514,4.407004274878381,10.242311566710132,19.056320116466896,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dm
+dm,mst,MST,0.65,41600,5.600861588966253,1.4619052174867864,4.138956371479466,7.062766806453039,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dm
+dm,causal_forest,Causal Forest,0.65,41600,1.3882161574085459,0.9193366676893382,0.4688794897192077,2.307552825097884,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dm
+dm,t_learner,T-Learner,0.65,41600,23.343345436939117,2.5879162044132467,20.75542923252587,25.931261641352364,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dm
+dm,s_learner,S-Learner,0.65,41600,19.94664923385162,1.9616936495453439,17.984955584306277,21.908342883396962,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dm
+dm,x_learner,X-Learner,0.65,41600,17.47486429296757,1.5171569706798997,15.957707322287671,18.99202126364747,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dm
+dm,dr_learner,DR-Learner,0.65,41600,26.209639638592606,2.1230771449363828,24.086562493656224,28.332716783528987,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dm
+dm,policytree,Policy Tree,0.65,41600,2.989493110690538,0.8428725049993145,2.1466206056912234,3.8323656156898527,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dm
+dm,kmeans,K-Means,0.7,44800,9.466443693135252,1.2776121602020853,8.188831532933166,10.744055853337338,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dm
+dm,gmm,GMM,0.7,44800,10.653408847990136,1.337396279436238,9.316012568553898,11.990805127426373,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dm
+dm,clr,CLR,0.7,44800,16.00571925336918,4.837588185086962,11.168131068282218,20.84330743845614,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dm
+dm,mst,MST,0.7,44800,5.996892519234615,1.137332121989818,4.859560397244797,7.134224641224433,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dm
+dm,causal_forest,Causal Forest,0.7,44800,2.6335504792410016,0.7390420043474059,1.8945084748935956,3.3725924835884076,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dm
+dm,t_learner,T-Learner,0.7,44800,24.301530660706877,2.999411851030876,21.302118809676003,27.30094251173775,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dm
+dm,s_learner,S-Learner,0.7,44800,20.416717671317468,2.2003932738543015,18.216324397463165,22.61711094517177,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dm
+dm,x_learner,X-Learner,0.7,44800,18.228607054926552,1.4843307006524755,16.744276354274078,19.712937755579027,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dm
+dm,dr_learner,DR-Learner,0.7,44800,27.39255920679852,2.013868232446694,25.378690974351827,29.406427439245213,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dm
+dm,policytree,Policy Tree,0.7,44800,2.6523620261008456,0.8696622637637411,1.7826997623371046,3.5220242898645866,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dm
+dm,kmeans,K-Means,0.75,48000,9.445874419485827,1.2958175011103312,8.150056918375496,10.741691920596159,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dm
+dm,gmm,GMM,0.75,48000,10.802383366995626,1.4951888307318106,9.307194536263815,12.297572197727437,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dm
+dm,clr,CLR,0.75,48000,15.079957515295256,5.028087476538942,10.051870038756313,20.1080449918342,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dm
+dm,mst,MST,0.75,48000,5.821344108010547,1.058658029768678,4.7626860782418685,6.8800021377792255,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dm
+dm,causal_forest,Causal Forest,0.75,48000,3.265107083824621,0.8516747796541982,2.413432304170423,4.11678186347882,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dm
+dm,t_learner,T-Learner,0.75,48000,25.801711785236257,4.015319269498013,21.786392515738243,29.817031054734272,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dm
+dm,s_learner,S-Learner,0.75,48000,20.147670911932575,1.875354935962326,18.27231597597025,22.0230258478949,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dm
+dm,x_learner,X-Learner,0.75,48000,17.82184099135756,1.2831617328880518,16.53867925846951,19.10500272424561,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dm
+dm,dr_learner,DR-Learner,0.75,48000,25.623577968991412,2.064106502728893,23.55947146626252,27.687684471720306,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dm
+dm,policytree,Policy Tree,0.75,48000,2.858474403045516,0.9421829206590709,1.9162914823864448,3.800657323704587,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dm
+dm,kmeans,K-Means,0.8,51200,8.366632242192432,1.4756055855977188,6.891026656594714,9.842237827790152,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dm
+dm,gmm,GMM,0.8,51200,9.244992800385917,1.5360832621882976,7.70890953819762,10.781076062574215,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dm
+dm,clr,CLR,0.8,51200,14.044720332079324,4.954036707372145,9.090683624707179,18.99875703945147,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dm
+dm,mst,MST,0.8,51200,5.644395011811716,1.0524495442942174,4.591945467517499,6.696844556105933,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dm
+dm,causal_forest,Causal Forest,0.8,51200,3.1393948334306225,0.8829323249151984,2.2564625085154244,4.022327158345821,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dm
+dm,t_learner,T-Learner,0.8,51200,23.531083539469165,2.0133372789803836,21.51774626048878,25.54442081844955,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dm
+dm,s_learner,S-Learner,0.8,51200,19.542122545369917,2.2968908299608635,17.245231715409055,21.83901337533078,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dm
+dm,x_learner,X-Learner,0.8,51200,17.217456578458957,1.2483773647411407,15.969079213717817,18.4658339432001,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dm
+dm,dr_learner,DR-Learner,0.8,51200,25.084146803597626,1.9632115423392693,23.120935261258357,27.047358345936896,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dm
+dm,policytree,Policy Tree,0.8,51200,1.7134795672756755,0.9153488677462325,0.798130699529443,2.6288284350219078,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dm
+dm,kmeans,K-Means,0.85,54400,8.211513250907592,1.019554695199534,7.191958555708058,9.231067946107126,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dm
+dm,gmm,GMM,0.85,54400,8.895090667819684,1.1460762065197196,7.749014461299964,10.041166874339403,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dm
+dm,clr,CLR,0.85,54400,10.50086499420754,3.6494913079178124,6.851373686289727,14.150356302125353,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dm
+dm,mst,MST,0.85,54400,4.418625769076406,0.8334454651765245,3.585180303899881,5.25207123425293,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dm
+dm,causal_forest,Causal Forest,0.85,54400,3.654106774169548,0.7388851990695228,2.915221575100025,4.392991973239071,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dm
+dm,t_learner,T-Learner,0.85,54400,21.80407484835092,2.106260175495702,19.697814672855216,23.91033502384662,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dm
+dm,s_learner,S-Learner,0.85,54400,19.35135762012675,1.943051554584941,17.408306065541808,21.29440917471169,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dm
+dm,x_learner,X-Learner,0.85,54400,15.669606757584182,1.396515491692011,14.273091265892171,17.066122249276194,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dm
+dm,dr_learner,DR-Learner,0.85,54400,23.545564940222924,1.8282056283950057,21.71735931182792,25.37377056861793,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dm
+dm,policytree,Policy Tree,0.85,54400,2.5863733001272426,0.890147877351087,1.6962254227761555,3.47652117747833,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dm
+dm,kmeans,K-Means,0.9,57600,7.6760017183133895,1.1542429049063132,6.521758813407076,8.830244623219702,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dm
+dm,gmm,GMM,0.9,57600,8.219919224470758,1.4129541423493324,6.806965082121425,9.632873366820089,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dm
+dm,clr,CLR,0.9,57600,10.727644352714083,4.1112679757147585,6.616376376999325,14.838912328428842,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dm
+dm,mst,MST,0.9,57600,5.040015981256871,0.8496621961279087,4.190353785128962,5.88967817738478,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dm
+dm,causal_forest,Causal Forest,0.9,57600,4.231144216931977,0.7178315543192305,3.5133126626127464,4.948975771251208,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dm
+dm,t_learner,T-Learner,0.9,57600,24.571851449275883,2.7324307764294233,21.839420672846458,27.304282225705307,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dm
+dm,s_learner,S-Learner,0.9,57600,18.918520707616313,1.7409535724952965,17.177567135121016,20.65947428011161,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dm
+dm,x_learner,X-Learner,0.9,57600,17.10502223089431,1.1820615756559718,15.922960655238338,18.28708380655028,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dm
+dm,dr_learner,DR-Learner,0.9,57600,24.580477506620852,1.6071481233392,22.97332938328165,26.187625629960053,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dm
+dm,policytree,Policy Tree,0.9,57600,2.112066281256822,0.8479207030998244,1.2641455781569975,2.959986984356646,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dm
+dm,kmeans,K-Means,0.95,60800,7.5044922115676,1.0852408615385778,6.419251350029022,8.589733073106178,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dm
+dm,gmm,GMM,0.95,60800,8.686596171893445,1.1602540249174016,7.526342146976043,9.846850196810847,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dm
+dm,clr,CLR,0.95,60800,9.48427706471496,3.85271379071628,5.63156327399868,13.336990855431239,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dm
+dm,mst,MST,0.95,60800,4.478450279960755,1.1194445419260808,3.359005738034674,5.597894821886835,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dm
+dm,causal_forest,Causal Forest,0.95,60800,4.3763479756438075,0.8188984954190591,3.5574494802247485,5.195246471062867,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dm
+dm,t_learner,T-Learner,0.95,60800,22.122079287018707,2.079235498379153,20.042843788639555,24.20131478539786,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dm
+dm,s_learner,S-Learner,0.95,60800,17.842705911790162,2.2249057987331544,15.617800113057008,20.067611710523316,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dm
+dm,x_learner,X-Learner,0.95,60800,16.404932544004183,1.509425434128719,14.895507109875464,17.9143579781329,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dm
+dm,dr_learner,DR-Learner,0.95,60800,22.98118571570214,2.0014852337947855,20.979700481907354,24.982670949496924,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dm
+dm,policytree,Policy Tree,0.95,60800,2.3683873047786568,0.8347664547528116,1.5336208500258453,3.2031537595314683,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dm
+dm,kmeans,K-Means,1.0,64000,6.811073759610963,1.1592050737551394,5.651868685855824,7.970278833366102,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dm
+dm,gmm,GMM,1.0,64000,7.293256794543976,1.0818288382211074,6.2114279563228685,8.375085632765083,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dm
+dm,clr,CLR,1.0,64000,9.221894544748725,3.652974113082571,5.568920431666154,12.874868657831296,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dm
+dm,mst,MST,1.0,64000,4.454100802754402,1.1415264656565227,3.312574337097879,5.595627268410925,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dm
+dm,causal_forest,Causal Forest,1.0,64000,4.84265960924988,0.6820369993129142,4.160622609936966,5.524696608562794,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dm
+dm,t_learner,T-Learner,1.0,64000,21.820481200919225,1.8266537361751654,19.99382746474406,23.64713493709439,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dm
+dm,s_learner,S-Learner,1.0,64000,18.325003399160188,2.2140271460752863,16.110976253084903,20.539030545235473,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dm
+dm,x_learner,X-Learner,1.0,64000,16.244646861351065,1.3310277502346102,14.913619111116454,17.575674611585676,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dm
+dm,dr_learner,DR-Learner,1.0,64000,21.901007605371674,1.825139757119764,20.07586784825191,23.72614736249144,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dm
+dm,policytree,Policy Tree,1.0,64000,2.384673735402649,0.8531545062510068,1.531519229151642,3.2378282416536557,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_dm
+stz,kmeans,K-Means,0.5,32000,7.625980280179215,3.5138828127531436,4.1120974674260715,11.139863092932359,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz
+stz,gmm,GMM,0.5,32000,8.999054864820424,3.601255866390305,5.397798998430119,12.60031073121073,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz
+stz,clr,CLR,0.5,32000,6.082507368186498,4.742570132922565,1.3399372352639327,10.825077501109064,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz
+stz,mst,MST,0.5,32000,4.820830406145212,3.7070329789297367,1.113797427215475,8.527863385074948,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz
+stz,causal_forest,Causal Forest,0.5,32000,13.77828316847815,2.934929500237213,10.843353668240937,16.713212668715364,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz
+stz,t_learner,T-Learner,0.5,32000,26.700352840183914,5.401935670183157,21.298417170000757,32.102288510367075,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz
+stz,s_learner,S-Learner,0.5,32000,21.648269649061525,4.78479777070092,16.863471878360606,26.433067419762445,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz
+stz,x_learner,X-Learner,0.5,32000,22.780344089392585,4.782461300973333,17.997882788419254,27.562805390365916,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz
+stz,dr_learner,DR-Learner,0.5,32000,26.779203190657384,4.829271817437928,21.949931373219457,31.60847500809531,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz
+stz,policytree,Policy Tree,0.5,32000,5.219546331798421,3.132074060914663,2.087472270883758,8.351620392713084,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz
+stz,kmeans,K-Means,0.55,35200,4.148087436489353,2.8832435885683028,1.2648438479210506,7.031331025057656,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz
+stz,gmm,GMM,0.55,35200,6.550218102703568,3.2954729620414587,3.2547451406621097,9.845691064745028,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz
+stz,clr,CLR,0.55,35200,2.2961700193308237,4.37794134463033,-2.0817713252995067,6.6741113639611545,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz
+stz,mst,MST,0.55,35200,2.5789379475343663,2.962897347882329,-0.3839594003479627,5.541835295416695,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz
+stz,causal_forest,Causal Forest,0.55,35200,12.48799179922923,3.2841431383251765,9.203848660904054,15.772134937554405,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz
+stz,t_learner,T-Learner,0.55,35200,23.211186149911896,4.036995630074353,19.174190519837545,27.248181779986247,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz
+stz,s_learner,S-Learner,0.55,35200,21.44711883124929,4.746850679908581,16.70026815134071,26.193969511157874,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz
+stz,x_learner,X-Learner,0.55,35200,22.345998015432333,4.059657029653172,18.286340985779162,26.405655045085503,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz
+stz,dr_learner,DR-Learner,0.55,35200,25.524623401786485,3.9803570749623676,21.54426632682412,29.50498047674885,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz
+stz,policytree,Policy Tree,0.55,35200,6.155965044864978,2.7794477164472013,3.3765173284177763,8.935412761312179,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz
+stz,kmeans,K-Means,0.6,38400,5.7870612318607355,2.844185001140326,2.9428762307204095,8.631246233001061,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz
+stz,gmm,GMM,0.6,38400,5.328383858170962,2.546339876122529,2.7820439820484335,7.874723734293491,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz
+stz,clr,CLR,0.6,38400,2.7809657562570886,3.71782470696364,-0.9368589507065512,6.498790463220729,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz
+stz,mst,MST,0.6,38400,5.119909485433099,3.3672506093040973,1.7526588761290016,8.487160094737195,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz
+stz,causal_forest,Causal Forest,0.6,38400,13.398353310883033,2.9371275031049993,10.461225807778034,16.33548081398803,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz
+stz,t_learner,T-Learner,0.6,38400,20.130819775027398,3.5737886513097537,16.557031123717643,23.704608426337153,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz
+stz,s_learner,S-Learner,0.6,38400,18.94948260288947,3.5921766707336946,15.357305932155777,22.541659273623168,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz
+stz,x_learner,X-Learner,0.6,38400,19.530254530442466,3.944227233773459,15.586027296669007,23.474481764215923,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz
+stz,dr_learner,DR-Learner,0.6,38400,26.204140211215503,4.899521870636157,21.304618340579346,31.10366208185166,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz
+stz,policytree,Policy Tree,0.6,38400,4.615178544843997,3.0899043807586306,1.5252741640853662,7.705082925602627,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz
+stz,kmeans,K-Means,0.65,41600,5.0522902078807475,2.664821615560839,2.3874685923199084,7.717111823441586,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz
+stz,gmm,GMM,0.65,41600,6.649489957612095,2.8538496268726776,3.7956403307394178,9.503339584484774,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz
+stz,clr,CLR,0.65,41600,2.0784550024405437,4.1083115387954905,-2.029856536354947,6.186766541236034,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz
+stz,mst,MST,0.65,41600,2.2900744696532733,2.7549066991199846,-0.4648322294667113,5.044981168773258,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz
+stz,causal_forest,Causal Forest,0.65,41600,14.644064333191498,3.7560544638884803,10.888009869303017,18.400118797079976,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz
+stz,t_learner,T-Learner,0.65,41600,25.049568945842147,4.468682028160253,20.580886917681894,29.5182509740024,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz
+stz,s_learner,S-Learner,0.65,41600,22.224550768978023,4.229805976232202,17.99474479274582,26.454356745210227,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz
+stz,x_learner,X-Learner,0.65,41600,22.47392411557777,4.479889037131232,17.994035078446537,26.953813152709003,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz
+stz,dr_learner,DR-Learner,0.65,41600,26.182074809867768,4.452839344088248,21.72923546577952,30.634914153956014,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz
+stz,policytree,Policy Tree,0.65,41600,5.058852959865835,2.8476551680722295,2.211197791793605,7.906508127938064,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz
+stz,kmeans,K-Means,0.7,44800,5.464084955901971,2.610013613463821,2.8540713424381496,8.074098569365791,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz
+stz,gmm,GMM,0.7,44800,6.219078759345256,2.5989894539724583,3.6200893053727974,8.818068213317714,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz
+stz,clr,CLR,0.7,44800,3.5244630889431643,3.9605288689429536,-0.43606577999978935,7.484991957886118,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz
+stz,mst,MST,0.7,44800,2.3391166080549057,2.4696862995290045,-0.1305696914740988,4.80880290758391,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz
+stz,causal_forest,Causal Forest,0.7,44800,13.580421544582112,2.4284686904438533,11.151952854138258,16.008890235025966,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz
+stz,t_learner,T-Learner,0.7,44800,22.77723832873246,4.219840871738864,18.557397456993595,26.997079200471322,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz
+stz,s_learner,S-Learner,0.7,44800,20.65524847690147,4.337347652784091,16.31790082411738,24.99259612968556,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz
+stz,x_learner,X-Learner,0.7,44800,19.836072952051182,4.150541185207193,15.68553176684399,23.986614137258375,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz
+stz,dr_learner,DR-Learner,0.7,44800,22.633228000087783,3.198295717301794,19.43493228278599,25.831523717389576,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz
+stz,policytree,Policy Tree,0.7,44800,4.246389213510255,2.7690543580282445,1.47733485548201,7.0154435715384995,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz
+stz,kmeans,K-Means,0.75,48000,3.971326377602399,2.298980945573476,1.6723454320289228,6.270307323175875,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz
+stz,gmm,GMM,0.75,48000,6.2542854684861995,2.854625152004625,3.3996603164815746,9.108910620490825,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz
+stz,clr,CLR,0.75,48000,1.3262116646848552,3.5353995310825552,-2.2091878663977003,4.86161119576741,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz
+stz,mst,MST,0.75,48000,1.8002240083896055,2.95705115191964,-1.1568271435300344,4.757275160309245,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz
+stz,causal_forest,Causal Forest,0.75,48000,16.722705288568864,3.326556891497909,13.396148397070956,20.049262180066773,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz
+stz,t_learner,T-Learner,0.75,48000,23.949146379382363,4.840004045230229,19.109142334152132,28.789150424612593,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz
+stz,s_learner,S-Learner,0.75,48000,18.88260870039934,3.8786691849014163,15.003939515497926,22.761277885300757,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz
+stz,x_learner,X-Learner,0.75,48000,21.71111932620201,3.616012018721536,18.095107307480475,25.327131344923544,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz
+stz,dr_learner,DR-Learner,0.75,48000,23.185166640051794,3.942952941621099,19.242213698430696,27.12811958167289,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz
+stz,policytree,Policy Tree,0.75,48000,5.306661185030359,2.566076665653533,2.740584519376826,7.872737850683892,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz
+stz,kmeans,K-Means,0.8,51200,3.165724595207683,2.908030671909683,0.257693923298,6.073755267117367,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz
+stz,gmm,GMM,0.8,51200,3.870676781041756,2.496597437386564,1.3740793436551924,6.36727421842832,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz
+stz,clr,CLR,0.8,51200,2.6594955866480525,4.329864261493893,-1.6703686748458404,6.989359848141945,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz
+stz,mst,MST,0.8,51200,1.154682085916776,2.3365686357979363,-1.1818865498811604,3.491250721714712,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz
+stz,causal_forest,Causal Forest,0.8,51200,14.26528506428069,2.6716356767483527,11.593649387532338,16.93692074102904,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz
+stz,t_learner,T-Learner,0.8,51200,21.994170728851554,3.0852863446996843,18.908884384151868,25.07945707355124,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz
+stz,s_learner,S-Learner,0.8,51200,19.206394692124412,3.592919767468677,15.613474924655735,22.799314459593088,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz
+stz,x_learner,X-Learner,0.8,51200,18.36604770545431,3.1841070318255054,15.181940673628805,21.550154737279815,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz
+stz,dr_learner,DR-Learner,0.8,51200,23.589394358238543,3.77156467024351,19.817829687995033,27.360959028482053,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz
+stz,policytree,Policy Tree,0.8,51200,3.664802537288821,2.760477709367257,0.9043248279215641,6.425280246656078,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz
+stz,kmeans,K-Means,0.85,54400,4.51682129650574,2.336839254073236,2.179982042432504,6.853660550578976,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz
+stz,gmm,GMM,0.85,54400,4.177536825023077,2.57109355701841,1.6064432680046674,6.748630382041487,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz
+stz,clr,CLR,0.85,54400,0.8734003766246741,3.0092283549144327,-2.1358279782897585,3.882628731539107,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz
+stz,mst,MST,0.85,54400,0.17304886966922514,2.0994335536628688,-1.9263846839936436,2.272482423332094,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz
+stz,causal_forest,Causal Forest,0.85,54400,13.391404552158054,2.6405840806781473,10.750820471479907,16.031988632836203,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz
+stz,t_learner,T-Learner,0.85,54400,20.9940789828237,3.9134841573852306,17.08059482543847,24.907563140208932,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz
+stz,s_learner,S-Learner,0.85,54400,20.854982719972877,3.6934191860136782,17.1615635339592,24.548401905986555,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz
+stz,x_learner,X-Learner,0.85,54400,18.077723061263068,3.534361121270241,14.543361939992828,21.61208418253331,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz
+stz,dr_learner,DR-Learner,0.85,54400,21.91797007260576,3.5477215910220723,18.370248481583687,25.46569166362783,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz
+stz,policytree,Policy Tree,0.85,54400,3.994859839136114,2.2530079705737087,1.7418518685624051,6.247867809709822,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz
+stz,kmeans,K-Means,0.9,57600,4.19680393824953,2.1943876912880467,2.002416246961483,6.391191629537577,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz
+stz,gmm,GMM,0.9,57600,4.110232929463305,2.1642278152438506,1.9460051142194548,6.274460744707156,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz
+stz,clr,CLR,0.9,57600,0.06061668773134519,2.843697613994938,-2.783080926263593,2.9043143017262834,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz
+stz,mst,MST,0.9,57600,1.0965110282452826,1.940406459419497,-0.8438954311742144,3.0369174876647795,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz
+stz,causal_forest,Causal Forest,0.9,57600,15.056813415929533,2.5746742995599488,12.482139116369584,17.63148771548948,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz
+stz,t_learner,T-Learner,0.9,57600,23.627410782766155,3.712348187283869,19.915062595482286,27.339758970050024,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz
+stz,s_learner,S-Learner,0.9,57600,18.57905604732938,3.050831347263768,15.528224700065612,21.629887394593148,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz
+stz,x_learner,X-Learner,0.9,57600,20.629894042841876,3.11879836542991,17.511095677411966,23.748692408271786,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz
+stz,dr_learner,DR-Learner,0.9,57600,24.272642005238335,3.4004079180905338,20.872234087147802,27.67304992332887,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz
+stz,policytree,Policy Tree,0.9,57600,4.240215032100703,2.1082753167330757,2.131939715367627,6.348490348833778,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz
+stz,kmeans,K-Means,0.95,60800,2.6881705623348147,2.1695529182969966,0.5186176440378181,4.857723480631812,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz
+stz,gmm,GMM,0.95,60800,4.757773798395044,2.3028362561177818,2.454937542277262,7.060610054512825,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz
+stz,clr,CLR,0.95,60800,0.7275273076058394,3.1992824284508314,-2.471755120844992,3.9268097360566707,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz
+stz,mst,MST,0.95,60800,1.3752133259832238,2.30718651402079,-0.9319731880375663,3.682399840004014,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz
+stz,causal_forest,Causal Forest,0.95,60800,13.476300462471164,2.0209970667149593,11.455303395756204,15.497297529186124,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz
+stz,t_learner,T-Learner,0.95,60800,21.297746999294944,2.99026922395476,18.307477775340182,24.288016223249706,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz
+stz,s_learner,S-Learner,0.95,60800,17.834679789697894,3.065010679005925,14.76966911069197,20.89969046870382,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz
+stz,x_learner,X-Learner,0.95,60800,18.81276818537988,2.8045270111621154,16.008241174217765,21.617295196541995,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz
+stz,dr_learner,DR-Learner,0.95,60800,20.13900054350564,2.5292995458476013,17.60970099765804,22.66830008935324,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz
+stz,policytree,Policy Tree,0.95,60800,4.502895260236205,1.7692399902723,2.7336552699639047,6.272135250508505,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz
+stz,kmeans,K-Means,1.0,64000,2.2411885941141203,1.9797187811037613,0.261469813010359,4.220907375217882,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz
+stz,gmm,GMM,1.0,64000,1.698347319255171,2.0366337468477247,-0.3382864275925537,3.734981066102896,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz
+stz,clr,CLR,1.0,64000,-1.988931985279995,2.1445919260676742,-4.13352391134767,0.1556599407876793,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz
+stz,mst,MST,1.0,64000,0.281118970856382,2.107337158682557,-1.8262181878261752,2.3884561295389393,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz
+stz,causal_forest,Causal Forest,1.0,64000,13.594977881302386,2.3046838757744657,11.29029400552792,15.899661757076851,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz
+stz,t_learner,T-Learner,1.0,64000,20.01721333134979,3.485741447676841,16.53147188367295,23.50295477902663,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz
+stz,s_learner,S-Learner,1.0,64000,17.322416539218942,3.1256780319462556,14.196738507272686,20.448094571165196,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz
+stz,x_learner,X-Learner,1.0,64000,18.564551985630914,3.0118857156715397,15.552666269959374,21.576437701302453,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz
+stz,dr_learner,DR-Learner,1.0,64000,20.34572114802756,3.148664337750647,17.197056810276912,23.49438548577821,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz
+stz,policytree,Policy Tree,1.0,64000,3.842283838818016,2.048137592061557,1.7941462467564588,5.890421430879574,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz
+stz_vr,kmeans,K-Means,0.5,32000,7.579626637644046,3.51915778839726,4.060468849246787,11.098784426041306,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz_vr
+stz_vr,gmm,GMM,0.5,32000,8.933412181435276,3.59549402202677,5.337918159408506,12.528906203462046,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz_vr
+stz_vr,clr,CLR,0.5,32000,6.041237071339058,4.741674884136552,1.2995621872025058,10.78291195547561,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz_vr
+stz_vr,mst,MST,0.5,32000,4.795805860696874,3.7007321932608725,1.0950736674360018,8.496538053957746,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz_vr
+stz_vr,causal_forest,Causal Forest,0.5,32000,13.754497059788704,2.933083744715839,10.821413315072865,16.68758080450454,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz_vr
+stz_vr,t_learner,T-Learner,0.5,32000,26.68107234977676,5.376812535608645,21.304259814168113,32.057884885385405,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz_vr
+stz_vr,s_learner,S-Learner,0.5,32000,21.611572543900937,4.788186139296814,16.823386404604122,26.399758683197753,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz_vr
+stz_vr,x_learner,X-Learner,0.5,32000,22.733005424822057,4.765765263698876,17.96724016112318,27.498770688520935,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz_vr
+stz_vr,dr_learner,DR-Learner,0.5,32000,26.682920818981543,4.806882702938921,21.876038116042622,31.489803521920464,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz_vr
+stz_vr,policytree,Policy Tree,0.5,32000,5.163990440626584,3.128975624692501,2.0350148159340833,8.292966065319085,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz_vr
+stz_vr,kmeans,K-Means,0.55,35200,4.104631422897756,2.8836426576317904,1.220988765265966,6.988274080529546,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz_vr
+stz_vr,gmm,GMM,0.55,35200,6.5067031805063085,3.294133170031912,3.2125700104743964,9.800836350538221,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz_vr
+stz_vr,clr,CLR,0.55,35200,2.286422641296544,4.376426418135328,-2.090003776838784,6.6628490594318714,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz_vr
+stz_vr,mst,MST,0.55,35200,2.5977343077921784,2.9495151727954996,-0.3517808650033212,5.547249480587678,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz_vr
+stz_vr,causal_forest,Causal Forest,0.55,35200,12.453368897347355,3.2824511604647273,9.170917736882627,15.735820057812083,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz_vr
+stz_vr,t_learner,T-Learner,0.55,35200,23.20831997294853,4.0596154192733565,19.148704553675174,27.267935392221887,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz_vr
+stz_vr,s_learner,S-Learner,0.55,35200,21.44088818148038,4.747776770675601,16.69311141080478,26.18866495215598,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz_vr
+stz_vr,x_learner,X-Learner,0.55,35200,22.319117655716337,4.077101297787562,18.242016357928776,26.396218953503897,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz_vr
+stz_vr,dr_learner,DR-Learner,0.55,35200,25.531249469881296,3.9680235355121805,21.563225934369115,29.499273005393476,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz_vr
+stz_vr,policytree,Policy Tree,0.55,35200,6.085010820726858,2.7675235455075287,3.317487275219329,8.852534366234387,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz_vr
+stz_vr,kmeans,K-Means,0.6,38400,5.7489052360124155,2.8176851164538625,2.931220119558553,8.566590352466278,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz_vr
+stz_vr,gmm,GMM,0.6,38400,5.301202898680567,2.529018309475773,2.772184589204794,7.83022120815634,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz_vr
+stz_vr,clr,CLR,0.6,38400,2.7501110916753673,3.701548909231743,-0.9514378175563758,6.45166000090711,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz_vr
+stz_vr,mst,MST,0.6,38400,5.086894838176858,3.354943131037835,1.731951707139023,8.441837969214692,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz_vr
+stz_vr,causal_forest,Causal Forest,0.6,38400,13.35592753089525,2.94662499388261,10.40930253701264,16.30255252477786,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz_vr
+stz_vr,t_learner,T-Learner,0.6,38400,20.116827859767508,3.5725462654822797,16.544281594285227,23.68937412524979,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz_vr
+stz_vr,s_learner,S-Learner,0.6,38400,18.924644343637418,3.5773780429121977,15.34726630072522,22.502022386549616,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz_vr
+stz_vr,x_learner,X-Learner,0.6,38400,19.51151569554145,3.934220789566277,15.577294905975174,23.44573648510773,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz_vr
+stz_vr,dr_learner,DR-Learner,0.6,38400,26.192500591643228,4.880471493562357,21.31202909808087,31.072972085205585,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz_vr
+stz_vr,policytree,Policy Tree,0.6,38400,4.616193056740803,3.0875607079870977,1.5286323487537055,7.703753764727901,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz_vr
+stz_vr,kmeans,K-Means,0.65,41600,5.04000466107457,2.6561802179364404,2.3838244431381295,7.69618487901101,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz_vr
+stz_vr,gmm,GMM,0.65,41600,6.642238646983743,2.8440607222692145,3.7981779247145284,9.486299369252958,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz_vr
+stz_vr,clr,CLR,0.65,41600,2.1127078573982736,4.100753370065734,-1.98804551266746,6.213461227464007,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz_vr
+stz_vr,mst,MST,0.65,41600,2.283577374732101,2.74286835025233,-0.4592909755202288,5.0264457249844305,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz_vr
+stz_vr,causal_forest,Causal Forest,0.65,41600,14.62666691275856,3.7706310731777792,10.85603583958078,18.39729798593634,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz_vr
+stz_vr,t_learner,T-Learner,0.65,41600,24.98954191095994,4.476838915256319,20.51270299570362,29.46638082621626,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz_vr
+stz_vr,s_learner,S-Learner,0.65,41600,22.220190801847075,4.22607575141444,17.994115050432633,26.446266553261516,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz_vr
+stz_vr,x_learner,X-Learner,0.65,41600,22.45046939409258,4.481399910553207,17.96906948353937,26.931869304645787,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz_vr
+stz_vr,dr_learner,DR-Learner,0.65,41600,26.254280735810934,4.462104549482347,21.792176186328586,30.71638528529328,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz_vr
+stz_vr,policytree,Policy Tree,0.65,41600,5.047188807769754,2.8481306263656703,2.199058181404084,7.895319434135425,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz_vr
+stz_vr,kmeans,K-Means,0.7,44800,5.471644646086705,2.5875229092634293,2.884121736823276,8.059167555350134,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz_vr
+stz_vr,gmm,GMM,0.7,44800,6.213276714729238,2.5847311977404765,3.6285455169887615,8.798007912469714,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz_vr
+stz_vr,clr,CLR,0.7,44800,3.534778679611869,3.9502242262315392,-0.41544554661967004,7.485002905843409,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz_vr
+stz_vr,mst,MST,0.7,44800,2.3419874776332392,2.476306598512426,-0.13431912087918674,4.818294076145666,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz_vr
+stz_vr,causal_forest,Causal Forest,0.7,44800,13.53613993182089,2.4258294266442606,11.110310505176628,15.96196935846515,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz_vr
+stz_vr,t_learner,T-Learner,0.7,44800,22.74772997077861,4.215240491167033,18.532489479611577,26.962970461945645,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz_vr
+stz_vr,s_learner,S-Learner,0.7,44800,20.59793353365525,4.318375464710057,16.279558068945192,24.91630899836531,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz_vr
+stz_vr,x_learner,X-Learner,0.7,44800,19.84560045182971,4.154165898356717,15.691434553472995,23.999766350186427,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz_vr
+stz_vr,dr_learner,DR-Learner,0.7,44800,22.623505599079245,3.2003281628083777,19.423177436270866,25.823833761887624,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz_vr
+stz_vr,policytree,Policy Tree,0.7,44800,4.227840420350167,2.7581958976057552,1.4696445227444115,6.9860363179559215,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz_vr
+stz_vr,kmeans,K-Means,0.75,48000,3.9504760560081826,2.291770804929047,1.6587052510791356,6.24224686093723,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz_vr
+stz_vr,gmm,GMM,0.75,48000,6.2390357193411194,2.8571107493004537,3.3819249700406657,9.096146468641573,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz_vr
+stz_vr,clr,CLR,0.75,48000,1.3173461315446473,3.536268830678146,-2.2189226991334987,4.853614962222793,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz_vr
+stz_vr,mst,MST,0.75,48000,1.7650395887738874,2.949287334405786,-1.1842477456318987,4.714326923179674,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz_vr
+stz_vr,causal_forest,Causal Forest,0.75,48000,16.67294594202843,3.323917176832074,13.349028765196357,19.996863118860503,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz_vr
+stz_vr,t_learner,T-Learner,0.75,48000,23.923260185431527,4.8459230220534835,19.077337163378044,28.76918320748501,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz_vr
+stz_vr,s_learner,S-Learner,0.75,48000,18.849049407377326,3.870253290979259,14.978796116398067,22.719302698356586,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz_vr
+stz_vr,x_learner,X-Learner,0.75,48000,21.672241753133655,3.6134875967403466,18.05875415639331,25.285729349874,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz_vr
+stz_vr,dr_learner,DR-Learner,0.75,48000,23.18054556629716,3.92349827831247,19.25704728798469,27.104043844609627,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz_vr
+stz_vr,policytree,Policy Tree,0.75,48000,5.273273783487628,2.557409914412452,2.7158638690751764,7.83068369790008,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz_vr
+stz_vr,kmeans,K-Means,0.8,51200,3.1377334833347112,2.8923845215448747,0.24534896178983656,6.030118004879586,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz_vr
+stz_vr,gmm,GMM,0.8,51200,3.842163551195558,2.480030165807104,1.362133385388454,6.322193717002662,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz_vr
+stz_vr,clr,CLR,0.8,51200,2.6840587140764764,4.333687388687467,-1.649628674610991,7.017746102763944,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz_vr
+stz_vr,mst,MST,0.8,51200,1.149409576450906,2.3283884546771776,-1.1789788782262716,3.4777980311280836,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz_vr
+stz_vr,causal_forest,Causal Forest,0.8,51200,14.208577444942232,2.663891088932647,11.544686356009585,16.87246853387488,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz_vr
+stz_vr,t_learner,T-Learner,0.8,51200,21.92758838042703,3.073005943410958,18.85458243701607,25.000594323837987,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz_vr
+stz_vr,s_learner,S-Learner,0.8,51200,19.19055155190482,3.59274862257537,15.59780292932945,22.783300174480193,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz_vr
+stz_vr,x_learner,X-Learner,0.8,51200,18.31772948432254,3.160154445732003,15.157575038590538,21.477883930054546,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz_vr
+stz_vr,dr_learner,DR-Learner,0.8,51200,23.600873358135345,3.7499522228182185,19.850921135317126,27.350825580953565,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz_vr
+stz_vr,policytree,Policy Tree,0.8,51200,3.642282390806329,2.74984045588634,0.8924419349199888,6.3921228466926685,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz_vr
+stz_vr,kmeans,K-Means,0.85,54400,4.498576578969942,2.3321502651326984,2.1664263138372437,6.8307268441026405,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz_vr
+stz_vr,gmm,GMM,0.85,54400,4.150778624296124,2.5616677330648745,1.5891108912312495,6.7124463573609985,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz_vr
+stz_vr,clr,CLR,0.85,54400,0.8712864335301113,3.008153997771695,-2.1368675642415838,3.8794404313018065,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz_vr
+stz_vr,mst,MST,0.85,54400,0.1519579122319198,2.0929635664185526,-1.941005654186633,2.2449214786504723,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz_vr
+stz_vr,causal_forest,Causal Forest,0.85,54400,13.326559477126782,2.6330674460609345,10.693492031065848,15.959626923187717,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz_vr
+stz_vr,t_learner,T-Learner,0.85,54400,20.97913366154552,3.9261666127784105,17.052967048767112,24.90530027432393,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz_vr
+stz_vr,s_learner,S-Learner,0.85,54400,20.831313307908477,3.6980307940213755,17.133282513887103,24.52934410192985,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz_vr
+stz_vr,x_learner,X-Learner,0.85,54400,18.053171031023847,3.5307120187365557,14.522459012287293,21.583883049760402,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz_vr
+stz_vr,dr_learner,DR-Learner,0.85,54400,21.906490526995732,3.540919313893991,18.36557121310174,25.447409840889723,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz_vr
+stz_vr,policytree,Policy Tree,0.85,54400,3.9703584975126933,2.246731904732501,1.7236265927801924,6.217090402245194,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz_vr
+stz_vr,kmeans,K-Means,0.9,57600,4.174057304311514,2.1849000085219337,1.9891572957895804,6.358957312833448,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz_vr
+stz_vr,gmm,GMM,0.9,57600,4.095464843244569,2.157152066698169,1.9383127765463999,6.252616909942738,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz_vr
+stz_vr,clr,CLR,0.9,57600,0.08272694396140928,2.8420130653538878,-2.7592861213924786,2.924740009315297,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz_vr
+stz_vr,mst,MST,0.9,57600,1.099388113059723,1.937308284077606,-0.837920171017883,3.036696397137329,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz_vr
+stz_vr,causal_forest,Causal Forest,0.9,57600,15.001791401142698,2.5729539486984816,12.428837452444217,17.57474534984118,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz_vr
+stz_vr,t_learner,T-Learner,0.9,57600,23.605701376208685,3.720649659183045,19.88505171702564,27.32635103539173,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz_vr
+stz_vr,s_learner,S-Learner,0.9,57600,18.547394584125108,3.0405210141093595,15.506873570015749,21.587915598234467,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz_vr
+stz_vr,x_learner,X-Learner,0.9,57600,20.5927966483345,3.1095501221433914,17.483246526191106,23.70234677047789,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz_vr
+stz_vr,dr_learner,DR-Learner,0.9,57600,24.296939221409616,3.392265982780585,20.90467323862903,27.689205204190202,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz_vr
+stz_vr,policytree,Policy Tree,0.9,57600,4.202505207923415,2.10923159369845,2.093273614224965,6.311736801621865,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz_vr
+stz_vr,kmeans,K-Means,0.95,60800,2.6848432906628887,2.165047363031591,0.5197959276312978,4.84989065369448,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz_vr
+stz_vr,gmm,GMM,0.95,60800,4.737172275224638,2.2840555275644054,2.4531167476602325,7.021227802789044,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz_vr
+stz_vr,clr,CLR,0.95,60800,0.7460207673197516,3.2062148179030245,-2.460194050583273,3.952235585222776,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz_vr
+stz_vr,mst,MST,0.95,60800,1.3723929163029516,2.3101697877438223,-0.9377768714408707,3.6825627040467737,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz_vr
+stz_vr,causal_forest,Causal Forest,0.95,60800,13.418281226422602,2.028730234207752,11.38955099221485,15.447011460630353,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz_vr
+stz_vr,t_learner,T-Learner,0.95,60800,21.27875283660203,2.9973843092267742,18.281368527375257,24.276137145828805,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz_vr
+stz_vr,s_learner,S-Learner,0.95,60800,17.788243282552298,3.060158322567287,14.728084959985011,20.848401605119584,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz_vr
+stz_vr,x_learner,X-Learner,0.95,60800,18.77700225686786,2.8013605389722938,15.975641717895567,21.578362795840153,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz_vr
+stz_vr,dr_learner,DR-Learner,0.95,60800,20.149089902096026,2.5353990096360404,17.613690892459985,22.684488911732068,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz_vr
+stz_vr,policytree,Policy Tree,0.95,60800,4.4654150844543095,1.7766302179538789,2.6887848665004306,6.242045302408188,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz_vr
+stz_vr,kmeans,K-Means,1.0,64000,2.2245463600326914,1.9786364091090665,0.2459099509236249,4.203182769141758,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz_vr
+stz_vr,gmm,GMM,1.0,64000,1.6798482287742018,2.0345187229235777,-0.3546704941493759,3.7143669516977793,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz_vr
+stz_vr,clr,CLR,1.0,64000,-1.9784718359727105,2.143409940143783,-4.121881776116494,0.16493810417107246,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz_vr
+stz_vr,mst,MST,1.0,64000,0.2825601330804169,2.1015039461035423,-1.8189438130231255,2.3840640791839594,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz_vr
+stz_vr,causal_forest,Causal Forest,1.0,64000,13.544382513744313,2.306372784029525,11.238009729714788,15.850755297773839,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz_vr
+stz_vr,t_learner,T-Learner,1.0,64000,19.97750154807669,3.4808157027570172,16.496685845319675,23.45831725083371,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz_vr
+stz_vr,s_learner,S-Learner,1.0,64000,17.297968310420803,3.12594691174501,14.172021398675792,20.423915222165814,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz_vr
+stz_vr,x_learner,X-Learner,1.0,64000,18.567860744457402,3.0088480359126395,15.559012708544763,21.57670878037004,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz_vr
+stz_vr,dr_learner,DR-Learner,1.0,64000,20.338713693315828,3.1414526578008837,17.197261035514945,23.48016635111671,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz_vr
+stz_vr,policytree,Policy Tree,1.0,64000,3.8101928019844276,2.0436588744367086,1.766533927547719,5.853851676421137,50,sample_frac,0.4,hillstrom,Hillstrom – Conversion,sample_frac_hillstrom_conversion_stz_vr

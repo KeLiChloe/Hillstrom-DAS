@@ -1,0 +1,166 @@
+figure_stem,algorithm,algorithm_label,row_order,evaluation_method,sample_frac,sample_size,mean_rank
+mean_rank_sample_frac,dast,DAS,1,dual_dr,,,1.0
+mean_rank_sample_frac,policytree,Policy Tree,2,dual_dr,,,2.090909090909091
+mean_rank_sample_frac,mst,MST,3,dual_dr,,,3.272727272727273
+mean_rank_sample_frac,causal_forest,Causal Forest,4,dual_dr,,,4.363636363636363
+mean_rank_sample_frac,kmeans,K-Means,5,dual_dr,,,5.090909090909091
+mean_rank_sample_frac,clr,CLR,6,dual_dr,,,5.818181818181818
+mean_rank_sample_frac,gmm,GMM,7,dual_dr,,,6.363636363636363
+mean_rank_sample_frac,x_learner,X-Learner,8,dual_dr,,,8.0
+mean_rank_sample_frac,s_learner,S-Learner,9,dual_dr,,,9.0
+mean_rank_sample_frac,t_learner,T-Learner,10,dual_dr,,,10.0
+mean_rank_sample_frac,dr_learner,DR-Learner,11,dual_dr,,,11.0
+mean_rank_sample_frac,dast,DAS,1,dm,,,1.0
+mean_rank_sample_frac,policytree,Policy Tree,2,dm,,,2.3636363636363638
+mean_rank_sample_frac,mst,MST,3,dm,,,3.8181818181818183
+mean_rank_sample_frac,causal_forest,Causal Forest,4,dm,,,2.8181818181818183
+mean_rank_sample_frac,kmeans,K-Means,5,dm,,,5.090909090909091
+mean_rank_sample_frac,clr,CLR,6,dm,,,7.090909090909091
+mean_rank_sample_frac,gmm,GMM,7,dm,,,6.0
+mean_rank_sample_frac,x_learner,X-Learner,8,dm,,,7.818181818181818
+mean_rank_sample_frac,s_learner,S-Learner,9,dm,,,9.090909090909092
+mean_rank_sample_frac,t_learner,T-Learner,10,dm,,,9.909090909090908
+mean_rank_sample_frac,dr_learner,DR-Learner,11,dm,,,11.0
+mean_rank_sample_frac,dast,DAS,1,ipw,,,1.4545454545454546
+mean_rank_sample_frac,policytree,Policy Tree,2,ipw,,,4.545454545454546
+mean_rank_sample_frac,mst,MST,3,ipw,,,2.5454545454545454
+mean_rank_sample_frac,causal_forest,Causal Forest,4,ipw,,,7.0
+mean_rank_sample_frac,kmeans,K-Means,5,ipw,,,4.7272727272727275
+mean_rank_sample_frac,clr,CLR,6,ipw,,,2.090909090909091
+mean_rank_sample_frac,gmm,GMM,7,ipw,,,5.636363636363637
+mean_rank_sample_frac,x_learner,X-Learner,8,ipw,,,8.727272727272727
+mean_rank_sample_frac,s_learner,S-Learner,9,ipw,,,8.272727272727273
+mean_rank_sample_frac,t_learner,T-Learner,10,ipw,,,10.090909090909092
+mean_rank_sample_frac,dr_learner,DR-Learner,11,ipw,,,10.909090909090908
+mean_rank_sample_frac,dast,DAS,1,stz,,,1.4545454545454546
+mean_rank_sample_frac,policytree,Policy Tree,2,stz,,,4.636363636363637
+mean_rank_sample_frac,mst,MST,3,stz,,,2.5454545454545454
+mean_rank_sample_frac,causal_forest,Causal Forest,4,stz,,,7.0
+mean_rank_sample_frac,kmeans,K-Means,5,stz,,,4.818181818181818
+mean_rank_sample_frac,clr,CLR,6,stz,,,2.090909090909091
+mean_rank_sample_frac,gmm,GMM,7,stz,,,5.454545454545454
+mean_rank_sample_frac,x_learner,X-Learner,8,stz,,,8.727272727272727
+mean_rank_sample_frac,s_learner,S-Learner,9,stz,,,8.272727272727273
+mean_rank_sample_frac,t_learner,T-Learner,10,stz,,,10.181818181818182
+mean_rank_sample_frac,dr_learner,DR-Learner,11,stz,,,10.818181818181818
+mean_rank_sample_frac_by_sample_size,dast,DAS,1,average_over_methods,0.5,32000,1.0
+mean_rank_sample_frac_by_sample_size,mst,MST,2,average_over_methods,0.5,32000,3.0
+mean_rank_sample_frac_by_sample_size,clr,CLR,3,average_over_methods,0.5,32000,5.25
+mean_rank_sample_frac_by_sample_size,policytree,Policy Tree,4,average_over_methods,0.5,32000,3.5
+mean_rank_sample_frac_by_sample_size,gmm,GMM,5,average_over_methods,0.5,32000,5.75
+mean_rank_sample_frac_by_sample_size,kmeans,K-Means,6,average_over_methods,0.5,32000,5.25
+mean_rank_sample_frac_by_sample_size,causal_forest,Causal Forest,7,average_over_methods,0.5,32000,4.5
+mean_rank_sample_frac_by_sample_size,s_learner,S-Learner,8,average_over_methods,0.5,32000,8.5
+mean_rank_sample_frac_by_sample_size,x_learner,X-Learner,9,average_over_methods,0.5,32000,8.25
+mean_rank_sample_frac_by_sample_size,t_learner,T-Learner,10,average_over_methods,0.5,32000,10.0
+mean_rank_sample_frac_by_sample_size,dr_learner,DR-Learner,11,average_over_methods,0.5,32000,11.0
+mean_rank_sample_frac_by_sample_size,dast,DAS,1,average_over_methods,0.55,35200,1.0
+mean_rank_sample_frac_by_sample_size,mst,MST,2,average_over_methods,0.55,35200,3.5
+mean_rank_sample_frac_by_sample_size,clr,CLR,3,average_over_methods,0.55,35200,4.75
+mean_rank_sample_frac_by_sample_size,policytree,Policy Tree,4,average_over_methods,0.55,35200,3.75
+mean_rank_sample_frac_by_sample_size,gmm,GMM,5,average_over_methods,0.55,35200,6.0
+mean_rank_sample_frac_by_sample_size,kmeans,K-Means,6,average_over_methods,0.55,35200,4.5
+mean_rank_sample_frac_by_sample_size,causal_forest,Causal Forest,7,average_over_methods,0.55,35200,4.75
+mean_rank_sample_frac_by_sample_size,s_learner,S-Learner,8,average_over_methods,0.55,35200,8.75
+mean_rank_sample_frac_by_sample_size,x_learner,X-Learner,9,average_over_methods,0.55,35200,8.25
+mean_rank_sample_frac_by_sample_size,t_learner,T-Learner,10,average_over_methods,0.55,35200,9.75
+mean_rank_sample_frac_by_sample_size,dr_learner,DR-Learner,11,average_over_methods,0.55,35200,11.0
+mean_rank_sample_frac_by_sample_size,dast,DAS,1,average_over_methods,0.6,38400,1.0
+mean_rank_sample_frac_by_sample_size,mst,MST,2,average_over_methods,0.6,38400,4.0
+mean_rank_sample_frac_by_sample_size,clr,CLR,3,average_over_methods,0.6,38400,4.5
+mean_rank_sample_frac_by_sample_size,policytree,Policy Tree,4,average_over_methods,0.6,38400,2.75
+mean_rank_sample_frac_by_sample_size,gmm,GMM,5,average_over_methods,0.6,38400,5.5
+mean_rank_sample_frac_by_sample_size,kmeans,K-Means,6,average_over_methods,0.6,38400,5.5
+mean_rank_sample_frac_by_sample_size,causal_forest,Causal Forest,7,average_over_methods,0.6,38400,4.75
+mean_rank_sample_frac_by_sample_size,s_learner,S-Learner,8,average_over_methods,0.6,38400,8.5
+mean_rank_sample_frac_by_sample_size,x_learner,X-Learner,9,average_over_methods,0.6,38400,8.5
+mean_rank_sample_frac_by_sample_size,t_learner,T-Learner,10,average_over_methods,0.6,38400,10.0
+mean_rank_sample_frac_by_sample_size,dr_learner,DR-Learner,11,average_over_methods,0.6,38400,11.0
+mean_rank_sample_frac_by_sample_size,dast,DAS,1,average_over_methods,0.65,41600,1.0
+mean_rank_sample_frac_by_sample_size,mst,MST,2,average_over_methods,0.65,41600,3.25
+mean_rank_sample_frac_by_sample_size,clr,CLR,3,average_over_methods,0.65,41600,4.25
+mean_rank_sample_frac_by_sample_size,policytree,Policy Tree,4,average_over_methods,0.65,41600,3.5
+mean_rank_sample_frac_by_sample_size,gmm,GMM,5,average_over_methods,0.65,41600,6.25
+mean_rank_sample_frac_by_sample_size,kmeans,K-Means,6,average_over_methods,0.65,41600,4.75
+mean_rank_sample_frac_by_sample_size,causal_forest,Causal Forest,7,average_over_methods,0.65,41600,5.0
+mean_rank_sample_frac_by_sample_size,s_learner,S-Learner,8,average_over_methods,0.65,41600,8.5
+mean_rank_sample_frac_by_sample_size,x_learner,X-Learner,9,average_over_methods,0.65,41600,8.5
+mean_rank_sample_frac_by_sample_size,t_learner,T-Learner,10,average_over_methods,0.65,41600,10.0
+mean_rank_sample_frac_by_sample_size,dr_learner,DR-Learner,11,average_over_methods,0.65,41600,11.0
+mean_rank_sample_frac_by_sample_size,dast,DAS,1,average_over_methods,0.7,44800,1.0
+mean_rank_sample_frac_by_sample_size,mst,MST,2,average_over_methods,0.7,44800,2.75
+mean_rank_sample_frac_by_sample_size,clr,CLR,3,average_over_methods,0.7,44800,5.0
+mean_rank_sample_frac_by_sample_size,policytree,Policy Tree,4,average_over_methods,0.7,44800,3.0
+mean_rank_sample_frac_by_sample_size,gmm,GMM,5,average_over_methods,0.7,44800,6.0
+mean_rank_sample_frac_by_sample_size,kmeans,K-Means,6,average_over_methods,0.7,44800,5.0
+mean_rank_sample_frac_by_sample_size,causal_forest,Causal Forest,7,average_over_methods,0.7,44800,5.25
+mean_rank_sample_frac_by_sample_size,s_learner,S-Learner,8,average_over_methods,0.7,44800,9.0
+mean_rank_sample_frac_by_sample_size,x_learner,X-Learner,9,average_over_methods,0.7,44800,8.0
+mean_rank_sample_frac_by_sample_size,t_learner,T-Learner,10,average_over_methods,0.7,44800,10.0
+mean_rank_sample_frac_by_sample_size,dr_learner,DR-Learner,11,average_over_methods,0.7,44800,11.0
+mean_rank_sample_frac_by_sample_size,dast,DAS,1,average_over_methods,0.75,48000,1.0
+mean_rank_sample_frac_by_sample_size,mst,MST,2,average_over_methods,0.75,48000,3.25
+mean_rank_sample_frac_by_sample_size,clr,CLR,3,average_over_methods,0.75,48000,4.25
+mean_rank_sample_frac_by_sample_size,policytree,Policy Tree,4,average_over_methods,0.75,48000,3.5
+mean_rank_sample_frac_by_sample_size,gmm,GMM,5,average_over_methods,0.75,48000,6.25
+mean_rank_sample_frac_by_sample_size,kmeans,K-Means,6,average_over_methods,0.75,48000,4.5
+mean_rank_sample_frac_by_sample_size,causal_forest,Causal Forest,7,average_over_methods,0.75,48000,5.25
+mean_rank_sample_frac_by_sample_size,s_learner,S-Learner,8,average_over_methods,0.75,48000,8.5
+mean_rank_sample_frac_by_sample_size,x_learner,X-Learner,9,average_over_methods,0.75,48000,8.5
+mean_rank_sample_frac_by_sample_size,t_learner,T-Learner,10,average_over_methods,0.75,48000,10.25
+mean_rank_sample_frac_by_sample_size,dr_learner,DR-Learner,11,average_over_methods,0.75,48000,10.75
+mean_rank_sample_frac_by_sample_size,dast,DAS,1,average_over_methods,0.8,51200,1.0
+mean_rank_sample_frac_by_sample_size,mst,MST,2,average_over_methods,0.8,51200,2.75
+mean_rank_sample_frac_by_sample_size,clr,CLR,3,average_over_methods,0.8,51200,5.0
+mean_rank_sample_frac_by_sample_size,policytree,Policy Tree,4,average_over_methods,0.8,51200,3.5
+mean_rank_sample_frac_by_sample_size,gmm,GMM,5,average_over_methods,0.8,51200,6.0
+mean_rank_sample_frac_by_sample_size,kmeans,K-Means,6,average_over_methods,0.8,51200,4.5
+mean_rank_sample_frac_by_sample_size,causal_forest,Causal Forest,7,average_over_methods,0.8,51200,5.25
+mean_rank_sample_frac_by_sample_size,s_learner,S-Learner,8,average_over_methods,0.8,51200,9.0
+mean_rank_sample_frac_by_sample_size,x_learner,X-Learner,9,average_over_methods,0.8,51200,8.0
+mean_rank_sample_frac_by_sample_size,t_learner,T-Learner,10,average_over_methods,0.8,51200,10.0
+mean_rank_sample_frac_by_sample_size,dr_learner,DR-Learner,11,average_over_methods,0.8,51200,11.0
+mean_rank_sample_frac_by_sample_size,dast,DAS,1,average_over_methods,0.85,54400,1.5
+mean_rank_sample_frac_by_sample_size,mst,MST,2,average_over_methods,0.85,54400,2.25
+mean_rank_sample_frac_by_sample_size,clr,CLR,3,average_over_methods,0.85,54400,4.5
+mean_rank_sample_frac_by_sample_size,policytree,Policy Tree,4,average_over_methods,0.85,54400,3.0
+mean_rank_sample_frac_by_sample_size,gmm,GMM,5,average_over_methods,0.85,54400,5.75
+mean_rank_sample_frac_by_sample_size,kmeans,K-Means,6,average_over_methods,0.85,54400,5.75
+mean_rank_sample_frac_by_sample_size,causal_forest,Causal Forest,7,average_over_methods,0.85,54400,5.25
+mean_rank_sample_frac_by_sample_size,s_learner,S-Learner,8,average_over_methods,0.85,54400,9.0
+mean_rank_sample_frac_by_sample_size,x_learner,X-Learner,9,average_over_methods,0.85,54400,8.0
+mean_rank_sample_frac_by_sample_size,t_learner,T-Learner,10,average_over_methods,0.85,54400,10.0
+mean_rank_sample_frac_by_sample_size,dr_learner,DR-Learner,11,average_over_methods,0.85,54400,11.0
+mean_rank_sample_frac_by_sample_size,dast,DAS,1,average_over_methods,0.9,57600,1.5
+mean_rank_sample_frac_by_sample_size,mst,MST,2,average_over_methods,0.9,57600,3.25
+mean_rank_sample_frac_by_sample_size,clr,CLR,3,average_over_methods,0.9,57600,3.25
+mean_rank_sample_frac_by_sample_size,policytree,Policy Tree,4,average_over_methods,0.9,57600,3.5
+mean_rank_sample_frac_by_sample_size,gmm,GMM,5,average_over_methods,0.9,57600,5.5
+mean_rank_sample_frac_by_sample_size,kmeans,K-Means,6,average_over_methods,0.9,57600,5.0
+mean_rank_sample_frac_by_sample_size,causal_forest,Causal Forest,7,average_over_methods,0.9,57600,6.0
+mean_rank_sample_frac_by_sample_size,s_learner,S-Learner,8,average_over_methods,0.9,57600,8.5
+mean_rank_sample_frac_by_sample_size,x_learner,X-Learner,9,average_over_methods,0.9,57600,8.5
+mean_rank_sample_frac_by_sample_size,t_learner,T-Learner,10,average_over_methods,0.9,57600,10.0
+mean_rank_sample_frac_by_sample_size,dr_learner,DR-Learner,11,average_over_methods,0.9,57600,11.0
+mean_rank_sample_frac_by_sample_size,dast,DAS,1,average_over_methods,0.95,60800,1.5
+mean_rank_sample_frac_by_sample_size,mst,MST,2,average_over_methods,0.95,60800,3.0
+mean_rank_sample_frac_by_sample_size,clr,CLR,3,average_over_methods,0.95,60800,3.0
+mean_rank_sample_frac_by_sample_size,policytree,Policy Tree,4,average_over_methods,0.95,60800,3.5
+mean_rank_sample_frac_by_sample_size,gmm,GMM,5,average_over_methods,0.95,60800,6.5
+mean_rank_sample_frac_by_sample_size,kmeans,K-Means,6,average_over_methods,0.95,60800,4.5
+mean_rank_sample_frac_by_sample_size,causal_forest,Causal Forest,7,average_over_methods,0.95,60800,6.0
+mean_rank_sample_frac_by_sample_size,s_learner,S-Learner,8,average_over_methods,0.95,60800,8.5
+mean_rank_sample_frac_by_sample_size,x_learner,X-Learner,9,average_over_methods,0.95,60800,8.5
+mean_rank_sample_frac_by_sample_size,t_learner,T-Learner,10,average_over_methods,0.95,60800,10.5
+mean_rank_sample_frac_by_sample_size,dr_learner,DR-Learner,11,average_over_methods,0.95,60800,10.5
+mean_rank_sample_frac_by_sample_size,dast,DAS,1,average_over_methods,1.0,64000,2.0
+mean_rank_sample_frac_by_sample_size,mst,MST,2,average_over_methods,1.0,64000,2.5
+mean_rank_sample_frac_by_sample_size,clr,CLR,3,average_over_methods,1.0,64000,3.25
+mean_rank_sample_frac_by_sample_size,policytree,Policy Tree,4,average_over_methods,1.0,64000,4.0
+mean_rank_sample_frac_by_sample_size,gmm,GMM,5,average_over_methods,1.0,64000,5.0
+mean_rank_sample_frac_by_sample_size,kmeans,K-Means,6,average_over_methods,1.0,64000,5.0
+mean_rank_sample_frac_by_sample_size,causal_forest,Causal Forest,7,average_over_methods,1.0,64000,6.25
+mean_rank_sample_frac_by_sample_size,s_learner,S-Learner,8,average_over_methods,1.0,64000,8.5
+mean_rank_sample_frac_by_sample_size,x_learner,X-Learner,9,average_over_methods,1.0,64000,8.5
+mean_rank_sample_frac_by_sample_size,t_learner,T-Learner,10,average_over_methods,1.0,64000,10.0
+mean_rank_sample_frac_by_sample_size,dr_learner,DR-Learner,11,average_over_methods,1.0,64000,11.0
