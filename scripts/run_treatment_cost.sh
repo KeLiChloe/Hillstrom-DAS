@@ -5,10 +5,10 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "${ROOT}"
 
-EXP_ROOT="${EXP_ROOT:-exp_aug_larger_M}"
+EXP_ROOT="${EXP_ROOT:-exp_nov}"
 DATASET="${DATASET:-criteo}"
 TARGET="${TARGET:-conversion}"
-SAMPLE_FRAC="${SAMPLE_FRAC:-0.1}"
+SAMPLE_FRAC="${SAMPLE_FRAC:-0.05}"
 PILOT_FRAC="${PILOT_FRAC:-0.40}"
 MU_MODEL_TYPE="${MU_MODEL_TYPE:-lightgbm_reg}"
 META_LEARNER_MU_MODEL_TYPE="${META_LEARNER_MU_MODEL_TYPE:-mlp_reg}"
@@ -19,8 +19,22 @@ SEED_SEQUENCE="${SEED_SEQUENCE:-1088}"
 N_SIM="${N_SIM:-50}"
 N_FOLDS_DAMS="${N_FOLDS_DAMS:-5}"
 
-# Space-separated cost grid
-COST_VALUES="${COST_VALUES:-0.0035 0.004}"
+# Space-separated cost grid from the August Criteo sweep.
+COST_VALUES="${COST_VALUES:-0 0.0005 0.001 0.0015 0.002 0.0025 0.0030 0.0035}"
+
+ALGO_LIST=(
+    dast
+    causal_forest
+    mst
+    clr
+    kmeans
+    gmm
+    t_learner
+    s_learner
+    x_learner
+    dr_learner
+    policytree
+)
 
 OUTDIR="${EXP_ROOT}/${DATASET}/${TARGET}/${MU_MODEL_TYPE}/treatment_cost_with_fixed_${SAMPLE_FRAC}_sample_frac_${PILOT_FRAC}_pilot_frac"
 mkdir -p "${OUTDIR}"
@@ -52,5 +66,6 @@ for cost in ${COST_VALUES}; do
         --treatment_cost "${cost}" \
         --N_sim "${N_SIM}" \
         --n_folds_dams "${N_FOLDS_DAMS}" \
+        --algo_list "${ALGO_LIST[@]}" \
         --outpath "${outpath}"
 done
