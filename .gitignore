@@ -6,6 +6,3 @@ logs/*
 
 # STZ offline payloads (large; keep local only)
 *_stz.pkl
-
-# Local compressed raw datasets
-/data/*.csv.gz
