@@ -1,0 +1,481 @@
+evaluation_method,comparator,comparator_label,treatment_cost,mean_pct,ci_half_width_pct,ci_lower_pct,ci_upper_pct,n_simulations,sweep_parameter,fixed_pilot_frac,dataset,plot_title,figure_stem
+dual_dr,kmeans,K-Means,0.0,3.5409804966724545,1.554793905786722,1.9861865908857326,5.095774402459177,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dual_dr
+dual_dr,gmm,GMM,0.0,7.699837763866096,2.4960217781009773,5.203815985765119,10.195859541967074,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dual_dr
+dual_dr,clr,CLR,0.0,3.5344621187060086,1.5865528245420693,1.9479092941639393,5.121014943248078,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dual_dr
+dual_dr,mst,MST,0.0,4.662760923410268,1.685513340296913,2.977247583113355,6.3482742637071805,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dual_dr
+dual_dr,causal_forest,Causal Forest,0.0,0.9538504719905676,1.3202856422960583,-0.36643517030549067,2.274136114286626,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dual_dr
+dual_dr,t_learner,T-Learner,0.0,17.754355017263762,3.379325189590522,14.37502982767324,21.133680206854283,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dual_dr
+dual_dr,s_learner,S-Learner,0.0,9.822424974573895,2.4600341941300625,7.362390780443833,12.282459168703959,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dual_dr
+dual_dr,x_learner,X-Learner,0.0,14.617103961050063,1.9512558104483415,12.665848150601722,16.568359771498404,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dual_dr
+dual_dr,dr_learner,DR-Learner,0.0,19.63549895793336,3.9481866333431315,15.68731232459023,23.583685591276492,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dual_dr
+dual_dr,policytree,Policy Tree,0.0,3.544105117110094,1.251799762767,2.2923053543430942,4.795904879877094,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dual_dr
+dual_dr,kmeans,K-Means,0.0005,3.4902716770025353,1.336533979489722,2.1537376975128133,4.826805656492257,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dual_dr
+dual_dr,gmm,GMM,0.0005,6.405650288694879,2.421287435058612,3.984362853636267,8.826937723753492,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dual_dr
+dual_dr,clr,CLR,0.0005,3.134867357992205,1.2468931123506568,1.8879742456415483,4.381760470342861,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dual_dr
+dual_dr,mst,MST,0.0005,4.854804913015501,2.058811421656272,2.795993491359229,6.913616334671773,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dual_dr
+dual_dr,causal_forest,Causal Forest,0.0005,0.25865426981780126,1.2576866267824118,-0.9990323569646106,1.5163408966002132,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dual_dr
+dual_dr,t_learner,T-Learner,0.0005,14.19304044355599,3.4012190162595606,10.79182142729643,17.59425945981555,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dual_dr
+dual_dr,s_learner,S-Learner,0.0005,8.32947518234927,2.9505682867999794,5.3789068955492905,11.28004346914925,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dual_dr
+dual_dr,x_learner,X-Learner,0.0005,11.310981087318881,2.0689223887766564,9.242058698542225,13.379903476095537,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dual_dr
+dual_dr,dr_learner,DR-Learner,0.0005,15.949712234447443,3.5155557183988604,12.434156516048581,19.465267952846304,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dual_dr
+dual_dr,policytree,Policy Tree,0.0005,3.043429106132066,1.6141744872582025,1.4292546188738635,4.657603593390268,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dual_dr
+dual_dr,kmeans,K-Means,0.001,2.430962199742902,1.4385946304333121,0.9923675693095897,3.869556830176214,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dual_dr
+dual_dr,gmm,GMM,0.001,6.436671648833441,2.250674007065402,4.185997641768038,8.687345655898843,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dual_dr
+dual_dr,clr,CLR,0.001,2.08123009106597,1.3321447675744515,0.7490853234915185,3.4133748586404216,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dual_dr
+dual_dr,mst,MST,0.001,6.199612148439368,2.3665623026238882,3.8330498458154794,8.566174451063256,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dual_dr
+dual_dr,causal_forest,Causal Forest,0.001,-0.4597213889573849,1.2520417440609788,-1.7117631330183638,0.7923203551035939,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dual_dr
+dual_dr,t_learner,T-Learner,0.001,12.725096982705516,3.4371677958608964,9.28792918684462,16.162264778566414,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dual_dr
+dual_dr,s_learner,S-Learner,0.001,7.444425454858304,2.810221663182438,4.634203791675866,10.254647118040742,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dual_dr
+dual_dr,x_learner,X-Learner,0.001,10.067322432688051,1.9342987543339918,8.13302367835406,12.001621187022042,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dual_dr
+dual_dr,dr_learner,DR-Learner,0.001,14.579517071171193,3.6178002893838004,10.961716781787391,18.197317360554994,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dual_dr
+dual_dr,policytree,Policy Tree,0.001,3.0647752598727194,1.6881393791554276,1.3766358807172918,4.7529146390281465,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dual_dr
+dual_dr,kmeans,K-Means,0.0015,2.1002529735138116,1.4102391988464937,0.6900137746673178,3.5104921723603053,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dual_dr
+dual_dr,gmm,GMM,0.0015,6.67214402149645,2.3606602230540323,4.311483798442418,9.032804244550483,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dual_dr
+dual_dr,clr,CLR,0.0015,1.7493391692866151,1.2863045290614077,0.46303464022520746,3.035643698348023,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dual_dr
+dual_dr,mst,MST,0.0015,6.391470567268498,2.5254196057097307,3.8660509615587673,8.916890172978228,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dual_dr
+dual_dr,causal_forest,Causal Forest,0.0015,-0.19726527012607917,1.5018768813144239,-1.699142151440503,1.3046116111883448,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dual_dr
+dual_dr,t_learner,T-Learner,0.0015,12.453578634354335,3.2889056567979402,9.164672977556394,15.742484291152275,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dual_dr
+dual_dr,s_learner,S-Learner,0.0015,8.121880656949566,2.8390986507836256,5.28278200616594,10.960979307733192,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dual_dr
+dual_dr,x_learner,X-Learner,0.0015,9.84942297174193,1.986431440175097,7.862991531566833,11.835854411917028,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dual_dr
+dual_dr,dr_learner,DR-Learner,0.0015,14.220666360005069,3.566858371678256,10.653807988326813,17.787524731683327,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dual_dr
+dual_dr,policytree,Policy Tree,0.0015,3.0169376571899345,1.7054215412798481,1.3115161159100863,4.722359198469783,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dual_dr
+dual_dr,kmeans,K-Means,0.002,1.949613376012248,1.9406078508739684,0.00900552513827968,3.8902212268862164,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dual_dr
+dual_dr,gmm,GMM,0.002,6.412198582576873,2.544561803343845,3.867636779233028,8.956760385920719,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dual_dr
+dual_dr,clr,CLR,0.002,2.5231788134419797,2.780261412493839,-0.25708259905185926,5.303440225935819,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dual_dr
+dual_dr,mst,MST,0.002,6.192766077593533,2.7329036646611815,3.4598624129323516,8.925669742254716,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dual_dr
+dual_dr,causal_forest,Causal Forest,0.002,-0.5791482252226442,1.5705074842103746,-2.1496557094330186,0.9913592589877304,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dual_dr
+dual_dr,t_learner,T-Learner,0.002,11.668866673935009,3.261183839595914,8.407682834339095,14.930050513530922,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dual_dr
+dual_dr,s_learner,S-Learner,0.002,8.039783113906118,2.9319304719884673,5.107852641917651,10.971713585894586,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dual_dr
+dual_dr,x_learner,X-Learner,0.002,9.234639148740724,2.1972127508470356,7.037426397893689,11.431851899587759,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dual_dr
+dual_dr,dr_learner,DR-Learner,0.002,13.52904226031077,3.425522026422823,10.103520233887949,16.954564286733593,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dual_dr
+dual_dr,policytree,Policy Tree,0.002,3.052026153990241,1.6572707941961295,1.3947553597941116,4.7092969481863705,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dual_dr
+dual_dr,kmeans,K-Means,0.0025,1.6665437720994773,1.95801074351575,-0.29146697141627276,3.6245545156152277,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dual_dr
+dual_dr,gmm,GMM,0.0025,6.202570174468251,2.4267754681389726,3.7757947063292785,8.629345642607223,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dual_dr
+dual_dr,clr,CLR,0.0025,3.206580878901737,3.493610580443713,-0.28702970154197605,6.70019145934545,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dual_dr
+dual_dr,mst,MST,0.0025,7.047429731129217,2.7581209907421544,4.289308740387062,9.805550721871372,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dual_dr
+dual_dr,causal_forest,Causal Forest,0.0025,-0.4733454463889021,1.5908784931846078,-2.06422393957351,1.1175330467957059,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dual_dr
+dual_dr,t_learner,T-Learner,0.0025,11.434140225252866,3.2498598174390323,8.184280407813834,14.684000042691899,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dual_dr
+dual_dr,s_learner,S-Learner,0.0025,9.033653834049991,3.0244460964045246,6.0092077376454665,12.058099930454516,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dual_dr
+dual_dr,x_learner,X-Learner,0.0025,9.171220633492283,2.1769912478257862,6.994229385666497,11.348211881318068,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dual_dr
+dual_dr,dr_learner,DR-Learner,0.0025,13.236393615541365,3.3430984050091803,9.893295210532184,16.579492020550546,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dual_dr
+dual_dr,policytree,Policy Tree,0.0025,3.3886341252001886,1.4634731753101977,1.9251609498899909,4.8521073005103865,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dual_dr
+dual_dr,kmeans,K-Means,0.003,1.822470798841384,2.429654728870872,-0.6071839300294879,4.252125527712256,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dual_dr
+dual_dr,gmm,GMM,0.003,6.340191567940597,2.3869677732388013,3.9532237947017954,8.727159341179398,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dual_dr
+dual_dr,clr,CLR,0.003,3.3677791011098215,3.778868136684544,-0.4110890355747223,7.146647237794365,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dual_dr
+dual_dr,mst,MST,0.003,6.9314314386241564,2.727544261073606,4.20388717755055,9.658975699697763,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dual_dr
+dual_dr,causal_forest,Causal Forest,0.003,-0.5470426614772768,1.5006906154333945,-2.0477332769106713,0.9536479539561178,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dual_dr
+dual_dr,t_learner,T-Learner,0.003,11.169296576944255,3.1507842462025986,8.018512330741657,14.320080823146853,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dual_dr
+dual_dr,s_learner,S-Learner,0.003,9.630209041317126,3.0164131535345358,6.61379588778259,12.646622194851663,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dual_dr
+dual_dr,x_learner,X-Learner,0.003,8.842221299141832,1.9867368294040768,6.855484469737755,10.828958128545908,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dual_dr
+dual_dr,dr_learner,DR-Learner,0.003,12.95818072786771,3.415632028300709,9.542548699567,16.37381275616842,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dual_dr
+dual_dr,policytree,Policy Tree,0.003,3.3119133026093475,1.4919654399836693,1.8199478626256782,4.8038787425930165,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dual_dr
+dual_dr,kmeans,K-Means,0.0035,2.5365306974766315,3.2303206978204524,-0.6937900003438209,5.766851395297084,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dual_dr
+dual_dr,gmm,GMM,0.0035,6.558120267938446,2.303948911836652,4.254171356101795,8.862069179775098,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dual_dr
+dual_dr,clr,CLR,0.0035,3.193718339450228,3.8151147404902184,-0.6213964010399904,7.008833079940446,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dual_dr
+dual_dr,mst,MST,0.0035,10.174011460665868,2.970792113109039,7.203219347556829,13.144803573774908,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dual_dr
+dual_dr,causal_forest,Causal Forest,0.0035,-0.4367872755070394,1.634036282201457,-2.070823557708496,1.1972490066944175,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dual_dr
+dual_dr,t_learner,T-Learner,0.0035,11.273958718067309,3.3214774695721827,7.952481248495126,14.595436187639493,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dual_dr
+dual_dr,s_learner,S-Learner,0.0035,10.718035472200198,2.9924321064126365,7.725603365787562,13.710467578612834,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dual_dr
+dual_dr,x_learner,X-Learner,0.0035,8.906223468474275,2.1423206477743455,6.763902820699929,11.048544116248621,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dual_dr
+dual_dr,dr_learner,DR-Learner,0.0035,12.83103305838351,3.415514967841465,9.415518090542044,16.246548026224975,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dual_dr
+dual_dr,policytree,Policy Tree,0.0035,4.034957325600907,1.7290851545864805,2.305872171014426,5.764042480187387,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dual_dr
+dr,kmeans,K-Means,0.0,-3.437354232312856,2.577769214112715,-6.015123446425571,-0.859585018200141,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dr
+dr,gmm,GMM,0.0,4.052544270370285,3.8821860329108957,0.17035823745938972,7.934730303281182,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dr
+dr,clr,CLR,0.0,-3.6278336398231166,2.5549032800200018,-6.182736919843118,-1.0729303598031148,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dr
+dr,mst,MST,0.0,-0.6495370378373689,2.5670735462916383,-3.216610584129007,1.9175365084542695,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dr
+dr,causal_forest,Causal Forest,0.0,-1.004701120252934,2.074479626619263,-3.079180746872197,1.069778506366329,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dr
+dr,t_learner,T-Learner,0.0,9.749335386116178,4.023717478996642,5.725617907119536,13.77305286511282,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dr
+dr,s_learner,S-Learner,0.0,1.642708256124275,3.3563918961982275,-1.7136836400739526,4.9991001523225025,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dr
+dr,x_learner,X-Learner,0.0,7.013789337222812,2.8911059547259623,4.1226833824968505,9.904895291948774,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dr
+dr,dr_learner,DR-Learner,0.0,9.682793323271436,4.35760818454599,5.3251851387254465,14.040401507817426,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dr
+dr,policytree,Policy Tree,0.0,-0.5685202087878769,2.173373323662303,-2.74189353245018,1.604853114874426,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dr
+dr,kmeans,K-Means,0.0005,-3.402982690511922,2.264869881032269,-5.667852571544191,-1.138112809479653,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dr
+dr,gmm,GMM,0.0005,3.477977068952023,3.578476279590282,-0.10049921063825895,7.056453348542305,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dr
+dr,clr,CLR,0.0005,-3.776176882235753,2.2960359190700177,-6.072212801305771,-1.4801409631657352,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dr
+dr,mst,MST,0.0005,0.9425421419984292,2.6934415462418664,-1.7508994042434372,3.6359836882402954,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dr
+dr,causal_forest,Causal Forest,0.0005,-1.2126518667897483,1.9049335361056043,-3.1175854028953527,0.692281669315856,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dr
+dr,t_learner,T-Learner,0.0005,7.549373879662556,4.162258099002945,3.3871157806596113,11.711631978665501,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dr
+dr,s_learner,S-Learner,0.0005,1.5923846541903282,3.8058490101482105,-2.2134643559578824,5.398233664338539,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dr
+dr,x_learner,X-Learner,0.0005,5.023402018708466,3.437146959478958,1.586255059229508,8.460548978187424,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dr
+dr,dr_learner,DR-Learner,0.0005,7.4792722561731315,4.5676301536866175,2.911642102486514,12.046902409859749,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dr
+dr,policytree,Policy Tree,0.0005,-0.4289118162501024,2.802272425279512,-3.2311842415296144,2.3733606090294095,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dr
+dr,kmeans,K-Means,0.001,-4.861328216587995,2.3426714838709493,-7.203999700458944,-2.5186567327170457,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dr
+dr,gmm,GMM,0.001,3.8680320838028837,3.5235461578442355,0.34448592595864813,7.391578241647119,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dr
+dr,clr,CLR,0.001,-5.206315483677066,2.3865583492700186,-7.592873832947085,-2.819757134407048,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dr
+dr,mst,MST,0.001,3.5421159573250645,3.3636631670731583,0.1784527902519062,6.905779124398222,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dr
+dr,causal_forest,Causal Forest,0.001,-2.3429153365032285,2.1475114848766426,-4.490426821379871,-0.1954038516265859,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dr
+dr,t_learner,T-Learner,0.001,5.752988059900597,3.9230061296099157,1.829981930290681,9.675994189510511,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dr
+dr,s_learner,S-Learner,0.001,0.9092033580982627,4.0476256702220885,-3.1384223121238257,4.956829028320351,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dr
+dr,x_learner,X-Learner,0.001,3.552962318335068,3.389934989993012,0.16302732834205624,6.94289730832808,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dr
+dr,dr_learner,DR-Learner,0.001,5.968787719057487,4.580434738043496,1.3883529810139912,10.549222457100983,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dr
+dr,policytree,Policy Tree,0.001,-0.43821424695067335,2.5030099035625293,-2.941224150513203,2.0647956566118557,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dr
+dr,kmeans,K-Means,0.0015,-5.1053390455872965,1.9297552914164988,-7.0350943370037955,-3.1755837541707974,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dr
+dr,gmm,GMM,0.0015,3.811801047101454,3.4405553326366434,0.3712457144648105,7.252356379738098,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dr
+dr,clr,CLR,0.0015,-5.452818121780726,1.9720771928021432,-7.424895314582869,-3.4807409289785824,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dr
+dr,mst,MST,0.0015,2.8852842425096275,3.1492276026681507,-0.26394336015852327,6.034511845177779,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dr
+dr,causal_forest,Causal Forest,0.0015,-2.1277895969144835,2.0473733697845082,-4.175162966698991,-0.08041622712997532,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dr
+dr,t_learner,T-Learner,0.0015,5.863443136635766,4.009989371888534,1.8534537647472318,9.8734325085243,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dr
+dr,s_learner,S-Learner,0.0015,1.647639008864167,3.9913791445231177,-2.3437401356589507,5.639018153387285,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dr
+dr,x_learner,X-Learner,0.0015,3.451571784188476,3.300992860451379,0.15057892373709691,6.752564644639855,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dr
+dr,dr_learner,DR-Learner,0.0015,5.895461030469038,4.601608020856175,1.2938530096128629,10.497069051325212,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dr
+dr,policytree,Policy Tree,0.0015,-0.5056628399369838,2.675547396580656,-3.1812102365176402,2.169884556643672,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dr
+dr,kmeans,K-Means,0.002,-5.788911475485552,2.0005284782123782,-7.78943995369793,-3.7883829972731737,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dr
+dr,gmm,GMM,0.002,3.179874934293019,3.598059189383021,-0.4181842550900021,6.77793412367604,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dr
+dr,clr,CLR,0.002,-4.9959546992298405,2.7201005969343295,-7.7160552961641695,-2.275854102295511,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dr
+dr,mst,MST,0.002,1.8912526577454125,3.0885533856219993,-1.1973007278765868,4.979806043367412,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dr
+dr,causal_forest,Causal Forest,0.002,-3.024057395839211,2.219963327837503,-5.244020723676714,-0.8040940680017084,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dr
+dr,t_learner,T-Learner,0.002,4.724938850204245,4.097090222444462,0.627848627759783,8.822029072648707,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dr
+dr,s_learner,S-Learner,0.002,1.0620578923692572,3.9951921383045796,-2.9331342459353227,5.057250030673837,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dr
+dr,x_learner,X-Learner,0.002,2.2836728133314343,3.422009618133213,-1.1383368048017788,5.7056824314646475,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dr
+dr,dr_learner,DR-Learner,0.002,4.999536360453431,4.705993201611757,0.2935431588416737,9.705529562065188,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dr
+dr,policytree,Policy Tree,0.002,-0.38729674984522466,2.7887450689616404,-3.176041818806865,2.4014483191164158,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dr
+dr,kmeans,K-Means,0.0025,-6.295149012524828,1.8360008267852361,-8.131149839310064,-4.459148185739592,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dr
+dr,gmm,GMM,0.0025,2.85068702667064,3.413292632614116,-0.5626056059434759,6.263979659284756,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dr
+dr,clr,CLR,0.0025,-4.18570643340151,3.428233940780372,-7.613940374181881,-0.757472492621138,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dr
+dr,mst,MST,0.0025,3.7082711429286475,3.7198626440978706,-0.01159150116922314,7.428133787026518,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dr
+dr,causal_forest,Causal Forest,0.0025,-3.2568114700778357,2.338262951415748,-5.5950744214935835,-0.9185485186620879,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dr
+dr,t_learner,T-Learner,0.0025,4.307437784293296,4.146818719002937,0.1606190652903594,8.454256503296232,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dr
+dr,s_learner,S-Learner,0.0025,1.5113244779313908,4.1573370953552775,-2.646012617423887,5.668661573286668,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dr
+dr,x_learner,X-Learner,0.0025,2.19665857252216,3.5708155674055764,-1.3741569948834162,5.767474139927737,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dr
+dr,dr_learner,DR-Learner,0.0025,4.5422836047000335,4.540831145513167,0.0014524591868667613,9.0831147502132,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dr
+dr,policytree,Policy Tree,0.0025,0.26559875618614315,2.9129724056779884,-2.647373649491845,3.1785711618641317,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dr
+dr,kmeans,K-Means,0.003,-5.752457904496657,3.3340547885592025,-9.086512693055859,-2.4184031159374544,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dr
+dr,gmm,GMM,0.003,2.3813464504792683,3.402148044172171,-1.020801593692903,5.783494494651439,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dr
+dr,clr,CLR,0.003,-3.64380870172739,4.396128756444827,-8.039937458172217,0.7523200547174369,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dr
+dr,mst,MST,0.003,3.2391219008754866,3.8230495271421576,-0.583927626266671,7.062171428017644,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dr
+dr,causal_forest,Causal Forest,0.003,-3.523305049975763,2.4184869375696345,-5.941791987545398,-1.1048181124061287,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dr
+dr,t_learner,T-Learner,0.003,3.5959359104107045,3.737774874975561,-0.14183896456485634,7.333710785386265,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dr
+dr,s_learner,S-Learner,0.003,2.5424084700665235,4.294989748033914,-1.7525812779673906,6.837398218100438,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dr
+dr,x_learner,X-Learner,0.003,1.5497178189152623,3.320943958116969,-1.7712261392017068,4.870661777032232,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dr
+dr,dr_learner,DR-Learner,0.003,3.830786190099482,3.977077020049685,-0.14629082995020282,7.807863210149167,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dr
+dr,policytree,Policy Tree,0.003,-0.15276367318145068,2.731523580671536,-2.8842872538529867,2.578759907490085,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dr
+dr,kmeans,K-Means,0.0035,-4.52647383304212,3.793527713762648,-8.320001546804768,-0.7329461192794717,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dr
+dr,gmm,GMM,0.0035,3.0676782527561857,3.0253140365912636,0.04236421616492203,6.09299228934745,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dr
+dr,clr,CLR,0.0035,-3.513313141916328,4.420058491719649,-7.933371633635977,0.9067453498033209,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dr
+dr,mst,MST,0.0035,5.380359854310601,3.493144271353456,1.887215582957145,8.873504125664057,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dr
+dr,causal_forest,Causal Forest,0.0035,-3.2964348125330205,2.395210192992408,-5.691645005525428,-0.9012246195406126,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dr
+dr,t_learner,T-Learner,0.0035,3.9382713470492687,3.8104653189493805,0.12780602809988828,7.748736665998649,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dr
+dr,s_learner,S-Learner,0.0035,4.122215777854215,4.165998308980745,-0.04378253112653052,8.288214086834959,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dr
+dr,x_learner,X-Learner,0.0035,1.8584744042822061,3.1507455599655665,-1.2922711556833604,5.009219964247773,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dr
+dr,dr_learner,DR-Learner,0.0035,4.0439494198719315,3.9079831121495108,0.1359663077224207,7.951932532021442,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dr
+dr,policytree,Policy Tree,0.0035,0.08442604851811787,2.567312693722633,-2.482886645204515,2.651738742240751,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dr
+ipw,kmeans,K-Means,0.0,-3.6059434021644226,3.390589545028742,-6.996532947193165,-0.21535385713568056,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_ipw
+ipw,gmm,GMM,0.0,4.831436278619665,4.580999195896718,0.2504370827229474,9.412435474516382,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_ipw
+ipw,clr,CLR,0.0,-3.7098140737566854,3.369276128062376,-7.079090201819062,-0.3405379456943094,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_ipw
+ipw,mst,MST,0.0,-0.547228896771996,2.84836726468964,-3.3955961614616363,2.301138367917644,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_ipw
+ipw,causal_forest,Causal Forest,0.0,-0.0388782480448819,2.4363978142022753,-2.4752760622471572,2.3975195661573934,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_ipw
+ipw,t_learner,T-Learner,0.0,11.502827310034638,4.55044448732025,6.952382822714388,16.05327179735489,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_ipw
+ipw,s_learner,S-Learner,0.0,2.4754876633794503,4.101686113226044,-1.6261984498465933,6.577173776605494,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_ipw
+ipw,x_learner,X-Learner,0.0,9.128479981373303,3.4490841003858064,5.679395880987497,12.57756408175911,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_ipw
+ipw,dr_learner,DR-Learner,0.0,12.140196531637674,5.576883948301446,6.563312583336228,17.71708047993912,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_ipw
+ipw,policytree,Policy Tree,0.0,-0.287580232995788,2.271421944979287,-2.559002177975075,1.983841711983499,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_ipw
+ipw,kmeans,K-Means,0.0005,-3.631070023350338,2.3648966212944167,-5.995966644644755,-1.2661734020559212,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_ipw
+ipw,gmm,GMM,0.0005,3.555307092274116,4.160416144177944,-0.605109051903828,7.71572323645206,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_ipw
+ipw,clr,CLR,0.0005,-3.885038272547565,2.387671417883826,-6.272709690431391,-1.4973668546637393,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_ipw
+ipw,mst,MST,0.0005,1.2919479455345084,3.109130911897888,-1.8171829663633794,4.401078857432396,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_ipw
+ipw,causal_forest,Causal Forest,0.0005,-0.9868435966012212,2.15777016830378,-3.144613764905001,1.1709265717025588,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_ipw
+ipw,t_learner,T-Learner,0.0005,8.323270978253161,4.414534552453131,3.90873642580003,12.737805530706293,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_ipw
+ipw,s_learner,S-Learner,0.0005,1.7100843847086955,4.561706573661316,-2.8516221889526205,6.271790958370011,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_ipw
+ipw,x_learner,X-Learner,0.0005,6.335815657899284,3.7351235517496324,2.6006921061496513,10.070939209648916,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_ipw
+ipw,dr_learner,DR-Learner,0.0005,9.15650421883131,5.73503816088465,3.4214660579466605,14.891542379715961,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_ipw
+ipw,policytree,Policy Tree,0.0005,-0.5982086233082624,3.1170038914677836,-3.715212514776046,2.518795268159521,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_ipw
+ipw,kmeans,K-Means,0.001,-5.6337317349898095,2.4265499333205893,-8.060281668310399,-3.20718180166922,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_ipw
+ipw,gmm,GMM,0.001,3.727493127619959,4.268974257749684,-0.5414811301297249,7.996467385369643,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_ipw
+ipw,clr,CLR,0.001,-5.872352319058413,2.4551225325502055,-8.327474851608619,-3.4172297865082073,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_ipw
+ipw,mst,MST,0.001,4.08439273501502,3.594160217653421,0.4902325173615987,7.678552952668441,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_ipw
+ipw,causal_forest,Causal Forest,0.001,-2.6676117647057462,2.4495607091726037,-5.11717247387835,-0.21805105553314252,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_ipw
+ipw,t_learner,T-Learner,0.001,5.923208018350745,4.200112847181833,1.7230951711689118,10.123320865532577,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_ipw
+ipw,s_learner,S-Learner,0.001,0.85390736934736,4.957400002833886,-4.103492633486526,5.811307372181246,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_ipw
+ipw,x_learner,X-Learner,0.001,4.238833295308569,3.701852706695753,0.5369805886128161,7.940686002004322,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_ipw
+ipw,dr_learner,DR-Learner,0.001,6.8820478588957705,5.6372224215796765,1.244825437316094,12.519270280475446,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_ipw
+ipw,policytree,Policy Tree,0.001,-1.1413912973554605,2.831922922343357,-3.9733142196988176,1.6905316249878963,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_ipw
+ipw,kmeans,K-Means,0.0015,-6.018847461542624,2.0252842799314617,-8.044131741474086,-3.993563181611162,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_ipw
+ipw,gmm,GMM,0.0015,3.5035100795565866,4.211894263394497,-0.7083841838379108,7.715404342951084,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_ipw
+ipw,clr,CLR,0.0015,-6.2595030592059615,2.0499908996330674,-8.30949395883903,-4.209512159572894,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_ipw
+ipw,mst,MST,0.0015,3.3401344685957675,3.7970065543968157,-0.4568720858010482,7.137141022992584,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_ipw
+ipw,causal_forest,Causal Forest,0.0015,-2.4568469878663546,2.3261656496342455,-4.7830126375006,-0.13068133823210903,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_ipw
+ipw,t_learner,T-Learner,0.0015,5.854064413898194,4.3087846781899035,1.5452797357082906,10.162849092088099,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_ipw
+ipw,s_learner,S-Learner,0.0015,1.8254952754719407,4.929178706170282,-3.103683430698341,6.754673981642222,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_ipw
+ipw,x_learner,X-Learner,0.0015,3.9587478043707462,3.664504563573937,0.2942432407968094,7.6232523679446835,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_ipw
+ipw,dr_learner,DR-Learner,0.0015,6.7241836737044665,5.679213970549051,1.0449697031554157,12.403397644253516,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_ipw
+ipw,policytree,Policy Tree,0.0015,-1.1688721653490086,2.879481414356954,-4.048353579705962,1.7106092490079452,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_ipw
+ipw,kmeans,K-Means,0.002,-6.503330433539706,2.2213161389191165,-8.724646572458823,-4.2820142946205895,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_ipw
+ipw,gmm,GMM,0.002,3.068893370749836,4.370596727675967,-1.3017033569261316,7.439490098425804,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_ipw
+ipw,clr,CLR,0.002,-5.239871717563191,3.4360701714974327,-8.675941889060624,-1.8038015460657584,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_ipw
+ipw,mst,MST,0.002,2.4232760131698194,3.68812847195761,-1.2648524587877907,6.11140448512743,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_ipw
+ipw,causal_forest,Causal Forest,0.002,-3.171918491909095,2.435048735624076,-5.606967227533171,-0.736869756285019,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_ipw
+ipw,t_learner,T-Learner,0.002,4.730232374039663,4.395017007087071,0.3352153669525926,9.125249381126734,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_ipw
+ipw,s_learner,S-Learner,0.002,1.3195438537620743,4.8980081637289254,-3.578464309966851,6.217552017491,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_ipw
+ipw,x_learner,X-Learner,0.002,2.8021019406000294,3.770817010326021,-0.9687150697259916,6.57291895092605,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_ipw
+ipw,dr_learner,DR-Learner,0.002,5.921749179745024,5.915071600286791,0.006677579458233218,11.836820780031815,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_ipw
+ipw,policytree,Policy Tree,0.002,-0.8885690446559303,3.1197080651619475,-4.008277109817878,2.231139020506017,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_ipw
+ipw,kmeans,K-Means,0.0025,-7.03878690365376,2.0279085965799015,-9.066695500233662,-5.010878307073858,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_ipw
+ipw,gmm,GMM,0.0025,2.8514211704969137,4.0780029806822125,-1.2265818101852988,6.929424151179126,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_ipw
+ipw,clr,CLR,0.0025,-4.177269228859307,4.290244667699635,-8.467513896558941,0.11297543884032724,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_ipw
+ipw,mst,MST,0.0025,4.299698056338274,4.1238106773486,0.17588737898967377,8.423508733686873,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_ipw
+ipw,causal_forest,Causal Forest,0.0025,-3.440900792938122,2.4212527225096916,-5.8621535154478135,-1.0196480704284303,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_ipw
+ipw,t_learner,T-Learner,0.0025,4.308584926626314,4.4504152241313095,-0.14183029750499543,8.759000150757624,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_ipw
+ipw,s_learner,S-Learner,0.0025,1.969450368876538,4.985068217647764,-3.015617848771226,6.954518586524301,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_ipw
+ipw,x_learner,X-Learner,0.0025,2.6591465286205636,3.8587912401910534,-1.1996447115704898,6.517937768811617,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_ipw
+ipw,dr_learner,DR-Learner,0.0025,5.511570002951715,5.713299629594562,-0.20172962664284722,11.224869632546277,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_ipw
+ipw,policytree,Policy Tree,0.0025,-0.11143070806865095,3.1702893113824366,-3.2817200194510874,3.058858603313786,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_ipw
+ipw,kmeans,K-Means,0.003,-5.929622198140136,4.198448949561437,-10.128071147701572,-1.7311732485786981,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_ipw
+ipw,gmm,GMM,0.003,2.432601154453664,4.045761186955117,-1.6131600325014528,6.478362341408781,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_ipw
+ipw,clr,CLR,0.003,-3.0675722198290276,5.60210129099643,-8.669673510825458,2.5345290711674022,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_ipw
+ipw,mst,MST,0.003,3.9171164379857424,4.259292552797456,-0.3421761148117137,8.176408990783198,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_ipw
+ipw,causal_forest,Causal Forest,0.003,-3.6550752449467963,2.4025924687911333,-6.05766771373793,-1.252482776155663,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_ipw
+ipw,t_learner,T-Learner,0.003,3.5951448019441195,3.9864069641954996,-0.3912621622513801,7.581551766139619,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_ipw
+ipw,s_learner,S-Learner,0.003,3.2617370574071622,5.1992652230547804,-1.9375281656476182,8.461002280461942,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_ipw
+ipw,x_learner,X-Learner,0.003,1.9562623047902639,3.465718173480471,-1.5094558686902073,5.421980478270735,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_ipw
+ipw,dr_learner,DR-Learner,0.003,4.812563581902961,5.169067863908018,-0.3565042820050568,9.98163144581098,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_ipw
+ipw,policytree,Policy Tree,0.003,-0.6325106803403877,2.9317961074654195,-3.5643067878058075,2.2992854271250316,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_ipw
+ipw,kmeans,K-Means,0.0035,-4.563635558138826,4.895966493221589,-9.459602051360417,0.332330935082763,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_ipw
+ipw,gmm,GMM,0.0035,3.0212405129948197,3.761657684741365,-0.7404171717465453,6.782898197736184,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_ipw
+ipw,clr,CLR,0.0035,-3.143993730579757,5.6382296184088965,-8.782223348988653,2.4942358878291393,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_ipw
+ipw,mst,MST,0.0035,6.244336679182885,4.121798286317712,2.122538392865173,10.366134965500596,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_ipw
+ipw,causal_forest,Causal Forest,0.0035,-3.588074547011436,2.483121385194712,-6.071195932206148,-1.104953161816724,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_ipw
+ipw,t_learner,T-Learner,0.0035,3.78468097628047,4.1743835291800755,-0.3897025528996054,7.959064505460546,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_ipw
+ipw,s_learner,S-Learner,0.0035,5.143185578123962,5.245177666345107,-0.10199208822114514,10.388363244469069,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_ipw
+ipw,x_learner,X-Learner,0.0035,2.1734454345576846,3.4700566420481658,-1.2966112074904812,5.64350207660585,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_ipw
+ipw,dr_learner,DR-Learner,0.0035,4.9044614446869454,5.217728596904187,-0.3132671522172412,10.122190041591132,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_ipw
+ipw,policytree,Policy Tree,0.0035,-0.4206555542565853,2.861462881141492,-3.2821184353980772,2.440807326884907,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_ipw
+dm,kmeans,K-Means,0.0,6.604351053431668,2.005628132997273,4.598722920434396,8.60997918642894,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dm
+dm,gmm,GMM,0.0,8.557882927492578,2.2729467222043778,6.284936205288201,10.830829649696955,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dm
+dm,clr,CLR,0.0,7.0674898627035985,2.1750763759165466,4.892413486787052,9.242566238620146,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dm
+dm,mst,MST,0.0,6.474801922257521,1.9632262962145786,4.5115756260429425,8.4380282184721,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dm
+dm,causal_forest,Causal Forest,0.0,0.9630229080619098,1.2041275587473612,-0.2411046506854514,2.167150466809271,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dm
+dm,t_learner,T-Learner,0.0,18.6513962186887,3.7077156876674304,14.943680531021268,22.35911190635613,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dm
+dm,s_learner,S-Learner,0.0,13.441866077914526,2.6521986331374676,10.789667444777058,16.094064711051992,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dm
+dm,x_learner,X-Learner,0.0,15.974426088257873,2.440589294212347,13.533836794045527,18.41501538247022,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dm
+dm,dr_learner,DR-Learner,0.0,21.659599832667087,3.8821150565974185,17.77748477606967,25.541714889264505,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dm
+dm,policytree,Policy Tree,0.0,4.810935580126238,1.4539206474367903,3.357014932689448,6.264856227563029,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dm
+dm,kmeans,K-Means,0.0005,7.18616046008754,1.840606464304951,5.345553995782589,9.02676692439249,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dm
+dm,gmm,GMM,0.0005,7.518494591725734,2.1992280533088664,5.319266538416867,9.7177226450346,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dm
+dm,clr,CLR,0.0005,6.907517445503985,1.757710352591289,5.149807092912696,8.665227798095273,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dm
+dm,mst,MST,0.0005,5.674992114934834,1.9874120394306236,3.68758007550421,7.662404154365458,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dm
+dm,causal_forest,Causal Forest,0.0005,0.8335868466993764,1.1800038738665093,-0.34641702716713285,2.013590720565886,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dm
+dm,t_learner,T-Learner,0.0005,11.398759137526426,3.703884885266965,7.694874252259461,15.102644022793392,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dm
+dm,s_learner,S-Learner,0.0005,8.055108507120538,2.546443777924388,5.50866472919615,10.601552285044926,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dm
+dm,x_learner,X-Learner,0.0005,8.973071512515064,2.0883334043560806,6.884738108158984,11.061404916871144,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dm
+dm,dr_learner,DR-Learner,0.0005,13.99752569330776,3.1844022254836353,10.813123467824123,17.181927918791395,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dm
+dm,policytree,Policy Tree,0.0005,4.253091051524835,1.408964151339965,2.8441269001848695,5.662055202864799,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dm
+dm,kmeans,K-Means,0.001,7.500867955324716,1.8632902079971365,5.63757774732758,9.364158163321852,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dm
+dm,gmm,GMM,0.001,8.566372933383951,2.1298360570405985,6.436536876343352,10.69620899042455,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dm
+dm,clr,CLR,0.001,7.216187793206571,1.7728018021166112,5.44338599108996,8.988989595323183,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dm
+dm,mst,MST,0.001,7.536674609761449,2.0558468252389885,5.480827784522461,9.592521435000437,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dm
+dm,causal_forest,Causal Forest,0.001,0.8336886837212956,1.1506543205840476,-0.31696563686275203,1.9843430043053432,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dm
+dm,t_learner,T-Learner,0.001,11.080771037513559,3.6593462570403283,7.421424780473231,14.740117294553887,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dm
+dm,s_learner,S-Learner,0.001,8.657003707458767,2.4756081945723856,6.181395512886381,11.132611902031153,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dm
+dm,x_learner,X-Learner,0.001,8.958665209477305,2.1289638676908718,6.829701341786433,11.087629077168177,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dm
+dm,dr_learner,DR-Learner,0.001,13.754179740370093,3.3095185801106113,10.444661160259482,17.063698320480704,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dm
+dm,policytree,Policy Tree,0.001,4.129549107586373,1.3644221514608508,2.765126956125522,5.493971259047223,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dm
+dm,kmeans,K-Means,0.0015,7.220810661885381,1.8891990055979708,5.331611656287411,9.110009667483352,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dm
+dm,gmm,GMM,0.0015,9.255557820330944,2.119369218092059,7.136188602238885,11.374927038423003,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dm
+dm,clr,CLR,0.0015,6.936282724895192,1.7969335068050565,5.1393492180901355,8.733216231700249,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dm
+dm,mst,MST,0.0015,7.594621951683925,2.2391595073548127,5.3554624443291114,9.833781459038738,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dm
+dm,causal_forest,Causal Forest,0.0015,0.899085065444956,1.2594014346219935,-0.36031636917703747,2.1584865000669495,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dm
+dm,t_learner,T-Learner,0.0015,10.903686112323077,3.5078185457835733,7.395867566539504,14.41150465810665,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dm
+dm,s_learner,S-Learner,0.0015,9.613679015657443,2.4752886244610335,7.13839039119641,12.088967640118476,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dm
+dm,x_learner,X-Learner,0.0015,9.02930021175557,2.2144630056177435,6.8148372061378275,11.243763217373314,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dm
+dm,dr_learner,DR-Learner,0.0015,13.609918670688023,3.258153255067702,10.35176541562032,16.868071925755725,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dm
+dm,policytree,Policy Tree,0.0015,4.129529601456325,1.2745609787268515,2.8549686227294737,5.404090580183177,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dm
+dm,kmeans,K-Means,0.002,7.196977058157262,2.1462021505167597,5.050774907640502,9.343179208674021,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dm
+dm,gmm,GMM,0.002,9.164925504727496,2.1946780814582825,6.970247423269213,11.359603586185777,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dm
+dm,clr,CLR,0.002,7.425799431421192,2.552857420663676,4.872942010757516,9.978656852084868,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dm
+dm,mst,MST,0.002,7.965796880755277,2.4697001556888143,5.4960967250664625,10.43549703644409,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dm
+dm,causal_forest,Causal Forest,0.002,0.8180928228622727,1.3011545651027685,-0.4830617422404958,2.119247387965041,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dm
+dm,t_learner,T-Learner,0.002,10.723434083461417,3.5252553701458837,7.198178713315533,14.2486894536073,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dm
+dm,s_learner,S-Learner,0.002,10.334127441157147,2.5147233464886147,7.819404094668532,12.848850787645762,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dm
+dm,x_learner,X-Learner,0.002,9.000369019157965,2.3074553782929765,6.6929136408649885,11.307824397450942,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dm
+dm,dr_learner,DR-Learner,0.002,13.366907301567492,3.229333073967756,10.137574227599735,16.59624037553525,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dm
+dm,policytree,Policy Tree,0.002,4.038304825243031,1.2507608322057064,2.7875439930373247,5.289065657448738,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dm
+dm,kmeans,K-Means,0.0025,7.142562851856319,2.2091040648202784,4.93345878703604,9.351666916676598,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dm
+dm,gmm,GMM,0.0025,8.90172178720209,2.1030505237483172,6.798671263453773,11.004772310950408,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dm
+dm,clr,CLR,0.0025,7.836726956219113,2.857297583740619,4.979429372478494,10.694024539959733,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dm
+dm,mst,MST,0.0025,8.38343807733056,2.508132624983609,5.87530545234695,10.89157070231417,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dm
+dm,causal_forest,Causal Forest,0.0025,1.0114269767117778,1.3096529260342207,-0.29822594932244284,2.3210799027459985,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dm
+dm,t_learner,T-Learner,0.0025,10.835174407611346,3.5471237869815364,7.288050620629809,14.382298194592883,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dm
+dm,s_learner,S-Learner,0.0025,11.37911472822885,2.5918452822354796,8.78726944599337,13.970960010464328,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dm
+dm,x_learner,X-Learner,0.0025,9.297710555577735,2.350289323999771,6.947421231577964,11.647999879577506,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dm
+dm,dr_learner,DR-Learner,0.0025,13.413383013507872,3.136648388755352,10.27673462475252,16.550031402263222,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dm
+dm,policytree,Policy Tree,0.0025,3.9399215249548085,1.0519143487898535,2.888007176164955,4.991835873744662,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dm
+dm,kmeans,K-Means,0.003,7.408275469715748,2.3795431452192024,5.028732324496545,9.78781861493495,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dm
+dm,gmm,GMM,0.003,9.25688695338851,2.1688117055047456,7.088075247883763,11.425698658893255,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dm
+dm,clr,CLR,0.003,8.104191859530522,2.9857617631604296,5.118430096370092,11.08995362269095,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dm
+dm,mst,MST,0.003,8.250332351964458,2.4361111800076864,5.814221171956771,10.686443531972145,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dm
+dm,causal_forest,Causal Forest,0.003,1.234064889992107,1.2170979063319538,0.016966983660153145,2.451162796324061,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dm
+dm,t_learner,T-Learner,0.003,11.049697554678556,3.6034934118855926,7.446204142792963,14.653190966564148,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dm
+dm,s_learner,S-Learner,0.003,12.292615649899636,2.5831041878818177,9.709511462017819,14.875719837781453,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dm
+dm,x_learner,X-Learner,0.003,9.609577686938692,2.219143902016995,7.390433784921697,11.828721588955688,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dm
+dm,dr_learner,DR-Learner,0.003,13.622284359820013,3.219398763537063,10.40288559628295,16.841683123357075,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dm
+dm,policytree,Policy Tree,0.003,3.942679626940149,1.123168997686437,2.8195106292537124,5.065848624626586,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dm
+dm,kmeans,K-Means,0.0035,7.683118272770418,2.8355851437074104,4.847533129063008,10.518703416477829,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dm
+dm,gmm,GMM,0.0035,9.099434787034316,2.00530638298601,7.0941284040483055,11.104741170020326,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dm
+dm,clr,CLR,0.0035,7.937015820146242,3.0371565771252897,4.899859243020952,10.974172397271532,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dm
+dm,mst,MST,0.0035,11.08046330694193,2.7940112702695106,8.286452036672419,13.87447457721144,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dm
+dm,causal_forest,Causal Forest,0.0035,1.29734239625579,1.384373049177168,-0.08703065292137802,2.6817154454329577,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dm
+dm,t_learner,T-Learner,0.0035,11.074843434045247,3.6618655906576754,7.412977843387572,14.736709024702922,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dm
+dm,s_learner,S-Learner,0.0035,13.321102872709698,2.750521605349731,10.570581267359968,16.07162447805943,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dm
+dm,x_learner,X-Learner,0.0035,9.899176826810697,2.4675516663110004,7.431625160499697,12.366728493121698,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dm
+dm,dr_learner,DR-Learner,0.0035,13.580170347106751,3.241674764032004,10.338495583074748,16.821845111138757,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dm
+dm,policytree,Policy Tree,0.0035,4.357405446948395,1.3130650775224353,3.044340369425959,5.67047052447083,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_dm
+stz,kmeans,K-Means,0.0,8.396154026246183,16.30054377826679,-7.904389752020606,24.696697804512972,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_stz
+stz,gmm,GMM,0.0,31.26068095689513,26.626619865241828,4.634061091653301,57.88730082213696,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_stz
+stz,clr,CLR,0.0,10.628299346284102,18.636567971860767,-8.008268625576665,29.26486731814487,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_stz
+stz,mst,MST,0.0,12.782067507177356,19.00371295915375,-6.221645451976393,31.785780466331104,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_stz
+stz,causal_forest,Causal Forest,0.0,26.089075523521032,19.160123435822705,6.9289520876983275,45.24919895934374,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_stz
+stz,t_learner,T-Learner,0.0,26.958821166732733,28.525906202990445,-1.567085036257712,55.484727369723174,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_stz
+stz,s_learner,S-Learner,0.0,12.387329105650828,22.364297844394358,-9.97696873874353,34.751626950045186,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_stz
+stz,x_learner,X-Learner,0.0,31.058253144304352,22.431216907856975,8.627036236447378,53.48947005216132,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_stz
+stz,dr_learner,DR-Learner,0.0,42.01727064773737,30.488566625826806,11.528704021910563,72.50583727356417,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_stz
+stz,policytree,Policy Tree,0.0,24.401334911201925,17.75674000762948,6.644594903572443,42.1580749188314,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_stz
+stz,kmeans,K-Means,0.0005,1.335923084965466,12.253722296675273,-10.917799211709806,13.58964538164074,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_stz
+stz,gmm,GMM,0.0005,48.536833333499864,15.654589192184238,32.882244141315624,64.1914225256841,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_stz
+stz,clr,CLR,0.0005,5.495368013969333,13.038806763941226,-7.543438749971893,18.534174777910557,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_stz
+stz,mst,MST,0.0005,26.908097939365117,14.631005645097705,12.277092294267412,41.53910358446282,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_stz
+stz,causal_forest,Causal Forest,0.0005,23.104135906727638,6.878956634985669,16.22517927174197,29.983092541713308,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_stz
+stz,t_learner,T-Learner,0.0005,146.18234466313746,27.055071423655395,119.12727323948207,173.23741608679285,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_stz
+stz,s_learner,S-Learner,0.0005,110.84868193076585,21.98784976896225,88.8608321618036,132.83653169972808,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_stz
+stz,x_learner,X-Learner,0.0005,157.8138848506504,20.697256263793545,137.11662858685685,178.51114111444394,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_stz
+stz,dr_learner,DR-Learner,0.0005,182.45415526366972,42.48849610398696,139.96565915968276,224.94265136765668,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_stz
+stz,policytree,Policy Tree,0.0005,35.94780210673617,10.2051557170918,25.74264638964437,46.15295782382797,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_stz
+stz,kmeans,K-Means,0.001,4.789667894048145,9.215486515237332,-4.425818621189187,14.005154409285478,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_stz
+stz,gmm,GMM,0.001,29.741656037469262,13.681395821742305,16.060260215726956,43.42305185921157,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_stz
+stz,clr,CLR,0.001,9.51813341259274,10.820373118362712,-1.3022397057699724,20.33850653095545,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_stz
+stz,mst,MST,0.001,30.971834857792498,12.331787304955652,18.640047552836847,43.30362216274815,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_stz
+stz,causal_forest,Causal Forest,0.001,26.256881608791684,5.801033023480468,20.455848585311216,32.05791463227215,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_stz
+stz,t_learner,T-Learner,0.001,173.96653821815565,32.82447509059689,141.14206312755874,206.79101330875255,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_stz
+stz,s_learner,S-Learner,0.001,122.79730331980039,33.225377681289714,89.57192563851068,156.02268100109012,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_stz
+stz,x_learner,X-Learner,0.001,180.28481494157685,24.968535628037678,155.31627931353918,205.25335056961453,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_stz
+stz,dr_learner,DR-Learner,0.001,215.35719531206485,49.637843181271776,165.71935213079308,264.9950384933366,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_stz
+stz,policytree,Policy Tree,0.001,21.33642436484898,6.12510915364107,15.21131521120791,27.46153351849005,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_stz
+stz,kmeans,K-Means,0.0015,6.742961687271116,8.676456713849834,-1.9334950265787185,15.41941840112095,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_stz
+stz,gmm,GMM,0.0015,20.607068717920004,11.763989238145033,8.843079479774971,32.37105795606504,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_stz
+stz,clr,CLR,0.0015,11.55022443912678,10.426925305438028,1.123299133688752,21.977149744564805,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_stz
+stz,mst,MST,0.0015,34.51685090769438,18.804422635191436,15.712428272502947,53.32127354288582,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_stz
+stz,causal_forest,Causal Forest,0.0015,23.32647893751339,5.808256765924109,17.51822217158928,29.1347357034375,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_stz
+stz,t_learner,T-Learner,0.0015,177.39579237154828,33.65091420854582,143.74487816300245,211.0467065800941,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_stz
+stz,s_learner,S-Learner,0.0015,115.5099526029055,32.46128502747837,83.04866757542713,147.97123763038388,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_stz
+stz,x_learner,X-Learner,0.0015,179.54198774805835,24.813806922083547,154.7281808259748,204.3557946701419,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_stz
+stz,dr_learner,DR-Learner,0.0015,217.73906368287138,48.19794524984653,169.54111843302485,265.9370089327179,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_stz
+stz,policytree,Policy Tree,0.0015,13.794821204374426,4.809191909371653,8.985629295002774,18.604013113746078,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_stz
+stz,kmeans,K-Means,0.002,14.560393669099717,15.38884680778131,-0.8284531386815921,29.949240476881027,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_stz
+stz,gmm,GMM,0.002,17.06981920374709,10.709033970167708,6.360785233579383,27.778853173914797,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_stz
+stz,clr,CLR,0.002,29.391473462219565,27.87177972231982,1.519693739899747,57.26325318453938,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_stz
+stz,mst,MST,0.002,29.870160587280473,16.72907741600132,13.141083171279153,46.5992380032818,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_stz
+stz,causal_forest,Causal Forest,0.002,20.938117813134323,5.799503649947119,15.138614163187203,26.737621463081442,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_stz
+stz,t_learner,T-Learner,0.002,177.86897083018223,34.718410369223655,143.1505604609586,212.58738119940588,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_stz
+stz,s_learner,S-Learner,0.002,100.22012102480288,29.653746525657937,70.56637449914494,129.87386755046083,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_stz
+stz,x_learner,X-Learner,0.002,177.0764156999083,25.186191898059576,151.89022380184872,202.26260759796787,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_stz
+stz,dr_learner,DR-Learner,0.002,221.925220695783,50.778050030496885,171.14717066528613,272.70327072627987,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_stz
+stz,policytree,Policy Tree,0.002,13.744822343425817,4.533358546160571,9.211463797265246,18.278180889586388,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_stz
+stz,kmeans,K-Means,0.0025,16.262328297483144,15.738844717675907,0.5234835798072375,32.001173015159054,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_stz
+stz,gmm,GMM,0.0025,17.653621011508932,10.462127347732789,7.191493663776143,28.11574835924172,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_stz
+stz,clr,CLR,0.0025,41.446868082184075,36.25927158048099,5.187596501703084,77.70613966266507,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_stz
+stz,mst,MST,0.0025,31.945809364384544,18.036804228843792,13.909005135540752,49.982613593228336,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_stz
+stz,causal_forest,Causal Forest,0.0025,19.314557341727927,5.411281158263203,13.903276183464722,24.72583849999113,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_stz
+stz,t_learner,T-Learner,0.0025,176.4663959179738,33.7640707121788,142.702325205795,210.23046663015262,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_stz
+stz,s_learner,S-Learner,0.0025,94.6350609491149,29.058570843994023,65.57649010512088,123.69363179310892,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_stz
+stz,x_learner,X-Learner,0.0025,173.7788431997518,25.062488452781135,148.71635474697067,198.84133165253294,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_stz
+stz,dr_learner,DR-Learner,0.0025,222.423031154175,50.947240067123914,171.47579108705108,273.37027122129894,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_stz
+stz,policytree,Policy Tree,0.0025,14.37294674217806,4.4987224497173965,9.874224292460664,18.871669191895457,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_stz
+stz,kmeans,K-Means,0.003,27.671175911142267,28.489855701842913,-0.8186797907006458,56.161031612985184,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_stz
+stz,gmm,GMM,0.003,16.09050613328654,10.09101644467487,5.9994896886116695,26.18152257796141,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_stz
+stz,clr,CLR,0.003,52.885105788229346,42.80142322208302,10.08368256614633,95.68652901031237,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_stz
+stz,mst,MST,0.003,31.74025937799415,18.396218150807982,13.344041227186167,50.13647752880213,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_stz
+stz,causal_forest,Causal Forest,0.003,16.399871609307134,5.330411879209831,11.069459730097304,21.730283488516964,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_stz
+stz,t_learner,T-Learner,0.003,171.9606067584956,33.607180781774545,138.35342597672104,205.56778754027016,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_stz
+stz,s_learner,S-Learner,0.003,92.04335754993299,29.669849801566652,62.373507748366336,121.71320735149965,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_stz
+stz,x_learner,X-Learner,0.003,165.4054992130425,23.659351604617154,141.74614760842536,189.06485081765965,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_stz
+stz,dr_learner,DR-Learner,0.003,216.34589581926295,49.069923077604024,167.27597274165893,265.415818896867,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_stz
+stz,policytree,Policy Tree,0.003,12.26786560411423,4.289528059279726,7.9783375448345035,16.557393663393956,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_stz
+stz,kmeans,K-Means,0.0035,37.987273488735866,35.47046177902502,2.5168117097108436,73.45773526776088,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_stz
+stz,gmm,GMM,0.0035,14.024691013265778,9.332160166431475,4.692530846834304,23.35685117969725,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_stz
+stz,clr,CLR,0.0035,51.952083321073296,42.640193783754825,9.311889537318471,94.59227710482813,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_stz
+stz,mst,MST,0.0035,33.52902193487741,18.62054436889837,14.908477565979044,52.149566303775785,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_stz
+stz,causal_forest,Causal Forest,0.0035,13.998709870249714,5.32315455236024,8.675555317889474,19.321864422609956,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_stz
+stz,t_learner,T-Learner,0.0035,169.0189926263515,34.00527099970797,135.01372162664353,203.02426362605945,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_stz
+stz,s_learner,S-Learner,0.0035,87.34679001345756,27.98803647207875,59.35875354137882,115.33482648553631,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_stz
+stz,x_learner,X-Learner,0.0035,157.14341720703302,23.0523374877794,134.09107971925363,180.19575469481242,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_stz
+stz,dr_learner,DR-Learner,0.0035,212.6547001231701,49.232448886110866,163.42225123705924,261.88714900928096,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_stz
+stz,policytree,Policy Tree,0.0035,11.018861731524645,4.5517950948819745,6.46706663664267,15.57065682640662,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_stz
+stz_vr,kmeans,K-Means,0.0,4.744606911492167,19.452351027036354,-14.707744115544187,24.19695793852852,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_stz_vr
+stz_vr,gmm,GMM,0.0,20.290971519994375,22.51223706560044,-2.221265545606066,42.80320858559482,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_stz_vr
+stz_vr,clr,CLR,0.0,4.390034548199642,19.55466627026179,-15.164631722062149,23.944700818461435,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_stz_vr
+stz_vr,mst,MST,0.0,9.470881121084657,10.827730434288707,-1.3568493132040498,20.298611555373363,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_stz_vr
+stz_vr,causal_forest,Causal Forest,0.0,6.092036083876149,12.827379233969925,-6.735343150093776,18.919415317846074,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_stz_vr
+stz_vr,t_learner,T-Learner,0.0,23.58766748114498,21.171444998623766,2.4162224825212135,44.759112479768746,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_stz_vr
+stz_vr,s_learner,S-Learner,0.0,3.0775270674340565,14.686779905142236,-11.60925283770818,17.764306972576293,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_stz_vr
+stz_vr,x_learner,X-Learner,0.0,17.93518677943207,15.541038551304254,2.394148228127815,33.47622533073633,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_stz_vr
+stz_vr,dr_learner,DR-Learner,0.0,29.835314831908182,23.25254311734001,6.582771714568171,53.08785794924819,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_stz_vr
+stz_vr,policytree,Policy Tree,0.0,22.586514822327867,9.811290722413332,12.775224099914535,32.3978055447412,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_stz_vr
+stz_vr,kmeans,K-Means,0.0005,-2.682167510438515,1.7354815698756818,-4.417649080314197,-0.9466859405628334,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_stz_vr
+stz_vr,gmm,GMM,0.0005,22.67801205857411,10.287606895180046,12.390405163394066,32.96561895375416,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_stz_vr
+stz_vr,clr,CLR,0.0005,-2.4714239712045636,1.848123619127242,-4.319547590331806,-0.6233003520773215,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_stz_vr
+stz_vr,mst,MST,0.0005,11.675798421951622,6.362012748080506,5.313785673871116,18.03781117003213,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_stz_vr
+stz_vr,causal_forest,Causal Forest,0.0005,12.641802777500994,5.132723365313643,7.509079412187351,17.774526142814636,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_stz_vr
+stz_vr,t_learner,T-Learner,0.0005,82.72533422053024,24.676909777680763,58.04842444284948,107.402243998211,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_stz_vr
+stz_vr,s_learner,S-Learner,0.0005,35.40468189839125,12.884720419719356,22.519961478671895,48.28940231811061,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_stz_vr
+stz_vr,x_learner,X-Learner,0.0005,83.46157051491038,14.119961298568272,69.3416092163421,97.58153181347865,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_stz_vr
+stz_vr,dr_learner,DR-Learner,0.0005,113.37581675487696,39.00551016391346,74.37030659096351,152.38132691879042,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_stz_vr
+stz_vr,policytree,Policy Tree,0.0005,19.79294466517383,5.350340830138513,14.442603835035317,25.143285495312345,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_stz_vr
+stz_vr,kmeans,K-Means,0.001,-1.2731614831524214,1.5078368383769818,-2.7809983215294034,0.2346753552245604,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_stz_vr
+stz_vr,gmm,GMM,0.001,15.336503129956974,8.666059042823626,6.6704440871333475,24.0025621727806,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_stz_vr
+stz_vr,clr,CLR,0.001,-1.1405052079720002,1.5911639427296995,-2.7316691507016997,0.45065873475769935,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_stz_vr
+stz_vr,mst,MST,0.001,14.626647883643113,9.146855136126485,5.479792747516628,23.7735030197696,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_stz_vr
+stz_vr,causal_forest,Causal Forest,0.001,12.870998873762268,5.052762001953867,7.818236871808401,17.923760875716134,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_stz_vr
+stz_vr,t_learner,T-Learner,0.001,85.48158176262363,26.042561342370593,59.439020420253044,111.52414310499422,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_stz_vr
+stz_vr,s_learner,S-Learner,0.001,43.413123397986766,20.649971180028963,22.763152217957803,64.06309457801572,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_stz_vr
+stz_vr,x_learner,X-Learner,0.001,87.98039789065471,15.929427973294766,72.05096991735995,103.90982586394948,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_stz_vr
+stz_vr,dr_learner,DR-Learner,0.001,125.28101406706301,44.0778708722431,81.20314319481992,169.3588849393061,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_stz_vr
+stz_vr,policytree,Policy Tree,0.001,12.011341362079225,3.0632498611442287,8.948091500934996,15.074591223223454,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_stz_vr
+stz_vr,kmeans,K-Means,0.0015,-0.9781394655135014,1.1034451543630686,-2.08158461987657,0.12530568884956717,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_stz_vr
+stz_vr,gmm,GMM,0.0015,11.265954345224461,6.80531968900981,4.460634656214651,18.07127403423427,49,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_stz_vr
+stz_vr,clr,CLR,0.0015,-0.9129065433857939,1.1863049682033966,-2.0992115115891905,0.2733984248176027,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_stz_vr
+stz_vr,mst,MST,0.0015,13.161582701698478,6.832653707260443,6.328928994438035,19.99423640895892,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_stz_vr
+stz_vr,causal_forest,Causal Forest,0.0015,12.863257558754025,5.090757966616766,7.772499592137259,17.954015525370792,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_stz_vr
+stz_vr,t_learner,T-Learner,0.0015,87.6543432753237,26.0683596763198,61.585983599003896,113.7227029516435,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_stz_vr
+stz_vr,s_learner,S-Learner,0.0015,43.97173691954514,18.894034271200244,25.077702648344893,62.86577119074538,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_stz_vr
+stz_vr,x_learner,X-Learner,0.0015,88.15755403142924,16.09957209942991,72.05798193199934,104.25712613085915,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_stz_vr
+stz_vr,dr_learner,DR-Learner,0.0015,124.06427670531201,41.62972866839859,82.43454803691341,165.6940053737106,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_stz_vr
+stz_vr,policytree,Policy Tree,0.0015,9.474905209281708,2.331451689331797,7.143453519949912,11.806356898613505,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_stz_vr
+stz_vr,kmeans,K-Means,0.002,-1.0346528255602216,0.9297415553684961,-1.9643943809287179,-0.10491127019172553,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_stz_vr
+stz_vr,gmm,GMM,0.002,9.117073070932515,5.830143247023678,3.286929823908837,14.947216317956192,49,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_stz_vr
+stz_vr,clr,CLR,0.002,-0.11660374592433971,2.1234786250653968,-2.2400823709897364,2.006874879141057,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_stz_vr
+stz_vr,mst,MST,0.002,12.734379753990181,7.029263057971288,5.7051166960188935,19.763642811961468,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_stz_vr
+stz_vr,causal_forest,Causal Forest,0.002,12.718187312657381,5.118039636035374,7.600147676622007,17.836226948692754,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_stz_vr
+stz_vr,t_learner,T-Learner,0.002,86.26448297451009,26.057729567466335,60.20675340704375,112.32221254197643,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_stz_vr
+stz_vr,s_learner,S-Learner,0.002,40.07378806007649,15.61376088669826,24.46002717337823,55.68754894677475,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_stz_vr
+stz_vr,x_learner,X-Learner,0.002,85.69906872940665,16.334118358677138,69.3649503707295,102.03318708808379,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_stz_vr
+stz_vr,dr_learner,DR-Learner,0.002,127.08686793855233,43.2720309480354,83.81483699051694,170.35889888658772,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_stz_vr
+stz_vr,policytree,Policy Tree,0.002,9.52234383462062,2.066441858226467,7.455901976394154,11.588785692847088,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_stz_vr
+stz_vr,kmeans,K-Means,0.0025,-1.0140065905402746,0.824777071831495,-1.8387836623717697,-0.1892295187087797,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_stz_vr
+stz_vr,gmm,GMM,0.0025,9.65974534041136,5.611024813257931,4.04872052715343,15.270770153669291,49,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_stz_vr
+stz_vr,clr,CLR,0.0025,1.0414369925352915,3.0319114870581956,-1.990474494522904,4.073348479593487,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_stz_vr
+stz_vr,mst,MST,0.0025,11.789246752491774,6.38388234681098,5.405364405680794,18.173129099302756,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_stz_vr
+stz_vr,causal_forest,Causal Forest,0.0025,11.678436312406413,4.64980322687623,7.028633085530183,16.32823953928264,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_stz_vr
+stz_vr,t_learner,T-Learner,0.0025,84.91922487893083,25.6058019553376,59.31342292359324,110.52502683426843,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_stz_vr
+stz_vr,s_learner,S-Learner,0.0025,39.35100153612953,14.781259375873086,24.569742160256446,54.132260912002614,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_stz_vr
+stz_vr,x_learner,X-Learner,0.0025,82.54733658600507,15.678548158092756,66.86878842791232,98.22588474409783,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_stz_vr
+stz_vr,dr_learner,DR-Learner,0.0025,128.11125566604048,43.77622891714479,84.33502674889569,171.88748458318526,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_stz_vr
+stz_vr,policytree,Policy Tree,0.0025,10.177226482728496,2.010827470704818,8.166399012023678,12.188053953433315,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_stz_vr
+stz_vr,kmeans,K-Means,0.003,0.5044374070723419,3.421107548842706,-2.916670141770364,3.925544955915048,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_stz_vr
+stz_vr,gmm,GMM,0.003,9.367603843611203,5.863363090320691,3.504240753290512,15.230966933931894,49,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_stz_vr
+stz_vr,clr,CLR,0.003,2.5748427427392757,4.447029110214329,-1.8721863674750532,7.021871852953605,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_stz_vr
+stz_vr,mst,MST,0.003,10.864420740979385,5.857167146729316,5.007253594250069,16.7215878877087,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_stz_vr
+stz_vr,causal_forest,Causal Forest,0.003,10.759846439002825,4.367230880047085,6.39261555895574,15.12707731904991,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_stz_vr
+stz_vr,t_learner,T-Learner,0.003,83.73942888021041,25.476277783503917,58.263151096706494,109.21570666371433,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_stz_vr
+stz_vr,s_learner,S-Learner,0.003,39.52880114516095,14.788175119634882,24.740626025526065,54.31697626479583,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_stz_vr
+stz_vr,x_learner,X-Learner,0.003,77.60367727224406,14.191622688368982,63.412054583875076,91.79529996061304,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_stz_vr
+stz_vr,dr_learner,DR-Learner,0.003,122.54183312780246,42.18295163229843,80.35888149550402,164.7247847601009,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_stz_vr
+stz_vr,policytree,Policy Tree,0.003,8.826924996489439,2.102637763764771,6.724287232724667,10.92956276025421,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_stz_vr
+stz_vr,kmeans,K-Means,0.0035,1.475410549334565,3.8655112852601703,-2.3901007359256052,5.340921834594735,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_stz_vr
+stz_vr,gmm,GMM,0.0035,8.666639876375978,5.654740346954751,3.0118995294212274,14.321380223330728,49,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_stz_vr
+stz_vr,clr,CLR,0.0035,2.7117265309128133,4.476606467968732,-1.7648799370559183,7.188332998881545,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_stz_vr
+stz_vr,mst,MST,0.0035,11.548224778765926,6.1529483618161835,5.395276416949742,17.70117314058211,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_stz_vr
+stz_vr,causal_forest,Causal Forest,0.0035,10.540398148474653,4.358192091579206,6.1822060568954464,14.89859024005386,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_stz_vr
+stz_vr,t_learner,T-Learner,0.0035,82.53794595029589,25.4278794729009,57.110066477394994,107.96582542319679,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_stz_vr
+stz_vr,s_learner,S-Learner,0.0035,38.694861662077145,13.471419368007682,25.223442294069464,52.166281030084825,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_stz_vr
+stz_vr,x_learner,X-Learner,0.0035,74.71631079012518,13.983505014276941,60.732805775848234,88.69981580440212,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_stz_vr
+stz_vr,dr_learner,DR-Learner,0.0035,121.27504171321434,42.11472181985667,79.16031989335767,163.389763533071,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_stz_vr
+stz_vr,policytree,Policy Tree,0.0035,8.224997444596196,2.084356745460421,6.140640699135775,10.309354190056617,50,treatment_cost,0.4,criteo,Criteo – Conversion,treatment_cost_criteo_conversion_stz_vr
