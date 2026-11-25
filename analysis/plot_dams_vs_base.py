@@ -331,7 +331,7 @@ def plot_das_improvement_stacked(
         runs, pairs, eval_method
     )
     x = np.arange(len(pairs), dtype=float)
-    width = 0.62
+    width = 0.84
 
     configure_plot_style()
     fig, ax = plt.subplots(figsize=(4.6, 4.0))
@@ -366,7 +366,7 @@ def plot_das_improvement_stacked(
         ax.set_xlim(x[0] - pad, x[-1] + pad)
     ax.set_ylabel("DAS improvement ratio (%)", fontweight="bold", labelpad=8)
     title = _title_with_eval(
-        "How Much of the DAS Advantage Is Closed by DAMS?",
+        "How Much of the DAS Advantage Can DAMS Alone Recover?",
         eval_method,
     )
     ax.set_title(title, fontweight="bold", fontsize=12.0, pad=22)
@@ -395,15 +395,14 @@ def plot_das_improvement_stacked(
         ax.text(
             xi,
             c / 2.0,
-            f"{format_pct(pct)}% closed\n"
+            f"{format_pct(pct)}% recovered\n"
             f"[{format_pct(pct_lo)}, {format_pct(pct_hi)}]%",
             ha="center",
             va="center",
-            fontsize=9.8,
+            fontsize=10.5,
             color="#1a1a1a",
             fontweight="bold",
             linespacing=1.05,
-            bbox=dict(facecolor="white", edgecolor="none", alpha=0.75, pad=1.3),
         )
 
     legend_handles = [
@@ -411,12 +410,12 @@ def plot_das_improvement_stacked(
             facecolor=_LEGEND_GRAY,
             edgecolor="white",
             hatch="///",
-            label="Gap closed by DAMS",
+            label="Recovered by DAMS",
         ),
         Patch(
             facecolor=_LEGEND_GRAY,
             edgecolor="white",
-            label="Remaining gap",
+            label="Remaining advantage",
         ),
     ]
     ax.legend(
