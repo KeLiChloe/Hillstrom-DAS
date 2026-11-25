@@ -1,16 +1,7 @@
 {
   "ALGO_LIST": [
     "dast",
-    "causal_forest",
-    "mst",
-    "clr",
-    "kmeans",
-    "gmm",
-    "t_learner",
-    "s_learner",
-    "x_learner",
-    "dr_learner",
-    "policytree"
+    "causal_forest"
   ],
   "M_candidates": [
     2,
@@ -37,16 +28,16 @@
   "mu_hparams_json": "/home/5880.li/Hillstrom-DAS/hparams/criteo/conversion.json",
   "mu_model_type": "lightgbm_reg",
   "n_folds_dams": 5,
-  "out_path": "exp_nov/criteo/conversion/lightgbm_reg/treatment_cost_with_fixed_0.05_sample_frac_0.40_pilot_frac/treatment_cost_0.pkl",
+  "out_path": "exp_nov/criteo/conversion/lightgbm_reg/treatment_cost_with_fixed_0.05_sample_frac_0.40_pilot_frac/treatment_cost_0p0015.pkl",
   "pilot_frac": 0.4,
   "reuse_seeds": null,
   "reuse_seeds_from": null,
   "sample_frac": 0.05,
   "seed_sequence": 1088,
   "seeds": [],
-  "stz_path": "exp_nov/criteo/conversion/lightgbm_reg/treatment_cost_with_fixed_0.05_sample_frac_0.40_pilot_frac/treatment_cost_0_stz.pkl",
+  "stz_path": "exp_nov/criteo/conversion/lightgbm_reg/treatment_cost_with_fixed_0.05_sample_frac_0.40_pilot_frac/treatment_cost_0p0015_stz.pkl",
   "target_col": "conversion",
   "train_frac": 0.7,
   "treatment_action_order": null,
-  "treatment_cost": 0.0
+  "treatment_cost": 0.0015
 }
