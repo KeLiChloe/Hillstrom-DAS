@@ -1,7 +1,16 @@
 {
   "ALGO_LIST": [
     "dast",
-    "causal_forest"
+    "causal_forest",
+    "mst",
+    "clr",
+    "kmeans",
+    "gmm",
+    "t_learner",
+    "s_learner",
+    "x_learner",
+    "dr_learner",
+    "policytree"
   ],
   "M_candidates": [
     2,
