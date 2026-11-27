@@ -22,7 +22,7 @@
     10
   ],
   "N_sim": 50,
-  "attempts_used": 32,
+  "attempts_used": 47,
   "criteo_source": "sklift",
   "dataset": "criteo",
   "eval_methods": [
@@ -73,7 +73,22 @@
     208165,
     384699,
     400779,
-    192770
+    192770,
+    458768,
+    496517,
+    516897,
+    543240,
+    933700,
+    538771,
+    96879,
+    765180,
+    157045,
+    944293,
+    869762,
+    880284,
+    297243,
+    297368,
+    805178
   ],
   "stz_path": "exp_nov_2/criteo/conversion/lightgbm_reg/treatment_cost_with_fixed_0.05_sample_frac_0.40_pilot_frac/treatment_cost_0p0030_stz.pkl",
   "target_col": "conversion",
