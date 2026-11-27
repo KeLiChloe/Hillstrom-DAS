@@ -1,0 +1,56 @@
+{
+  "ALGO_LIST": [
+    "mst",
+    "dast",
+    "causal_forest",
+    "clr",
+    "kmeans",
+    "gmm",
+    "t_learner",
+    "s_learner",
+    "x_learner",
+    "dr_learner",
+    "policytree"
+  ],
+  "M_candidates": [
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10
+  ],
+  "N_sim": 50,
+  "attempts_used": 0,
+  "dataset": "hillstrom",
+  "eval_methods": [
+    "dr",
+    "dual_dr",
+    "ipw",
+    "dm"
+  ],
+  "min_leaf_size": 20,
+  "mu_crossfit_folds": 10,
+  "mu_hparams_json": "/home/5880.li/Hillstrom-DAS/hparams/hillstrom/conversion.json",
+  "mu_model_type": "lightgbm_reg",
+  "n_folds_dams": 5,
+  "out_path": "exp_nov_crossfit/hillstrom/conversion/lightgbm_reg/sample_frac_with_fixed_0.40_pilot_frac/sample_frac_050.pkl",
+  "pilot_frac": 0.4,
+  "reuse_seeds": null,
+  "reuse_seeds_from": null,
+  "sample_frac": 0.5,
+  "seed_sequence": 1088,
+  "seeds": [],
+  "stz_path": "exp_nov_crossfit/hillstrom/conversion/lightgbm_reg/sample_frac_with_fixed_0.40_pilot_frac/sample_frac_050_stz.pkl",
+  "target_col": "conversion",
+  "train_frac": 0.7,
+  "treatment_action_order": [
+    "No E-Mail",
+    "Mens E-Mail",
+    "Womens E-Mail"
+  ],
+  "treatment_cost": 0.0
+}
