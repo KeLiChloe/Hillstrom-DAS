@@ -24,7 +24,7 @@
     10
   ],
   "N_sim": 50,
-  "attempts_used": 28,
+  "attempts_used": 16,
   "dataset": "hillstrom",
   "eval_methods": [
     "dr",
@@ -37,11 +37,11 @@
   "mu_hparams_json": "/home/5880.li/Hillstrom-DAS/hparams/hillstrom/conversion.json",
   "mu_model_type": "lightgbm_reg",
   "n_folds_dams": 5,
-  "out_path": "exp_nov_crossfit/hillstrom/conversion/lightgbm_reg/sample_frac_with_fixed_0.40_pilot_frac/sample_frac_070.pkl",
+  "out_path": "exp_nov_crossfit/hillstrom/conversion/lightgbm_reg/sample_frac_with_fixed_0.40_pilot_frac/sample_frac_075.pkl",
   "pilot_frac": 0.4,
   "reuse_seeds": null,
   "reuse_seeds_from": null,
-  "sample_frac": 0.7,
+  "sample_frac": 0.75,
   "seed_sequence": 1088,
   "seeds": [
     559536,
@@ -59,21 +59,9 @@
     368317,
     365314,
     573425,
-    273015,
-    978228,
-    92718,
-    381427,
-    199280,
-    670762,
-    150662,
-    822280,
-    66345,
-    22927,
-    262749,
-    384661,
-    509774
+    273015
   ],
-  "stz_path": "exp_nov_crossfit/hillstrom/conversion/lightgbm_reg/sample_frac_with_fixed_0.40_pilot_frac/sample_frac_070_stz.pkl",
+  "stz_path": "exp_nov_crossfit/hillstrom/conversion/lightgbm_reg/sample_frac_with_fixed_0.40_pilot_frac/sample_frac_075_stz.pkl",
   "target_col": "conversion",
   "train_frac": 0.7,
   "treatment_action_order": [
